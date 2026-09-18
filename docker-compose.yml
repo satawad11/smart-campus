@@ -1,0 +1,141 @@
+# AI Smart Campus — base development compose (FND-002)
+#
+# Defines the initial service topology from docs/04-development-blueprint.md §3:
+#   nginx, frontend, backend, queue, scheduler, websocket, ai-service,
+#   postgres, redis, minio
+# plus named volumes and ONE internal application network.
+#
+# Scope note (FND-002): this file wires the base services only. Application
+# Dockerfiles/code arrive in FND-003 (backend), FND-004 (frontend), and
+# FND-005 (ai-service); Nginx routing config in FND-009. No production secrets
+# are hardcoded — all credentials/ports come from environment variables with
+# dev-safe defaults (see .env.example). Copy .env.example to .env for local use.
+
+name: smart-campus
+
+# Shared build definition for the Laravel backend image. The queue, scheduler,
+# and websocket workers all run the same image with a different command.
+x-backend: &backend
+  build:
+    context: ./apps/backend        # Dockerfile added in FND-003
+  image: smart-campus/backend:dev
+  env_file:
+    - path: .env
+      required: false
+  networks: [smartcampus]
+  restart: unless-stopped
+
+networks:
+  # Single internal application network.
+  smartcampus:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
+  minio-data:
+
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - frontend
+      - backend
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+    volumes:
+      # Routing config is added in FND-009; empty placeholder dir for now.
+      - ./infrastructure/nginx:/etc/nginx/conf.d:ro
+    networks: [smartcampus]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./apps/frontend     # Dockerfile + Vue app added in FND-004
+    image: smart-campus/frontend:dev
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+    expose:
+      - "5173"
+    networks: [smartcampus]
+    restart: unless-stopped
+
+  backend:
+    <<: *backend                   # Laravel php-fpm; app added in FND-003
+    depends_on:
+      - postgres
+      - redis
+      - minio
+    expose:
+      - "9000"
+
+  queue:
+    <<: *backend
+    command: ["php", "artisan", "queue:work"]
+    depends_on:
+      - backend
+      - redis
+
+  scheduler:
+    <<: *backend
+    command: ["php", "artisan", "schedule:work"]
+    depends_on:
+      - backend
+
+  websocket:
+    <<: *backend
+    command: ["php", "artisan", "reverb:start", "--host=0.0.0.0", "--port=8080"]
+    depends_on:
+      - backend
+      - redis
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+
+  ai-service:
+    build:
+      context: ./apps/ai-service   # Dockerfile + FastAPI app added in FND-005
+    image: smart-campus/ai-service:dev
+    environment:
+      AI_MODE: ${AI_MODE:-mock}
+    expose:
+      - "8001"
+    networks: [smartcampus]
+    restart: unless-stopped
+
+  postgres:
+    # pgvector-capable image (locked data stack: PostgreSQL + pgvector).
+    # Extension/pg_trgm configuration is performed in FND-006.
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_campus}
+      POSTGRES_USER: ${POSTGRES_USER:-smart_campus}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smart_campus}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    networks: [smartcampus]
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis-data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks: [smartcampus]
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio-data:/data
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    networks: [smartcampus]
+    restart: unless-stopped

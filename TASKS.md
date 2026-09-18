@@ -12,7 +12,7 @@ Only mark `[x]` when the relevant tests pass.
 # FOUNDATION
 
 [x] FND-001 Create monorepo directory structure
-[ ] FND-002 Create Docker Compose base services
+[x] FND-002 Create Docker Compose base services
 [ ] FND-003 Bootstrap Laravel backend
 [ ] FND-004 Bootstrap Vue 3 frontend
 [ ] FND-005 Bootstrap FastAPI AI service

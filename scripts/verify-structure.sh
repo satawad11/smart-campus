@@ -52,10 +52,10 @@ required_files=(
   "docs/04-development-blueprint.md"
 )
 
-# --- Forbidden (belongs to FND-002+ / framework bootstrap) -------------------
+# --- Forbidden (belongs to FND-003+ / framework bootstrap) -------------------
+# NOTE: docker-compose.yml is expected from FND-002 onward and is verified by
+# scripts/verify-compose.sh, so it is intentionally NOT forbidden here.
 forbidden_paths=(
-  "docker-compose.yml"
-  "docker-compose.yaml"
   "apps/backend/composer.json"
   "apps/backend/artisan"
   "apps/frontend/package.json"
