@@ -52,15 +52,12 @@ required_files=(
   "docs/04-development-blueprint.md"
 )
 
-# --- Forbidden (belongs to FND-004+ / framework bootstrap) -------------------
-# NOTE: docker-compose.yml is expected from FND-002 onward (verified by
-# scripts/verify-compose.sh). The Laravel backend is bootstrapped in FND-003
-# (verified by scripts/verify-backend.sh), so apps/backend/* is no longer
-# forbidden. Frontend (FND-004) and AI service (FND-005) remain placeholders.
+# --- Forbidden (secrets / never-commit) --------------------------------------
+# NOTE: docker-compose.yml (FND-002) and the three apps — backend (FND-003),
+# frontend (FND-004), ai-service (FND-005) — are all bootstrapped and verified
+# by their own scripts, so they are no longer forbidden. A root-level committed
+# .env would be a secret leak and stays forbidden.
 forbidden_paths=(
-  "apps/frontend/package.json"
-  "apps/ai-service/requirements.txt"
-  "apps/ai-service/pyproject.toml"
   ".env"
 )
 
@@ -72,9 +69,9 @@ for d in "${required_dirs[@]}"; do
 done
 
 echo "[2/4] Placeholders in still-empty leaf dirs..."
-# apps/backend is bootstrapped in FND-003, so it no longer carries a .gitkeep.
-for d in apps/frontend apps/ai-service \
-         infrastructure/nginx infrastructure/postgres infrastructure/monitoring \
+# All three apps (backend/frontend/ai-service) are bootstrapped, so they no
+# longer carry a .gitkeep. Infra/docker/tests dirs remain placeholders.
+for d in infrastructure/nginx infrastructure/postgres infrastructure/monitoring \
          docker tests/Acceptance tests/Architecture tests/Security; do
   [ -f "$d/.gitkeep" ] || fail ".gitkeep in '$d'"
 done
@@ -88,8 +85,8 @@ echo "[4/4] Out-of-scope artifacts must be absent..."
 for p in "${forbidden_paths[@]}"; do
   [ -e "$p" ] && forbid "$p"
 done
-# No framework/service directories should exist yet under CI either.
-[ -d ".github/workflows" ] && forbid ".github/workflows (FND-011)"
+# NOTE: .github/workflows is created in FND-011 (verified by verify-ci.sh) and
+# is therefore no longer forbidden.
 
 echo
 if [ "$errors" -ne 0 ]; then

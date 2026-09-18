@@ -44,10 +44,15 @@ services:
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
     volumes:
-      # Routing config is added in FND-009; empty placeholder dir for now.
+      # Development routing config (FND-009): frontend + Laravel API gateway.
       - ./infrastructure/nginx:/etc/nginx/conf.d:ro
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   frontend:
     build:
@@ -59,6 +64,11 @@ services:
       - "5173"
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5173',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   backend:
     <<: *backend                   # Laravel php-fpm; app added in FND-003
@@ -68,6 +78,12 @@ services:
       - minio
     expose:
       - "9000"
+    healthcheck:
+      # php-fpm speaks FastCGI, not HTTP — check the port is accepting connections.
+      test: ["CMD", "php", "-r", "exit(@fsockopen('127.0.0.1',9000)?0:1);"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   queue:
     <<: *backend
@@ -101,10 +117,15 @@ services:
       - "8001"
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health').status==200 else 1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   postgres:
     # pgvector-capable image (locked data stack: PostgreSQL + pgvector).
-    # Extension/pg_trgm configuration is performed in FND-006.
+    # The init script enables the vector and pg_trgm extensions on first init.
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-smart_campus}
@@ -112,19 +133,33 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-smart_campus}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # Deterministic extension setup (FND-006), runs on first initialization.
+      - ./infrastructure/postgres/init:/docker-entrypoint-initdb.d:ro
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-smart_campus} -d ${POSTGRES_DB:-smart_campus}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
+    # Dev persistence: append-only file so cache/queue/session survive restarts.
+    command: ["redis-server", "--appendonly", "yes"]
     volumes:
       - redis-data:/data
     ports:
       - "${REDIS_PORT:-6379}:6379"
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   minio:
     image: minio/minio:latest
@@ -139,3 +174,8 @@ services:
       - "${MINIO_CONSOLE_PORT:-9001}:9001"
     networks: [smartcampus]
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5

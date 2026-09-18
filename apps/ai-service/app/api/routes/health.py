@@ -1,0 +1,10 @@
+"""Liveness/health endpoint (FND-005)."""
+
+from fastapi import APIRouter
+
+router = APIRouter()
+
+
+@router.get("/health")
+def health() -> dict:
+    return {"status": "ok", "service": "ai-service"}

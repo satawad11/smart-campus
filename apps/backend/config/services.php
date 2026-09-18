@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    // Internal AI perception service (FastAPI). Used for health checks (FND-010)
+    // and, later, recognition calls over the internal network.
+    'ai' => [
+        'url' => env('AI_SERVICE_URL', 'http://ai-service:8001'),
+    ],
+
 ];

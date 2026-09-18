@@ -14,15 +14,15 @@ Only mark `[x]` when the relevant tests pass.
 [x] FND-001 Create monorepo directory structure
 [x] FND-002 Create Docker Compose base services
 [x] FND-003 Bootstrap Laravel backend
-[ ] FND-004 Bootstrap Vue 3 frontend
-[ ] FND-005 Bootstrap FastAPI AI service
-[ ] FND-006 Configure PostgreSQL + pgvector + pg_trgm
-[ ] FND-007 Configure Redis
-[ ] FND-008 Configure S3-compatible object storage
-[ ] FND-009 Configure Nginx development routing
-[ ] FND-010 Create health checks
-[ ] FND-011 Create base CI pipeline
-[ ] FND-012 Create development seed/demo environment
+[x] FND-004 Bootstrap Vue 3 frontend
+[x] FND-005 Bootstrap FastAPI AI service
+[x] FND-006 Configure PostgreSQL + pgvector + pg_trgm
+[x] FND-007 Configure Redis
+[x] FND-008 Configure S3-compatible object storage
+[x] FND-009 Configure Nginx development routing
+[x] FND-010 Create health checks
+[x] FND-011 Create base CI pipeline
+[x] FND-012 Create development seed/demo environment
 
 # MODULE 01 — AUTHENTICATION + USER + RBAC
 

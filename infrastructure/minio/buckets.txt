@@ -1,0 +1,7 @@
+# Required object-storage buckets (development blueprint §8).
+# One bucket per line. Consumed by scripts/provision-minio.sh and
+# scripts/verify-storage.sh. Do not rename without approval (approved contract).
+person-photos
+face-samples
+event-snapshots
+report-exports
