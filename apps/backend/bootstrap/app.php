@@ -1,5 +1,8 @@
 <?php
 
+use App\Exceptions\ApiException;
+use App\Http\Middleware\EnsureSessionActive;
+use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
@@ -27,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'permission' => RequirePermission::class,
+            'active' => EnsureUserActive::class,
+            'session.active' => EnsureSessionActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -66,6 +71,19 @@ return Application::configure(basePath: dirname(__DIR__))
                         'fields' => new stdClass,
                     ],
                 ], 419);
+            }
+        });
+
+        $exceptions->render(function (ApiException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                    'error' => [
+                        'code' => $e->errorCode,
+                        'fields' => new stdClass,
+                    ],
+                ], $e->status);
             }
         });
 

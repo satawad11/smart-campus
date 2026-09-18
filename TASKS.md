@@ -35,8 +35,8 @@ Only mark `[x]` when the relevant tests pass.
 [x] AUTH-007 Implement MFA setup/verify/disable
 [x] AUTH-008 Implement permission middleware/service
 [x] AUTH-009 Implement GLOBAL/SITE/ZONE scope authorization
-[ ] AUTH-010 Implement user management APIs
-[ ] AUTH-011 Implement role/permission APIs
+[x] AUTH-010 Implement user management APIs
+[x] AUTH-011 Implement role/permission APIs
 [ ] AUTH-012 Implement session management and force logout
 [ ] AUTH-013 Implement login history
 [ ] AUTH-014 Implement auth/RBAC audit actions

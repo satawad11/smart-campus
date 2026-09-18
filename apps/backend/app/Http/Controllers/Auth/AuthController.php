@@ -44,7 +44,9 @@ class AuthController extends Controller
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
 
-            // 2. Create application-level user_sessions record
+            // 2. Create application-level user_sessions record keyed by the
+            //    current session id — EnsureSessionActive enforces revocation
+            //    by matching this session id.
             UserSession::create([
                 'user_id' => $user->id,
                 'session_id' => $request->session()->getId(),

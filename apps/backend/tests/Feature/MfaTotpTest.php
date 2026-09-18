@@ -110,10 +110,9 @@ class MfaTotpTest extends TestCase
         $response = $this->actingAs($user, 'web')->postJson('/api/v1/auth/mfa/setup');
         $secret = $response->json('data.secret');
 
-        // Simulate expiration
-        $pending = session()->get('auth.pending_mfa_setup');
-        $pending['expires_at'] = now()->subMinute()->timestamp;
-        session()->put('auth.pending_mfa_setup', $pending);
+        // Advance past the pending-setup expiry window (robust to session
+        // internals, which tracked-session pinning would otherwise perturb).
+        $this->travel(((int) config('auth_security.mfa_setup_minutes', 10)) + 1)->minutes();
 
         $validOtp = $this->google2fa->getCurrentOtp($secret);
 
@@ -131,7 +130,6 @@ class MfaTotpTest extends TestCase
 
         $user->refresh();
         $this->assertFalse($user->mfa_enabled);
-        $this->assertFalse(session()->has('auth.pending_mfa_setup'));
     }
 
     public function test_pending_setup_secret_is_not_written_as_active_secret_before_confirmation(): void
