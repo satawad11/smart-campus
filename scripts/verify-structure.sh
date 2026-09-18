@@ -52,12 +52,12 @@ required_files=(
   "docs/04-development-blueprint.md"
 )
 
-# --- Forbidden (belongs to FND-003+ / framework bootstrap) -------------------
-# NOTE: docker-compose.yml is expected from FND-002 onward and is verified by
-# scripts/verify-compose.sh, so it is intentionally NOT forbidden here.
+# --- Forbidden (belongs to FND-004+ / framework bootstrap) -------------------
+# NOTE: docker-compose.yml is expected from FND-002 onward (verified by
+# scripts/verify-compose.sh). The Laravel backend is bootstrapped in FND-003
+# (verified by scripts/verify-backend.sh), so apps/backend/* is no longer
+# forbidden. Frontend (FND-004) and AI service (FND-005) remain placeholders.
 forbidden_paths=(
-  "apps/backend/composer.json"
-  "apps/backend/artisan"
   "apps/frontend/package.json"
   "apps/ai-service/requirements.txt"
   "apps/ai-service/pyproject.toml"
@@ -71,8 +71,9 @@ for d in "${required_dirs[@]}"; do
   [ -d "$d" ] || fail "directory '$d'"
 done
 
-echo "[2/4] Placeholders in leaf app/infra/docker/test dirs..."
-for d in apps/backend apps/frontend apps/ai-service \
+echo "[2/4] Placeholders in still-empty leaf dirs..."
+# apps/backend is bootstrapped in FND-003, so it no longer carries a .gitkeep.
+for d in apps/frontend apps/ai-service \
          infrastructure/nginx infrastructure/postgres infrastructure/monitoring \
          docker tests/Acceptance tests/Architecture tests/Security; do
   [ -f "$d/.gitkeep" ] || fail ".gitkeep in '$d'"

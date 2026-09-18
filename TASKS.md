@@ -13,7 +13,7 @@ Only mark `[x]` when the relevant tests pass.
 
 [x] FND-001 Create monorepo directory structure
 [x] FND-002 Create Docker Compose base services
-[ ] FND-003 Bootstrap Laravel backend
+[x] FND-003 Bootstrap Laravel backend
 [ ] FND-004 Bootstrap Vue 3 frontend
 [ ] FND-005 Bootstrap FastAPI AI service
 [ ] FND-006 Configure PostgreSQL + pgvector + pg_trgm
