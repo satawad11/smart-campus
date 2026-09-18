@@ -1,0 +1,59 @@
+permissions:
+  dashboard:
+    - dashboard.view
+  student:
+    - student.view
+    - student.create
+    - student.update
+    - student.status.change
+    - student.import
+    - student.export
+    - student.archive
+  academic:
+    - academic.view
+    - academic.manage
+  face:
+    - face.view
+    - face.enroll
+    - face.revoke
+    - face.reenroll
+    - face.test
+    - face.model.view
+    - face.model.manage
+  camera:
+    - camera.view
+    - camera.create
+    - camera.update
+    - camera.enable
+    - camera.live
+    - camera.test
+  ai_node:
+    - ai_node.view
+    - ai_node.manage
+  monitor:
+    - monitor.view
+  event:
+    - event.view
+    - event.review
+    - event.note
+  policy:
+    - policy.view
+    - policy.manage
+  report:
+    - report.view
+    - report.export
+    - report.executive
+    - report.system
+  user:
+    - user.view
+    - user.create
+    - user.update
+    - user.disable
+  role:
+    - role.view
+    - role.manage
+  audit:
+    - audit.view
+  system:
+    - system.view
+    - system.manage

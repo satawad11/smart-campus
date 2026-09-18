@@ -1,0 +1,26 @@
+# --- OS / editor cruft -------------------------------------------------------
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# --- Secrets / local env (never commit) --------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# --- Dependency / build output (reserved for later FND tasks) ----------------
+node_modules/
+vendor/
+dist/
+build/
+__pycache__/
+*.pyc
+.venv/
+
+# Keep intentionally-empty directories tracked via their placeholders.
+!**/.gitkeep

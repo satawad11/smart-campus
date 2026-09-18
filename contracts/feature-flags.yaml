@@ -1,0 +1,10 @@
+features:
+  FACE: true
+  LIVENESS: true
+  MONITOR: true
+  REPORT: true
+  DOOR: false
+  VISITOR: false
+  VEHICLE: false
+  ALPR: false
+  AI_ASSISTANT: false
