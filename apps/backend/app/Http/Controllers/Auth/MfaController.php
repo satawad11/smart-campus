@@ -7,7 +7,10 @@ use App\Http\Requests\Auth\MfaConfirmRequest;
 use App\Http\Requests\Auth\MfaDisableRequest;
 use App\Http\Requests\Auth\MfaVerifyRequest;
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use App\Models\UserSession;
+use App\Services\Audit\AuditRequestContext;
+use App\Services\Auth\LoginHistoryService;
 use App\Services\Auth\MfaService;
 use DomainException;
 use Illuminate\Http\JsonResponse;
@@ -16,7 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use stdClass;
 
 /**
- * MFA Controller (AUTH-007).
+ * MFA Controller (AUTH-007, AUTH-013).
  *
  * Handles HTTP TOTP setup, confirmation, login verification, and disabling.
  */
@@ -24,6 +27,7 @@ class MfaController extends Controller
 {
     public function __construct(
         protected MfaService $mfaService,
+        protected LoginHistoryService $loginHistoryService,
     ) {}
 
     /**
@@ -62,7 +66,12 @@ class MfaController extends Controller
         $user = $request->user();
         $code = (string) $request->validated('code');
 
-        $success = $this->mfaService->confirmSetup($user, $request->session(), $code);
+        $success = $this->mfaService->confirmSetup(
+            $user,
+            $request->session(),
+            $code,
+            AuditRequestContext::fromRequest($request)
+        );
 
         if (! $success) {
             return response()->json([
@@ -92,8 +101,18 @@ class MfaController extends Controller
     {
         $session = $request->session();
         $pending = $session->get('auth.pending_mfa');
+        $ip = $request->ip() ?? '127.0.0.1';
+        $userAgent = $request->userAgent();
 
         if (! is_array($pending) || empty($pending['user_uuid']) || now()->timestamp > (int) ($pending['expires_at'] ?? 0)) {
+            $pendingUser = is_array($pending) && ! empty($pending['user_uuid'])
+                ? User::where('uuid', $pending['user_uuid'])->first()
+                : null;
+
+            if ($pendingUser) {
+                $this->loginHistoryService->recordFailure($pendingUser->username, 'MFA_FAILED', $pendingUser, $ip, $userAgent);
+            }
+
             $session->forget('auth.pending_mfa');
 
             return response()->json([
@@ -106,10 +125,14 @@ class MfaController extends Controller
             ], 401);
         }
 
+        $pendingUser = User::where('uuid', $pending['user_uuid'])->first();
         $code = (string) $request->validated('code');
         $user = $this->mfaService->verifyLoginChallenge($session, $code);
 
         if (! $user) {
+            $username = $pendingUser?->username ?? 'unknown';
+            $this->loginHistoryService->recordFailure($username, 'MFA_FAILED', $pendingUser, $ip, $userAgent);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Invalid MFA verification code',
@@ -120,6 +143,9 @@ class MfaController extends Controller
             ], 401);
         }
 
+        // Record successful MFA verification in login_logs
+        $this->loginHistoryService->recordSuccess($user, $ip, $userAgent);
+
         // 1. Establish authenticated web session and regenerate session ID
         Auth::guard('web')->login($user);
         $request->session()->regenerate();
@@ -128,8 +154,8 @@ class MfaController extends Controller
         UserSession::create([
             'user_id' => $user->id,
             'session_id' => $request->session()->getId(),
-            'ip_address' => $request->ip() ?? '127.0.0.1',
-            'user_agent' => $request->userAgent() ?? 'unknown',
+            'ip_address' => $ip,
+            'user_agent' => $userAgent ?? 'unknown',
             'device_name' => null,
             'login_at' => now(),
             'last_activity_at' => now(),
@@ -169,7 +195,13 @@ class MfaController extends Controller
         $password = (string) $request->validated('password');
         $code = (string) $request->validated('code');
 
-        $success = $this->mfaService->disableMfa($user, $request->session(), $password, $code);
+        $success = $this->mfaService->disableMfa(
+            $user,
+            $request->session(),
+            $password,
+            $code,
+            AuditRequestContext::fromRequest($request)
+        );
 
         if (! $success) {
             return response()->json([

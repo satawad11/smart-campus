@@ -9,6 +9,7 @@ use App\Http\Requests\Role\UpdateRolePermissionsRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Role;
+use App\Services\Audit\AuditRequestContext;
 use App\Services\Auth\RoleManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,7 +79,11 @@ class RoleController extends Controller
 
     public function store(StoreRoleRequest $request): JsonResponse
     {
-        $role = $this->service->create($request->validated());
+        $role = $this->service->create(
+            $request->validated(),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,
@@ -100,7 +105,12 @@ class RoleController extends Controller
 
     public function update(UpdateRoleRequest $request, Role $role): JsonResponse
     {
-        $updated = $this->service->update($role, $request->validated());
+        $updated = $this->service->update(
+            $role,
+            $request->validated(),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,
@@ -112,7 +122,12 @@ class RoleController extends Controller
 
     public function updatePermissions(UpdateRolePermissionsRequest $request, Role $role): JsonResponse
     {
-        $updated = $this->service->syncPermissions($role, $request->validated('permissions'));
+        $updated = $this->service->syncPermissions(
+            $role,
+            $request->validated('permissions'),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,

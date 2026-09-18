@@ -10,6 +10,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Requests\User\UpdateUserStatusRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\Audit\AuditRequestContext;
 use App\Services\Auth\UserManagementService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -91,7 +92,11 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $user = $this->service->create($request->validated());
+        $user = $this->service->create(
+            $request->validated(),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,
@@ -113,7 +118,12 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
-        $updated = $this->service->update($user, $request->validated());
+        $updated = $this->service->update(
+            $user,
+            $request->validated(),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,
@@ -129,6 +139,7 @@ class UserController extends Controller
             $user,
             UserStatus::from($request->validated('status')),
             $request->user(),
+            AuditRequestContext::fromRequest($request)
         );
 
         return response()->json([
@@ -141,7 +152,12 @@ class UserController extends Controller
 
     public function resetPassword(ResetPasswordRequest $request, User $user): JsonResponse
     {
-        $this->service->resetPassword($user, $request->validated('password'));
+        $this->service->resetPassword(
+            $user,
+            $request->validated('password'),
+            $request->user(),
+            AuditRequestContext::fromRequest($request)
+        );
 
         return response()->json([
             'success' => true,

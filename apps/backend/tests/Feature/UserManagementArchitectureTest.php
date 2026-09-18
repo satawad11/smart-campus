@@ -23,7 +23,7 @@ class UserManagementArchitectureTest extends TestCase
     public function test_no_delete_users_route_exists(): void // 56
     {
         foreach (Route::getRoutes() as $route) {
-            if (str_starts_with($route->uri(), 'api/v1/users')) {
+            if ($route->uri() === 'api/v1/users' || $route->uri() === 'api/v1/users/{user}') {
                 $this->assertNotContains('DELETE', $route->methods(), "unexpected DELETE on {$route->uri()}");
             }
         }

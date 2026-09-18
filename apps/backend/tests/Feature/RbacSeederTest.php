@@ -433,4 +433,81 @@ class RbacSeederTest extends TestCase
             );
         }
     }
+
+    public function test_seeder_does_not_overwrite_runtime_permission_modifications(): void
+    {
+        $systemAdmin = Role::where('code', 'SYSTEM_ADMIN')->firstOrFail();
+        $auditView = Permission::where('code', 'audit.view')->firstOrFail();
+
+        // Administrator modifies SYSTEM_ADMIN permissions at runtime: detach audit.view
+        $systemAdmin->permissions()->detach($auditView->id);
+        $this->assertFalse($systemAdmin->fresh()->permissions()->where('code', 'audit.view')->exists());
+        $countBefore = $systemAdmin->fresh()->permissions()->count();
+
+        // Run db:seed again
+        $this->seed(DatabaseSeeder::class);
+
+        // Verification: runtime change survived, audit.view was NOT restored
+        $systemAdmin->refresh();
+        $this->assertSame($countBefore, $systemAdmin->permissions()->count());
+        $this->assertFalse($systemAdmin->permissions()->where('code', 'audit.view')->exists());
+    }
+
+    public function test_seeder_does_not_restore_intentionally_removed_permissions(): void
+    {
+        $disciplineOfficer = Role::where('code', 'DISCIPLINE_OFFICER')->firstOrFail();
+        $studentUpdate = Permission::where('code', 'student.update')->firstOrFail();
+
+        // Administrator removes 1 permission from DISCIPLINE_OFFICER at runtime
+        $disciplineOfficer->permissions()->detach($studentUpdate->id);
+        $this->assertFalse($disciplineOfficer->fresh()->permissions()->where('code', 'student.update')->exists());
+
+        // Run RolePermissionSeeder directly
+        $this->seed(RolePermissionSeeder::class);
+
+        // Verification: student.update was NOT restored
+        $disciplineOfficer->refresh();
+        $this->assertFalse($disciplineOfficer->permissions()->where('code', 'student.update')->exists());
+        $this->assertCount(12, $disciplineOfficer->permissions);
+    }
+
+    public function test_seeder_preserves_intentionally_emptied_role_matrix(): void
+    {
+        $executiveViewer = Role::where('code', 'EXECUTIVE_VIEWER')->firstOrFail();
+
+        // Administrator empties all permissions from EXECUTIVE_VIEWER at runtime
+        $executiveViewer->permissions()->detach();
+        $this->assertCount(0, $executiveViewer->fresh()->permissions);
+
+        // Run db:seed again
+        $this->seed(DatabaseSeeder::class);
+
+        // Verification: Role remains empty and was NOT re-seeded/restored
+        $executiveViewer->refresh();
+        $this->assertCount(0, $executiveViewer->permissions);
+    }
+
+    public function test_seeder_preserves_custom_role_permissions(): void
+    {
+        $customRole = Role::create([
+            'name' => 'Custom Auditor',
+            'code' => 'CUSTOM_AUDITOR',
+            'system_role' => false,
+            'status' => RoleStatus::ACTIVE,
+            'description' => 'Custom role created at runtime',
+        ]);
+
+        $auditView = Permission::where('code', 'audit.view')->firstOrFail();
+        $customRole->permissions()->attach([$auditView->id]);
+
+        $this->assertCount(1, $customRole->fresh()->permissions);
+
+        // Run db:seed again
+        $this->seed(DatabaseSeeder::class);
+
+        // Verification: Custom role and its permission assignment remain untouched
+        $customRole->refresh();
+        $this->assertCount(1, $customRole->permissions);
+        $this->assertTrue($customRole->permissions()->where('code', 'audit.view')->exists());
+    }
 }

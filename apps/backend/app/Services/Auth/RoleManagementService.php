@@ -2,34 +2,38 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\AuditAction;
 use App\Enums\RoleStatus;
 use App\Exceptions\ApiException;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
+use App\Services\Audit\AuditRequestContext;
+use App\Services\Audit\AuditService;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Administrative role & permission-matrix management (AUTH-011).
+ * Administrative role & permission-matrix management (AUTH-011, AUTH-014).
  *
- * Owns role lifecycle and role_permissions matrix logic so controllers stay
- * thin. Authorization is enforced by permission middleware (role.manage), never
- * by role name. System-role protections here are configuration invariants, not
- * authorization bypasses. Emits no audit records (AUTH-014) but exposes discrete
- * methods that later audit hooks can capture: ROLE_CREATED / ROLE_UPDATED /
- * PERMISSION_UPDATED.
+ * Owns role lifecycle and role_permissions matrix logic with transactional
+ * audit logging (AUTH-014).
  */
 class RoleManagementService
 {
     private const SUPER_ADMIN = 'SUPER_ADMIN';
 
+    public function __construct(
+        private readonly AuditService $auditService,
+    ) {}
+
     /**
-     * Create a custom role. system_role is always false; UUID is server-side.
+     * Create a custom role.
      *
      * @param  array{code:string, name:string, description?:?string, status?:string}  $data
      */
-    public function create(array $data): Role
+    public function create(array $data, ?User $actor = null, ?AuditRequestContext $context = null): Role
     {
-        return DB::transaction(function () use ($data) {
+        return DB::transaction(function () use ($data, $actor, $context) {
             $role = new Role;
             $role->code = $data['code'];
             $role->name = $data['name'];
@@ -38,18 +42,29 @@ class RoleManagementService
             $role->status = RoleStatus::from($data['status'] ?? RoleStatus::ACTIVE->value);
             $role->save(); // uuid auto-generated
 
+            $this->auditService->record(
+                AuditAction::ROLE_CREATED,
+                $actor,
+                'ROLE',
+                $role->uuid,
+                newValues: [
+                    'code' => $role->code,
+                    'name' => $role->name,
+                    'status' => $role->status->value,
+                ],
+                context: $context
+            );
+
             return $role;
         });
     }
 
     /**
-     * Update mutable role fields (name, description, status). Code and
-     * system_role are immutable (rejected at the request layer). SUPER_ADMIN
-     * cannot be disabled.
+     * Update mutable role fields (name, description, status).
      *
      * @param  array{name?:string, description?:?string, status?:string}  $data
      */
-    public function update(Role $role, array $data): Role
+    public function update(Role $role, array $data, ?User $actor = null, ?AuditRequestContext $context = null): Role
     {
         if ($this->isSuperAdmin($role)
             && array_key_exists('status', $data)
@@ -60,17 +75,39 @@ class RoleManagementService
             );
         }
 
-        return DB::transaction(function () use ($role, $data) {
-            if (array_key_exists('name', $data)) {
+        return DB::transaction(function () use ($role, $data, $actor, $context) {
+            $oldValues = [];
+            $newValues = [];
+
+            if (array_key_exists('name', $data) && $data['name'] !== $role->name) {
+                $oldValues['name'] = $role->name;
+                $newValues['name'] = $data['name'];
                 $role->name = $data['name'];
             }
-            if (array_key_exists('description', $data)) {
+            if (array_key_exists('description', $data) && $data['description'] !== $role->description) {
+                $oldValues['description'] = $role->description;
+                $newValues['description'] = $data['description'];
                 $role->description = $data['description'];
             }
-            if (array_key_exists('status', $data)) {
+            if (array_key_exists('status', $data) && RoleStatus::from($data['status']) !== $role->status) {
+                $oldValues['status'] = $role->status->value;
+                $newValues['status'] = $data['status'];
                 $role->status = RoleStatus::from($data['status']);
             }
-            $role->save();
+
+            if (! empty($newValues)) {
+                $role->save();
+
+                $this->auditService->record(
+                    AuditAction::ROLE_UPDATED,
+                    $actor,
+                    'ROLE',
+                    $role->uuid,
+                    oldValues: $oldValues,
+                    newValues: $newValues,
+                    context: $context
+                );
+            }
 
             return $role;
         });
@@ -79,14 +116,9 @@ class RoleManagementService
     /**
      * Replace a role's permission matrix atomically (all-or-nothing).
      *
-     * Codes are validated to exist at the request layer. SUPER_ADMIN must retain
-     * the full canonical permission catalog. Concurrency: the role row is locked
-     * for the duration so two concurrent replacements are serialized
-     * (last-writer-wins, deterministic and atomic).
-     *
      * @param  list<string>  $permissionCodes
      */
-    public function syncPermissions(Role $role, array $permissionCodes): Role
+    public function syncPermissions(Role $role, array $permissionCodes, ?User $actor = null, ?AuditRequestContext $context = null): Role
     {
         $codes = array_values(array_unique($permissionCodes));
 
@@ -103,11 +135,27 @@ class RoleManagementService
             }
         }
 
-        return DB::transaction(function () use ($role, $codes) {
+        return DB::transaction(function () use ($role, $codes, $actor, $context) {
             $locked = Role::whereKey($role->id)->lockForUpdate()->firstOrFail();
 
+            $oldCodes = $locked->permissions()->pluck('code')->all();
             $ids = Permission::query()->whereIn('code', $codes)->pluck('id')->all();
             $locked->permissions()->sync($ids);
+
+            $added = array_values(array_diff($codes, $oldCodes));
+            $removed = array_values(array_diff($oldCodes, $codes));
+
+            $this->auditService->record(
+                AuditAction::ROLE_PERMISSION_MATRIX_UPDATED,
+                $actor,
+                'ROLE',
+                $locked->uuid,
+                newValues: [
+                    'added' => $added,
+                    'removed' => $removed,
+                ],
+                context: $context
+            );
 
             return $locked->load('permissions');
         });

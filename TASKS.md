@@ -37,13 +37,13 @@ Only mark `[x]` when the relevant tests pass.
 [x] AUTH-009 Implement GLOBAL/SITE/ZONE scope authorization
 [x] AUTH-010 Implement user management APIs
 [x] AUTH-011 Implement role/permission APIs
-[ ] AUTH-012 Implement session management and force logout
-[ ] AUTH-013 Implement login history
-[ ] AUTH-014 Implement auth/RBAC audit actions
-[ ] AUTH-015 Build Vue login/MFA/change-password
-[ ] AUTH-016 Build user management UI
-[ ] AUTH-017 Build role/permission matrix UI
-[ ] AUTH-018 Add auth/RBAC acceptance/security tests
+[x] AUTH-012 Implement session management and force logout
+[x] AUTH-013 Implement login history
+[x] AUTH-014 Implement auth/RBAC audit actions
+[x] AUTH-015 Build Vue login/MFA/change-password
+[x] AUTH-016 Build user management UI
+[x] AUTH-017 Build role/permission matrix UI
+[x] AUTH-018 Add auth/RBAC acceptance/security tests
 
 # MODULE 02 — PERSON + STUDENT + ACADEMIC
 

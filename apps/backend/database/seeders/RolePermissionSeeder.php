@@ -5,34 +5,48 @@ namespace Database\Seeders;
 use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class RolePermissionSeeder extends Seeder
 {
     /**
      * Seed canonical role-permission assignment matrix.
      *
-     * Idempotent: uses Eloquent BelongsToMany sync() to align role permissions.
-     * Does NOT touch user_roles or user_permissions tables.
+     * Non-destructive & Bootstrap-safe:
+     * - Seeds canonical AUTH-003 baseline matrices ONLY when role_permissions has not yet been initialized.
+     * - If role_permissions is already initialized, runtime edits from administrators are authoritative
+     *   and ordinary db:seed will NOT overwrite, sync, restore, or append role permissions.
+     * - Does NOT touch user_roles or user_permissions tables.
      */
     public function run(): void
     {
-        $matrix = $this->getRolePermissionMatrix();
-
-        foreach ($matrix as $roleCode => $permissionCodes) {
-            $role = Role::where('code', $roleCode)->first();
-
-            if (! $role) {
-                continue;
-            }
-
-            if ($permissionCodes === ['*']) {
-                $permissionIds = Permission::pluck('id')->all();
-            } else {
-                $permissionIds = Permission::whereIn('code', $permissionCodes)->pluck('id')->all();
-            }
-
-            $role->permissions()->sync($permissionIds);
+        if (DB::table('role_permissions')->exists()) {
+            return;
         }
+
+        DB::transaction(function () {
+            if (DB::table('role_permissions')->exists()) {
+                return;
+            }
+
+            $matrix = $this->getRolePermissionMatrix();
+
+            foreach ($matrix as $roleCode => $permissionCodes) {
+                $role = Role::where('code', $roleCode)->first();
+
+                if (! $role) {
+                    continue;
+                }
+
+                if ($permissionCodes === ['*']) {
+                    $permissionIds = Permission::pluck('id')->all();
+                } else {
+                    $permissionIds = Permission::whereIn('code', $permissionCodes)->pluck('id')->all();
+                }
+
+                $role->permissions()->attach($permissionIds);
+            }
+        });
     }
 
     /**

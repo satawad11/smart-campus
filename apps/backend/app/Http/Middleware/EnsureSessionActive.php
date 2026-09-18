@@ -10,12 +10,12 @@ use stdClass;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Enforce application session revocation (AUTH-010 final invariant).
+ * Enforce application session revocation (AUTH-010 final invariant, AUTH-012).
  *
  * For EVERY authenticated first-party request the current server-side session
  * id must correspond to an active, non-revoked user_sessions record for the
  * authenticated user. FAIL CLOSED:
- *   - active, non-revoked matching record -> allow
+ *   - active, non-revoked matching record -> allow (and perform bounded last_activity_at update)
  *   - matching record revoked              -> 401
  *   - no matching record                   -> 401
  *
@@ -34,13 +34,13 @@ class EnsureSessionActive
         $user = $request->user();
 
         if ($user !== null) {
-            $active = UserSession::query()
+            $userSession = UserSession::query()
                 ->where('user_id', $user->id)
                 ->where('session_id', $request->session()->getId())
                 ->whereNull('revoked_at')
-                ->exists();
+                ->first();
 
-            if (! $active) {
+            if (! $userSession) {
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
@@ -53,6 +53,11 @@ class EnsureSessionActive
                         'fields' => new stdClass,
                     ],
                 ], 401);
+            }
+
+            // Bounded last_activity_at update: at most once every 5 minutes to minimize DB write load
+            if ($userSession->last_activity_at === null || $userSession->last_activity_at->diffInSeconds(now()) >= 300) {
+                $userSession->forceFill(['last_activity_at' => now()])->save();
             }
         }
 

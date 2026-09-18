@@ -4,24 +4,30 @@ namespace App\Http\Controllers\Auth;
 
 use App\Enums\AuthStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\ChangePasswordRequest;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Resources\UserResource;
 use App\Models\UserSession;
+use App\Services\Audit\AuditRequestContext;
 use App\Services\Auth\AuthenticationService;
+use App\Services\Auth\LoginHistoryService;
+use App\Services\Auth\PasswordService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 /**
- * Authentication Controller (AUTH-005).
+ * Authentication Controller (AUTH-005, AUTH-013, AUTH-015).
  *
- * Handles HTTP login, logout, and authenticated user profile endpoints.
+ * Handles HTTP login, logout, password change, and authenticated user profile endpoints.
  * Session state is managed via Laravel web guard session cookies.
  */
 class AuthController extends Controller
 {
     public function __construct(
         protected AuthenticationService $authService,
+        protected LoginHistoryService $loginHistoryService,
+        protected PasswordService $passwordService,
     ) {}
 
     /**
@@ -29,13 +35,21 @@ class AuthController extends Controller
      */
     public function login(LoginRequest $request): JsonResponse
     {
+        $username = (string) $request->validated('username');
+        $password = (string) $request->validated('password');
+        $ip = $request->ip() ?? '127.0.0.1';
+        $userAgent = $request->userAgent();
+
         $result = $this->authService->authenticate(
-            $request->validated('username'),
-            $request->validated('password')
+            $username,
+            $password
         );
 
         if ($result->isSuccessful()) {
             $user = $result->getUser();
+
+            // Record successful login in login_logs
+            $this->loginHistoryService->recordSuccess($user, $ip, $userAgent);
 
             // Clear any pending MFA challenge state
             $this->authService->clearPendingMfaState($request->session());
@@ -50,8 +64,8 @@ class AuthController extends Controller
             UserSession::create([
                 'user_id' => $user->id,
                 'session_id' => $request->session()->getId(),
-                'ip_address' => $request->ip() ?? '127.0.0.1',
-                'user_agent' => $request->userAgent() ?? 'unknown',
+                'ip_address' => $ip,
+                'user_agent' => $userAgent ?? 'unknown',
                 'device_name' => null,
                 'login_at' => now(),
                 'last_activity_at' => now(),
@@ -74,6 +88,9 @@ class AuthController extends Controller
             $user = $result->getUser();
             $mfaMinutes = (int) config('auth_security.mfa_challenge_minutes', 5);
 
+            // Record password stage success (MFA required) in login_logs
+            $this->loginHistoryService->recordMfaRequired($user, $ip, $userAgent);
+
             // Store pending MFA state in session
             $this->authService->setPendingMfaState($request->session(), $user);
 
@@ -93,6 +110,17 @@ class AuthController extends Controller
         }
 
         // Map failure statuses
+        $reason = match ($result->getStatus()) {
+            AuthStatus::INVALID_CREDENTIALS => 'INVALID_CREDENTIALS',
+            AuthStatus::ACCOUNT_LOCKED => 'ACCOUNT_LOCKED',
+            AuthStatus::ACCOUNT_DISABLED => 'ACCOUNT_DISABLED',
+            AuthStatus::ACCOUNT_EXPIRED => 'ACCOUNT_EXPIRED',
+            default => 'AUTHENTICATION_FAILED',
+        };
+
+        // Record failed attempt in login_logs
+        $this->loginHistoryService->recordFailure($username, $reason, $result->getUser(), $ip, $userAgent);
+
         $httpStatus = match ($result->getStatus()) {
             AuthStatus::INVALID_CREDENTIALS => 401,
             AuthStatus::ACCOUNT_LOCKED => 423,
@@ -158,6 +186,34 @@ class AuthController extends Controller
             'message' => 'Success',
             'data' => [
                 'user' => new UserResource($user->load('roles')),
+            ],
+            'meta' => null,
+        ]);
+    }
+
+    /**
+     * Change the authenticated user's own password.
+     */
+    public function changePassword(ChangePasswordRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $currentPassword = (string) $request->validated('current_password');
+        $newPassword = (string) $request->validated('password');
+        $currentSessionId = $request->session()->getId();
+
+        $updated = $this->passwordService->changePassword(
+            $user,
+            $currentPassword,
+            $newPassword,
+            $currentSessionId,
+            AuditRequestContext::fromRequest($request)
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password changed successfully',
+            'data' => [
+                'user' => new UserResource($updated->load('roles')),
             ],
             'meta' => null,
         ]);

@@ -2,7 +2,10 @@
 
 namespace App\Services\Auth;
 
+use App\Enums\AuditAction;
 use App\Models\User;
+use App\Services\Audit\AuditRequestContext;
+use App\Services\Audit\AuditService;
 use DomainException;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Session\SessionManager;
@@ -12,7 +15,7 @@ use Illuminate\Support\Facades\Hash;
 use PragmaRX\Google2FA\Google2FA;
 
 /**
- * MFA TOTP Service (AUTH-007).
+ * MFA TOTP Service (AUTH-007, AUTH-014).
  *
  * Responsibilities:
  * - Generate standard RFC 6238 TOTP secrets and QR provisioning URIs.
@@ -20,14 +23,18 @@ use PragmaRX\Google2FA\Google2FA;
  * - Encrypt confirmed TOTP secrets at rest in mfa_secret_encrypted.
  * - Verify TOTP login challenges against encrypted stored secrets.
  * - Manage MFA disable flow requiring password and TOTP validation.
+ * - Audit log MFA enablement and disabling.
  */
 class MfaService
 {
     protected ?Google2FA $google2fa;
 
-    public function __construct(?Google2FA $google2fa = null)
+    protected AuditService $auditService;
+
+    public function __construct(?Google2FA $google2fa = null, ?AuditService $auditService = null)
     {
         $this->google2fa = $google2fa ?? new Google2FA;
+        $this->auditService = $auditService ?? app(AuditService::class);
     }
 
     /**
@@ -72,7 +79,7 @@ class MfaService
      *
      * On success: encrypts and saves the secret, sets mfa_enabled=true, and clears pending setup.
      */
-    public function confirmSetup(User $user, Session|SessionManager $session, string $code): bool
+    public function confirmSetup(User $user, Session|SessionManager $session, string $code, ?AuditRequestContext $context = null): bool
     {
         $pending = $session->get('auth.pending_mfa_setup');
 
@@ -99,7 +106,7 @@ class MfaService
             return false;
         }
 
-        DB::transaction(function () use ($user, $secret) {
+        DB::transaction(function () use ($user, $secret, $context) {
             $fresh = User::where('id', $user->id)->lockForUpdate()->firstOrFail();
 
             $fresh->mfa_secret_encrypted = Crypt::encryptString($secret);
@@ -109,6 +116,15 @@ class MfaService
             // Sync in-memory model
             $user->mfa_secret_encrypted = $fresh->mfa_secret_encrypted;
             $user->mfa_enabled = $fresh->mfa_enabled;
+
+            $this->auditService->record(
+                AuditAction::MFA_ENABLED,
+                $fresh,
+                'USER',
+                $fresh->uuid,
+                newValues: ['mfa_enabled' => true],
+                context: $context
+            );
         });
 
         $session->forget('auth.pending_mfa_setup');
@@ -159,7 +175,7 @@ class MfaService
     /**
      * Disable MFA for an authenticated user requiring current password and valid TOTP code.
      */
-    public function disableMfa(User $user, Session|SessionManager $session, string $password, string $code): bool
+    public function disableMfa(User $user, Session|SessionManager $session, string $password, string $code, ?AuditRequestContext $context = null): bool
     {
         if (! $user->mfa_enabled || empty($user->mfa_secret_encrypted)) {
             return false;
@@ -178,7 +194,7 @@ class MfaService
             return false;
         }
 
-        DB::transaction(function () use ($user) {
+        DB::transaction(function () use ($user, $context) {
             $fresh = User::where('id', $user->id)->lockForUpdate()->firstOrFail();
 
             $fresh->mfa_enabled = false;
@@ -188,6 +204,15 @@ class MfaService
             // Sync in-memory model
             $user->mfa_enabled = false;
             $user->mfa_secret_encrypted = null;
+
+            $this->auditService->record(
+                AuditAction::MFA_DISABLED,
+                $fresh,
+                'USER',
+                $fresh->uuid,
+                newValues: ['mfa_enabled' => false],
+                context: $context
+            );
         });
 
         $session->forget(['auth.pending_mfa', 'auth.pending_mfa_setup']);
