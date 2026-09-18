@@ -28,8 +28,8 @@ Only mark `[x]` when the relevant tests pass.
 
 [x] AUTH-001 Create user/RBAC/session/login-log migrations
 [x] AUTH-002 Create User/Role/Permission models and relationships
-[ ] AUTH-003 Create idempotent RBAC seeders
-[ ] AUTH-004 Implement AuthenticationService
+[x] AUTH-003 Create idempotent RBAC seeders
+[x] AUTH-004 Implement AuthenticationService
 [ ] AUTH-005 Implement login/logout/me APIs
 [ ] AUTH-006 Implement account lock and password policy
 [ ] AUTH-007 Implement MFA setup/verify/disable
