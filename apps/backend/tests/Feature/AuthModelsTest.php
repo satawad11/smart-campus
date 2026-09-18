@@ -9,6 +9,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserPermission;
+use App\Models\UserRole;
 use App\Models\UserSession;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -142,6 +143,41 @@ class AuthModelsTest extends TestCase
         $this->assertCount(1, $user->loginLogs()->get());
         $this->assertTrue($user->sessions()->first()->user->is($user));
         $this->assertTrue($log->user->is($user));
+    }
+
+    public function test_created_at_is_auto_set_without_updated_at(): void
+    {
+        $user = User::factory()->create();
+        $role = Role::factory()->create();
+        $perm = Permission::factory()->create();
+
+        // Created through Eloquent WITHOUT supplying created_at.
+        $assignment = UserRole::create(['user_id' => $user->id, 'role_id' => $role->id]);
+        $override = UserPermission::create([
+            'user_id' => $user->id,
+            'permission_id' => $perm->id,
+            'effect' => PermissionEffect::ALLOW,
+        ]);
+        $log = LoginLog::create([
+            'username' => 'auto',
+            'success' => true,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'phpunit',
+        ]);
+
+        // 1-3: created_at is populated automatically.
+        $this->assertNotNull($assignment->created_at);
+        $this->assertNotNull($override->created_at);
+        $this->assertNotNull($log->created_at);
+
+        // 4: no model expects/writes an updated_at column.
+        $this->assertNull((new UserRole)->getUpdatedAtColumn());
+        $this->assertNull((new UserPermission)->getUpdatedAtColumn());
+        $this->assertNull((new LoginLog)->getUpdatedAtColumn());
+
+        // Updating a row must not attempt to write updated_at (would fail on PG).
+        $log->update(['failure_reason' => 'note']);
+        $this->assertDatabaseHas('login_logs', ['id' => $log->id, 'failure_reason' => 'note']);
     }
 
     public function test_login_log_tolerates_null_user(): void

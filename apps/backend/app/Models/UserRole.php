@@ -11,8 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class UserRole extends Model
 {
-    // user_roles has created_at only (no updated_at); DB fills the default.
-    public $timestamps = false;
+    // user_roles has created_at but no updated_at. Let Eloquent set created_at
+    // automatically on create, and never write a (nonexistent) updated_at.
+    public $timestamps = true;
+
+    const UPDATED_AT = null;
 
     /** @var list<string> */
     protected $fillable = [

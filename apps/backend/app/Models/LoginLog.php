@@ -11,8 +11,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class LoginLog extends Model
 {
-    // login_logs has created_at only.
-    public $timestamps = false;
+    // login_logs has created_at but no updated_at. Eloquent sets created_at
+    // automatically; updated_at is disabled so it is never written.
+    public $timestamps = true;
+
+    const UPDATED_AT = null;
 
     /** @var list<string> */
     protected $fillable = [

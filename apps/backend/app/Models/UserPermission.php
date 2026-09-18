@@ -13,7 +13,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class UserPermission extends Model
 {
-    public $timestamps = false;
+    // created_at but no updated_at column (see UserRole).
+    public $timestamps = true;
+
+    const UPDATED_AT = null;
 
     public $incrementing = false;
 
