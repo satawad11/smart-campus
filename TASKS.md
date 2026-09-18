@@ -27,7 +27,7 @@ Only mark `[x]` when the relevant tests pass.
 # MODULE 01 — AUTHENTICATION + USER + RBAC
 
 [x] AUTH-001 Create user/RBAC/session/login-log migrations
-[ ] AUTH-002 Create User/Role/Permission models and relationships
+[x] AUTH-002 Create User/Role/Permission models and relationships
 [ ] AUTH-003 Create idempotent RBAC seeders
 [ ] AUTH-004 Implement AuthenticationService
 [ ] AUTH-005 Implement login/logout/me APIs
