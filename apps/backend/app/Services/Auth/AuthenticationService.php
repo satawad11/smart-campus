@@ -4,6 +4,8 @@ namespace App\Services\Auth;
 
 use App\Enums\UserStatus;
 use App\Models\User;
+use Illuminate\Contracts\Session\Session;
+use Illuminate\Session\SessionManager;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
@@ -123,9 +125,48 @@ class AuthenticationService
                     ])->save();
                 }
             });
-
-            $user->failed_login_count = 0;
-            $user->locked_until = null;
         }
+    }
+
+    /**
+     * Store pending MFA authentication state in session.
+     */
+    public function setPendingMfaState(Session|SessionManager $session, User $user): void
+    {
+        $minutes = (int) config('auth_security.mfa_challenge_minutes', 5);
+
+        $session->put('auth.pending_mfa', [
+            'user_uuid' => $user->uuid,
+            'issued_at' => now()->timestamp,
+            'expires_at' => now()->addMinutes($minutes)->timestamp,
+        ]);
+    }
+
+    /**
+     * Retrieve user from valid unexpired pending MFA state.
+     */
+    public function getPendingMfaUser(Session|SessionManager $session): ?User
+    {
+        $data = $session->get('auth.pending_mfa');
+
+        if (! is_array($data) || empty($data['user_uuid']) || empty($data['expires_at'])) {
+            return null;
+        }
+
+        if (now()->timestamp > (int) $data['expires_at']) {
+            $session->forget('auth.pending_mfa');
+
+            return null;
+        }
+
+        return User::where('uuid', $data['user_uuid'])->first();
+    }
+
+    /**
+     * Clear pending MFA authentication state from session.
+     */
+    public function clearPendingMfaState(Session|SessionManager $session): void
+    {
+        $session->forget('auth.pending_mfa');
     }
 }

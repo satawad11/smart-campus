@@ -30,10 +30,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] AUTH-002 Create User/Role/Permission models and relationships
 [x] AUTH-003 Create idempotent RBAC seeders
 [x] AUTH-004 Implement AuthenticationService
-[ ] AUTH-005 Implement login/logout/me APIs
-[ ] AUTH-006 Implement account lock and password policy
-[ ] AUTH-007 Implement MFA setup/verify/disable
-[ ] AUTH-008 Implement permission middleware/service
+[x] AUTH-005 Implement login/logout/me APIs
+[x] AUTH-006 Implement account lock and password policy
+[x] AUTH-007 Implement MFA setup/verify/disable
+[x] AUTH-008 Implement permission middleware/service
 [ ] AUTH-009 Implement GLOBAL/SITE/ZONE scope authorization
 [ ] AUTH-010 Implement user management APIs
 [ ] AUTH-011 Implement role/permission APIs
