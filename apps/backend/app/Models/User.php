@@ -97,4 +97,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(LoginLog::class);
     }
+
+    public function importJobs(): HasMany
+    {
+        return $this->hasMany(ImportJob::class, 'created_by');
+    }
 }

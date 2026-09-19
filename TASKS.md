@@ -57,7 +57,7 @@ Only mark `[x]` when the relevant tests pass.
 [ ] STD-008 Implement student status-change workflow/history
 [ ] STD-009 Implement student archive flow
 [ ] STD-010 Implement student photo storage
-[ ] STD-011 Implement import job/error schema
+[x] STD-011 Implement import job/error schema
 [ ] STD-012 Implement import upload/mapping/validation/preview
 [ ] STD-013 Implement queued student import
 [ ] STD-014 Implement import identity-conflict handling

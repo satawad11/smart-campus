@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
+use App\Enums\AcademicStatus;
 use Database\Factories\ProgramFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ class Program extends Model
      */
     protected function casts(): array
     {
-        return ['status' => \App\Enums\AcademicStatus::class];
+        return ['status' => AcademicStatus::class];
     }
 
     public function department(): BelongsTo
