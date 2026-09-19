@@ -52,7 +52,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] STD-003 Create StudentProfile migration/model
 [x] STD-004 Create student status history migration/model
 [x] STD-005 Implement academic master-data APIs
-[ ] STD-006 Implement StudentService
+[x] STD-006 Implement StudentService
 [ ] STD-007 Implement student CRUD/search/filter/pagination
 [ ] STD-008 Implement student status-change workflow/history
 [ ] STD-009 Implement student archive flow
