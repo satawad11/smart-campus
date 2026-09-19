@@ -22,4 +22,9 @@ class ApiException extends RuntimeException
     {
         return new self($errorCode, $message, 409);
     }
+
+    public static function unprocessable(string $errorCode, string $message): self
+    {
+        return new self($errorCode, $message, 422);
+    }
 }

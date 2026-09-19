@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Academic\ClassroomController;
+use App\Http\Controllers\Academic\DepartmentController;
+use App\Http\Controllers\Academic\ProgramController;
 use App\Http\Controllers\Audit\AuditLogController;
 use App\Http\Controllers\Auth\AuthController;
 use App\Http\Controllers\Auth\LoginHistoryController;
@@ -100,4 +103,28 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/audit-logs', [AuditLogController::class, 'index'])->middleware('permission:audit.view');
     Route::get('/audit-logs/{auditLog:uuid}', [AuditLogController::class, 'show'])->middleware('permission:audit.view');
+});
+
+/*
+| Academic Master Data (STD-005). Departments / Programs / Classrooms.
+| UUID public identity; internal numeric ids are never accepted or exposed.
+| Reads require academic.view; mutations require academic.manage. Master-data
+| lifecycle is ACTIVE/INACTIVE (status), never a hard delete — so there is no
+| DELETE route. Cross-entity consistency is enforced server-side.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/departments', [DepartmentController::class, 'index'])->middleware('permission:academic.view');
+    Route::post('/departments', [DepartmentController::class, 'store'])->middleware('permission:academic.manage');
+    Route::get('/departments/{department}', [DepartmentController::class, 'show'])->middleware('permission:academic.view');
+    Route::put('/departments/{department}', [DepartmentController::class, 'update'])->middleware('permission:academic.manage');
+
+    Route::get('/programs', [ProgramController::class, 'index'])->middleware('permission:academic.view');
+    Route::post('/programs', [ProgramController::class, 'store'])->middleware('permission:academic.manage');
+    Route::get('/programs/{program}', [ProgramController::class, 'show'])->middleware('permission:academic.view');
+    Route::put('/programs/{program}', [ProgramController::class, 'update'])->middleware('permission:academic.manage');
+
+    Route::get('/classrooms', [ClassroomController::class, 'index'])->middleware('permission:academic.view');
+    Route::post('/classrooms', [ClassroomController::class, 'store'])->middleware('permission:academic.manage');
+    Route::get('/classrooms/{classroom}', [ClassroomController::class, 'show'])->middleware('permission:academic.view');
+    Route::put('/classrooms/{classroom}', [ClassroomController::class, 'update'])->middleware('permission:academic.manage');
 });

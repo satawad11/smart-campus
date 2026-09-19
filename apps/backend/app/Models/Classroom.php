@@ -19,6 +19,14 @@ class Classroom extends Model
     /** @var list<string> */
     protected $fillable = ['department_id', 'program_id', 'code', 'name', 'academic_year', 'year_level', 'status'];
 
+    /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return ['status' => \App\Enums\AcademicStatus::class];
+    }
+
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
