@@ -6,18 +6,20 @@ use Illuminate\Support\Facades\Schema;
 
 // STD-002: complete the deferred users.person_id -> persons.id foreign key.
 //
-// The column was created (nullable, indexed) in AUTH-001. It stays NULLABLE — a
-// User may exist without a Person, and a Person without a User. ON DELETE SET
-// NULL: a hard-deleted Person must never cascade-delete its login account
-// (preserve the security record; blueprint §14 / "user may exist without a
-// person"). NO unique constraint is added: the docs do not define user↔person
-// cardinality, so 1:1 is NOT assumed (see report SCHEMA CLARIFICATION); a unique
-// index can be added later additively if 1:1 is confirmed.
+// Canonical V1 cardinality: optional one-to-one. The column (created nullable,
+// indexed in AUTH-001) stays NULLABLE — a User may exist without a Person and a
+// Person without a User — but is now UNIQUE, so the same non-null Person cannot
+// be linked to two users (PostgreSQL nullable-unique allows many NULLs). ON
+// DELETE SET NULL: a hard-deleted Person must never cascade-delete its login
+// account (preserve the security record; blueprint §14). The unique index
+// replaces AUTH-001's plain index on person_id.
 return new class extends Migration
 {
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
+            $table->dropIndex(['person_id']); // AUTH-001 plain index → superseded by unique
+            $table->unique('person_id');
             $table->foreign('person_id')->references('id')->on('persons')->nullOnDelete();
         });
     }
@@ -26,6 +28,8 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['person_id']);
+            $table->dropUnique(['person_id']);
+            $table->index('person_id');
         });
     }
 };

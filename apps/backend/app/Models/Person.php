@@ -3,11 +3,12 @@
 namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -45,15 +46,25 @@ class Person extends Model
     {
         return [
             'person_type' => PersonType::class,
+            'status' => PersonStatus::class,
         ];
     }
 
     /**
-     * Optional login accounts for this person. Cardinality is not constrained
-     * to 1:1 (see STD-002 report); modeled as hasMany until confirmed.
+     * The optional login account for this person. Canonical V1 cardinality is
+     * optional one-to-one (users.person_id is unique when non-null).
      */
-    public function users(): HasMany
+    public function user(): HasOne
     {
-        return $this->hasMany(User::class);
+        return $this->hasOne(User::class);
+    }
+
+    /**
+     * The optional academic profile for this person (STD-003). Canonical 0..1:1
+     * (student_profiles.person_id is unique).
+     */
+    public function studentProfile(): HasOne
+    {
+        return $this->hasOne(StudentProfile::class);
     }
 }

@@ -49,8 +49,8 @@ Only mark `[x]` when the relevant tests pass.
 
 [x] STD-001 Create academic master-data migrations
 [x] STD-002 Create Person migration/model
-[ ] STD-003 Create StudentProfile migration/model
-[ ] STD-004 Create student status history migration/model
+[x] STD-003 Create StudentProfile migration/model
+[x] STD-004 Create student status history migration/model
 [ ] STD-005 Implement academic master-data APIs
 [ ] STD-006 Implement StudentService
 [ ] STD-007 Implement student CRUD/search/filter/pagination

@@ -60,5 +60,20 @@ Must support:
 - import
 - academic master changes
 
+## Person Record Status (STD-002)
+persons.status is the identity RECORD lifecycle, distinct from student academic status:
+- ACTIVE — normal operational identity record
+- INACTIVE — retained but no longer operationally active
+- ARCHIVED — retained for historical/reference purposes
+
+Default: ACTIVE. Enforced by a database CHECK constraint. Student academic
+statuses (ACTIVE/LEAVE/SUSPENDED/WITHDRAWN/GRADUATED/EXPELLED/UNKNOWN) are NOT
+valid person statuses.
+
+## User–Person Cardinality (STD-002)
+Optional one-to-one. users.person_id is nullable, UNIQUE when non-null, and FK
+ON DELETE SET NULL. A Person has zero or one User; a User belongs to zero or one
+Person. Relaxing this requires an explicit architecture change.
+
 ## Acceptance
 See Module 02 acceptance criteria.

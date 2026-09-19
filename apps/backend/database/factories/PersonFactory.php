@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use App\Models\Person;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -27,7 +28,7 @@ class PersonFactory extends Factory
             'display_name' => null,
             'gender' => null,
             'primary_photo' => null,
-            'status' => 'ACTIVE',
+            'status' => PersonStatus::ACTIVE,
         ];
     }
 }

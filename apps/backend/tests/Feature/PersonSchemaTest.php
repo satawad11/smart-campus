@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use App\Models\Person;
 use App\Models\User;
@@ -55,10 +56,11 @@ class PersonSchemaTest extends TestCase
         }
     }
 
-    // 9-10: STD-003 / Module 03 tables are NOT created.
-    public function test_student_and_face_tables_not_created(): void
+    // Module 03 (face) tables are NOT created yet. persons, student_profiles
+    // (STD-003) and student_status_histories (STD-004) are legitimate now.
+    public function test_face_tables_not_created(): void
     {
-        foreach (['student_profiles', 'student_status_histories', 'face_profiles', 'face_samples'] as $table) {
+        foreach (['face_profiles', 'face_samples'] as $table) {
             $this->assertFalse(Schema::hasTable($table), "{$table} must not exist yet");
         }
     }
@@ -123,18 +125,18 @@ class PersonSchemaTest extends TestCase
         $this->assertNull($user->person);
     }
 
-    // 12/13: FK references persons.id with SET NULL on delete.
+    // 13/14/16/17: optional one-to-one relationship + SET NULL on delete.
     public function test_user_person_relationship_and_fk_set_null(): void
     {
         $person = Person::factory()->create();
         $user = User::factory()->create(['person_id' => $person->id]);
 
-        $this->assertTrue($user->person->is($person));
-        $this->assertTrue($person->users->contains($user));
+        $this->assertTrue($user->person->is($person));   // User::person()
+        $this->assertTrue($person->user->is($user));      // Person::user() hasOne
 
-        // 15: person may exist without a user (already: created independently).
+        // 16: person may exist without a user.
         $lonePerson = Person::factory()->create();
-        $this->assertCount(0, $lonePerson->users);
+        $this->assertNull($lonePerson->user);
 
         // 13: hard-deleting the referenced person nulls the FK, never deletes the user.
         Person::withoutEvents(fn () => Person::whereKey($person->id)->forceDelete());
@@ -147,5 +149,70 @@ class PersonSchemaTest extends TestCase
     {
         $this->expectException(QueryException::class);
         User::factory()->create(['person_id' => 999999]);
+    }
+
+    // 1: status defaults to ACTIVE.
+    public function test_status_defaults_to_active(): void
+    {
+        $id = DB::table('persons')->insertGetId([
+            'uuid' => (string) Str::uuid(), 'person_type' => 'STUDENT',
+            'first_name' => 'A', 'last_name' => 'B',
+        ]);
+        $this->assertSame('ACTIVE', DB::table('persons')->where('id', $id)->value('status'));
+        $this->assertSame(PersonStatus::ACTIVE, Person::find($id)->status);
+    }
+
+    // 2-4: canonical statuses accepted and cast.
+    public function test_status_accepts_canonical_values(): void
+    {
+        foreach ([PersonStatus::ACTIVE, PersonStatus::INACTIVE, PersonStatus::ARCHIVED] as $status) {
+            $person = Person::factory()->create(['status' => $status]);
+            $this->assertSame($status, $person->fresh()->status);
+        }
+    }
+
+    // 5-6: arbitrary / academic statuses rejected (PostgreSQL CHECK).
+    public function test_status_rejects_non_canonical_values(): void
+    {
+        if (! $this->isPgsql()) {
+            $this->markTestIncomplete('status CHECK rejection is only enforced on PostgreSQL');
+        }
+
+        foreach (['SOMETHING', 'SUSPENDED', 'GRADUATED'] as $bad) {
+            try {
+                DB::table('persons')->insert([
+                    'uuid' => (string) Str::uuid(), 'person_type' => 'STUDENT',
+                    'first_name' => 'A', 'last_name' => 'B', 'status' => $bad,
+                ]);
+                $this->fail("status '{$bad}' should be rejected");
+            } catch (QueryException) {
+                $this->assertTrue(true);
+            }
+        }
+    }
+
+    // 8: multiple users with NULL person_id are allowed.
+    public function test_multiple_users_may_have_null_person(): void
+    {
+        User::factory()->create(['person_id' => null]);
+        User::factory()->create(['person_id' => null]);
+        $this->assertSame(2, User::whereNull('person_id')->count());
+    }
+
+    // 9-10: one user per person; a second user cannot reference the same person.
+    public function test_person_id_is_unique_when_non_null(): void
+    {
+        $person = Person::factory()->create();
+        User::factory()->create(['person_id' => $person->id]);
+
+        $this->expectException(QueryException::class);
+        User::factory()->create(['person_id' => $person->id]);
+    }
+
+    // 15: Person::users() is no longer part of the canonical model API.
+    public function test_person_users_relationship_removed(): void
+    {
+        $this->assertFalse(method_exists(Person::class, 'users'));
+        $this->assertTrue(method_exists(Person::class, 'user'));
     }
 }

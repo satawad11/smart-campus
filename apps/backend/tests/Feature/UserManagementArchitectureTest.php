@@ -40,13 +40,13 @@ class UserManagementArchitectureTest extends TestCase
 
     public function test_no_person_site_zone_domain_introduced(): void // 58
     {
-        // Person (STD-002) is now a legitimate Module 02 artifact; Site/Zone and
-        // StudentProfile (STD-003) remain out of scope for this task's guard.
-        foreach (['Site', 'Zone', 'StudentProfile'] as $model) {
+        // Person (STD-002) and StudentProfile (STD-003) are now legitimate
+        // Module 02 artifacts; Site/Zone (Module 04) remain out of scope.
+        foreach (['Site', 'Zone'] as $model) {
             $this->assertFileDoesNotExist(base_path("app/Models/{$model}.php"));
         }
         foreach (glob(base_path('database/migrations/*.php')) as $file) {
-            foreach (['create_sites_table', 'create_zones_table', 'create_student'] as $forbidden) {
+            foreach (['create_sites_table', 'create_zones_table'] as $forbidden) {
                 $this->assertStringNotContainsString($forbidden, basename($file));
             }
         }
