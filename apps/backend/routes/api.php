@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\Student\StudentController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -127,4 +128,19 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::post('/classrooms', [ClassroomController::class, 'store'])->middleware('permission:academic.manage');
     Route::get('/classrooms/{classroom}', [ClassroomController::class, 'show'])->middleware('permission:academic.view');
     Route::put('/classrooms/{classroom}', [ClassroomController::class, 'update'])->middleware('permission:academic.manage');
+});
+
+/*
+| Student CRUD / search (STD-007). {student} binds by StudentProfile uuid;
+| internal ids are never accepted or exposed. Reads require student.view,
+| create student.create, generic update student.update. Controllers are thin —
+| all domain rules live in StudentService. The dedicated academic-status
+| transition endpoint (PATCH /students/{uuid}/status) is STD-008. No DELETE
+| (archive is STD-009); no import/export here.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/students', [StudentController::class, 'index'])->middleware('permission:student.view');
+    Route::post('/students', [StudentController::class, 'store'])->middleware('permission:student.create');
+    Route::get('/students/{student}', [StudentController::class, 'show'])->middleware('permission:student.view');
+    Route::put('/students/{student}', [StudentController::class, 'update'])->middleware('permission:student.update');
 });

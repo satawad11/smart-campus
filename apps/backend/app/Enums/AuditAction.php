@@ -39,4 +39,7 @@ enum AuditAction: string
     // Module 02 — student domain (STD-006)
     case STUDENT_CREATED = 'STUDENT_CREATED';
     case STUDENT_STATUS_CHANGED = 'STUDENT_STATUS_CHANGED';
+
+    // Module 02 — student CRUD (STD-007)
+    case STUDENT_UPDATED = 'STUDENT_UPDATED';
 }

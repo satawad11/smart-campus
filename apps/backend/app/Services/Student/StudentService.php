@@ -241,6 +241,58 @@ class StudentService
         });
     }
 
+    /**
+     * Generic Student update (STD-007). Mutates only the approved identity and
+     * academic-profile fields, atomically, and writes a STUDENT_UPDATED audit
+     * record when anything changed.
+     *
+     * Deliberately out of reach here: academic_status and the status dates
+     * (dedicated status operation, STD-008), student_code / person_code /
+     * person_type (immutable business keys), persons.status (separate record
+     * lifecycle), any User/account field, and academic relationship
+     * reassignment (department/program/classroom/education_level — reassignment
+     * semantics are not defined by canonical docs, so it is deferred rather than
+     * invented). None of these are accepted by the update FormRequest either.
+     *
+     * @param  array{
+     *     person?: array{first_name?:string, last_name?:string, display_name?:?string, gender?:?string},
+     *     year_level?: int,
+     *     admission_year?: ?int,
+     *     graduation_year?: ?int
+     *  }  $data
+     */
+    public function updateStudent(StudentProfile $profile, array $data, ?User $actor, ?AuditRequestContext $context): StudentProfile
+    {
+        return DB::transaction(function () use ($profile, $data, $actor, $context) {
+            $person = $profile->person()->firstOrFail();
+
+            $personChanges = $this->applyChanges($person, $data['person'] ?? [], ['first_name', 'last_name', 'display_name', 'gender']);
+            $profileChanges = $this->applyChanges($profile, $data, ['year_level', 'admission_year', 'graduation_year']);
+
+            $changed = $personChanges !== [] || $profileChanges !== [];
+
+            if ($personChanges !== []) {
+                $person->save();
+            }
+            if ($profileChanges !== []) {
+                $profile->save();
+            }
+
+            if ($changed) {
+                $this->audit->record(
+                    AuditAction::STUDENT_UPDATED, $actor, 'STUDENT', $profile->uuid,
+                    oldValues: $this->prefixKeys($personChanges['old'] ?? [], 'person.') + ($profileChanges['old'] ?? []),
+                    newValues: (
+                        $this->prefixKeys($personChanges['new'] ?? [], 'person.') + ($profileChanges['new'] ?? [])
+                    ) + ['student_code' => $profile->student_code, 'person_uuid' => $person->uuid],
+                    context: $context, module: 'student',
+                );
+            }
+
+            return $profile;
+        });
+    }
+
     // ---- Resolution + consistency helpers ----
 
     private function resolveActiveDepartment(string $uuid): Department
@@ -351,5 +403,45 @@ class StudentService
         } catch (\Throwable) {
             throw ApiException::unprocessable('STUDENT_STATUS_EFFECTIVE_FROM_INVALID', 'The effective_from value is not a valid timestamp.');
         }
+    }
+
+    /**
+     * Apply whitelisted changed fields to a model, returning the old/new diff.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  list<string>  $fields
+     * @return array{old?: array<string,mixed>, new?: array<string,mixed>}
+     */
+    private function applyChanges(object $model, array $data, array $fields): array
+    {
+        $old = [];
+        $new = [];
+        foreach ($fields as $field) {
+            if (array_key_exists($field, $data)) {
+                $current = $model->{$field};
+                $currentValue = $current instanceof \BackedEnum ? $current->value : $current;
+                if ($currentValue !== $data[$field]) {
+                    $old[$field] = $currentValue;
+                    $new[$field] = $data[$field];
+                    $model->{$field} = $data[$field];
+                }
+            }
+        }
+
+        return $new === [] ? [] : ['old' => $old, 'new' => $new];
+    }
+
+    /**
+     * @param  array<string, mixed>  $values
+     * @return array<string, mixed>
+     */
+    private function prefixKeys(array $values, string $prefix): array
+    {
+        $out = [];
+        foreach ($values as $key => $value) {
+            $out[$prefix.$key] = $value;
+        }
+
+        return $out;
     }
 }
