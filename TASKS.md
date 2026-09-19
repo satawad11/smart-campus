@@ -47,8 +47,8 @@ Only mark `[x]` when the relevant tests pass.
 
 # MODULE 02 — PERSON + STUDENT + ACADEMIC
 
-[ ] STD-001 Create academic master-data migrations
-[ ] STD-002 Create Person migration/model
+[x] STD-001 Create academic master-data migrations
+[x] STD-002 Create Person migration/model
 [ ] STD-003 Create StudentProfile migration/model
 [ ] STD-004 Create student status history migration/model
 [ ] STD-005 Implement academic master-data APIs

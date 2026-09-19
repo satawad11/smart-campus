@@ -6,6 +6,7 @@ use App\Concerns\HasPublicUuid;
 use App\Enums\UserStatus;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -62,8 +63,14 @@ class User extends Authenticatable
         ];
     }
 
-    // person_id remains a scalar nullable field. The Person Eloquent
-    // relationship is deferred until Module 02 (persons table/model).
+    /**
+     * The real-world person this login account belongs to, if any (STD-002).
+     * Nullable: a User may exist without a Person.
+     */
+    public function person(): BelongsTo
+    {
+        return $this->belongsTo(Person::class);
+    }
 
     public function roles(): BelongsToMany
     {

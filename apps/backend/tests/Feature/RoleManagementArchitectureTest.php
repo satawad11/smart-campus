@@ -64,7 +64,9 @@ class RoleManagementArchitectureTest extends TestCase
 
     public function test_no_future_domain_modules(): void // 53
     {
-        foreach (['Person', 'Site', 'Zone', 'Camera', 'Door', 'Visitor', 'Vehicle'] as $model) {
+        // Person is introduced in Module 02 (STD-002) and is now allowed; the
+        // rest remain out of scope for the auth module.
+        foreach (['Site', 'Zone', 'Camera', 'Door', 'Visitor', 'Vehicle'] as $model) {
             $this->assertFileDoesNotExist(base_path("app/Models/{$model}.php"));
         }
     }
