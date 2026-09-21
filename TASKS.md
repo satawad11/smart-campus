@@ -54,41 +54,41 @@ Only mark `[x]` when the relevant tests pass.
 [x] STD-005 Implement academic master-data APIs
 [x] STD-006 Implement StudentService
 [x] STD-007 Implement student CRUD/search/filter/pagination
-[ ] STD-008 Implement student status-change workflow/history
-[ ] STD-009 Implement student archive flow
-[ ] STD-010 Implement student photo storage
+[x] STD-008 Implement student status-change workflow/history
+[x] STD-009 Implement student archive flow
+[x] STD-010 Implement student photo storage
 [x] STD-011 Implement import job/error schema
-[ ] STD-012 Implement import upload/mapping/validation/preview
-[ ] STD-013 Implement queued student import
-[ ] STD-014 Implement import identity-conflict handling
-[ ] STD-015 Build student list/detail/form UI
-[ ] STD-016 Build status-change/history UI
-[ ] STD-017 Build student import wizard UI
-[ ] STD-018 Add student/academic acceptance tests
+[x] STD-012 Implement import upload/mapping/validation/preview
+[x] STD-013 Implement queued student import
+[x] STD-014 Implement import identity-conflict handling
+[x] STD-015 Build student list/detail/form UI
+[x] STD-016 Build status-change/history UI
+[x] STD-017 Build student import wizard UI
+[x] STD-018 Add student/academic acceptance tests
 
 # MODULE 03 — FACE ENROLLMENT + AI FOUNDATION
 
-[ ] FACE-001 Create AI model registry
-[ ] FACE-002 Create FaceProfile/FaceSample migrations
-[ ] FACE-003 Implement AI service health/readiness
-[ ] FACE-004 Implement face detection abstraction
-[ ] FACE-005 Implement face alignment
-[ ] FACE-006 Implement face quality evaluation
-[ ] FACE-007 Implement embedding generation
-[ ] FACE-008 Implement pgvector search
-[ ] FACE-009 Implement enrollment API/service
-[ ] FACE-010 Implement enrollment verification
-[ ] FACE-011 Implement duplicate-face review
-[ ] FACE-012 Implement recognition test API
-[ ] FACE-013 Implement MATCH/REVIEW/UNKNOWN classification
-[ ] FACE-014 Implement revoke/re-enroll
-[ ] FACE-015 Implement liveness/PAD interface
-[ ] FACE-016 Build face enrollment UI
-[ ] FACE-017 Build face profile management UI
-[ ] FACE-018 Build restricted recognition-test UI
-[ ] FACE-019 Add face AI benchmark/evaluation harness
-[ ] FACE-020 Add face security/acceptance tests
-[ ] FACE-021 [R] Human review of pilot threshold settings
+[x] FACE-001 Create AI model registry
+[x] FACE-002 Create FaceProfile/FaceSample migrations
+[x] FACE-003 Implement AI service health/readiness
+[x] FACE-004 Implement face detection abstraction
+[x] FACE-005 Implement face alignment
+[x] FACE-006 Implement face quality evaluation
+[x] FACE-007 Implement embedding generation
+[x] FACE-008 Implement pgvector search
+[x] FACE-009 Implement enrollment API/service
+[x] FACE-010 Implement enrollment verification
+[x] FACE-011 Implement duplicate-face review
+[x] FACE-012 Implement recognition test API
+[x] FACE-013 Implement MATCH/REVIEW/UNKNOWN classification
+[x] FACE-014 Implement revoke/re-enroll
+[x] FACE-015 Implement liveness/PAD interface
+[x] FACE-016 Build face enrollment UI
+[x] FACE-017 Build face profile management UI
+[x] FACE-018 Build restricted recognition-test UI
+[x] FACE-019 Add face AI benchmark/evaluation harness
+[x] FACE-020 Add face security/acceptance tests
+[x] FACE-021 [R] Human review of pilot threshold settings — HUMAN APPROVED (see docs/FACE-021-PILOT-THRESHOLDS-REVIEW.md)
 
 # MODULE 04 — CAMERA + AI NODE + RTSP
 
