@@ -4,3 +4,4 @@ pydantic>=2.7
 pydantic-settings>=2.3
 numpy>=1.26
 python-multipart>=0.0.9
+opencv-python-headless>=4.9

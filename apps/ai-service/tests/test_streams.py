@@ -207,8 +207,10 @@ class TestFactory:
         source = get_video_source("mock", num_frames=7)
         assert isinstance(source, MockVideoSource)
 
-    def test_rtsp_provider_raises_clear_not_implemented_error(self) -> None:
-        with pytest.raises(ValueError, match="CAM-006"):
+    def test_rtsp_provider_requires_rtsp_url(self) -> None:
+        # Real RTSP support landed in CAM-006 — the provider is now
+        # accepted, but still requires an rtsp_url argument.
+        with pytest.raises(ValueError, match="rtsp_url"):
             get_video_source("rtsp")
 
     def test_unsupported_provider_raises(self) -> None:
