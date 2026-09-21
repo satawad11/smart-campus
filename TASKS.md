@@ -92,7 +92,7 @@ Only mark `[x]` when the relevant tests pass.
 
 # MODULE 04 — CAMERA + AI NODE + RTSP
 
-[ ] CAM-001 Create Camera/AINode/health schemas
+[x] CAM-001 Create Camera/AINode/health schemas
 [ ] CAM-002 Implement camera CRUD/test/snapshot
 [ ] CAM-003 Implement AI node registration/heartbeat
 [ ] CAM-004 Implement per-node authentication

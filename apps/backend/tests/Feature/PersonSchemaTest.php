@@ -56,11 +56,11 @@ class PersonSchemaTest extends TestCase
         }
     }
 
-    // Module 03 (face) tables are NOT created yet. persons, student_profiles
-    // (STD-003) and student_status_histories (STD-004) are legitimate now.
-    public function test_face_tables_not_created(): void
+    // Camera/AINode schema (CAM-001) is now a legitimate Module 04 artifact;
+    // later Module 04 domains (actual RTSP stream tracking, CAM-006+) are not.
+    public function test_future_rtsp_stream_tables_not_created(): void
     {
-        foreach (['face_profiles', 'face_samples'] as $table) {
+        foreach (['rtsp_streams'] as $table) {
             $this->assertFalse(Schema::hasTable($table), "{$table} must not exist yet");
         }
     }

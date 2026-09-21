@@ -38,17 +38,13 @@ class UserManagementArchitectureTest extends TestCase
         }
     }
 
-    public function test_no_person_site_zone_domain_introduced(): void // 58
+    public function test_no_door_visitor_vehicle_domain_introduced(): void // 58
     {
-        // Person (STD-002) and StudentProfile (STD-003) are now legitimate
-        // Module 02 artifacts; Site/Zone (Module 04) remain out of scope.
-        foreach (['Site', 'Zone'] as $model) {
+        // Person (STD-002), StudentProfile (STD-003), and Site/Zone/Camera
+        // (CAM-001) are now legitimate Module 02/04 artifacts; the locked
+        // future modules (Door/Visitor/Vehicle) remain out of scope.
+        foreach (['Door', 'Visitor', 'Vehicle'] as $model) {
             $this->assertFileDoesNotExist(base_path("app/Models/{$model}.php"));
-        }
-        foreach (glob(base_path('database/migrations/*.php')) as $file) {
-            foreach (['create_sites_table', 'create_zones_table'] as $forbidden) {
-                $this->assertStringNotContainsString($forbidden, basename($file));
-            }
         }
     }
 
