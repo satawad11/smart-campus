@@ -98,7 +98,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-004 Implement per-node authentication
 [x] CAM-005 Implement VideoSource abstraction
 [x] CAM-006 Implement RTSP source and reconnect
-[ ] CAM-007 Implement frame sampler
+[x] CAM-007 Implement frame sampler
 [ ] CAM-008 Implement face tracking
 [ ] CAM-009 Implement recognition worker queue
 [ ] CAM-010 Implement track/local recognition cache
