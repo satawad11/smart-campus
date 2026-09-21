@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\Camera\AiNodeController;
+use App\Http\Controllers\Camera\AiNodeCredentialController;
 use App\Http\Controllers\Camera\CameraController;
 use App\Http\Controllers\Face\FaceDuplicateReviewController;
 use App\Http\Controllers\Face\FaceEnrollmentController;
@@ -230,10 +231,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 });
 
 /*
-| AI Node administrative CRUD (CAM-003). {aiNode} binds by AiNode uuid. The
-| node-facing check-in/heartbeat surface is separate, under /internal/v1
-| (routes/internal.php), authenticated by internal.token — never this
-| human-session stack. No DELETE.
+| AI Node administrative CRUD (CAM-003) + credential lifecycle (CAM-004).
+| {aiNode} binds by AiNode uuid. The node-facing check-in/heartbeat surface
+| is separate, under /internal/v1 (routes/internal.php), authenticated by a
+| per-node bearer credential (ai_node.token) — never this human-session
+| stack. No DELETE.
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes', [AiNodeController::class, 'index'])->middleware('permission:ai_node.view');
@@ -241,4 +243,10 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes/{aiNode}', [AiNodeController::class, 'show'])->middleware('permission:ai_node.view');
     Route::put('/ai-nodes/{aiNode}', [AiNodeController::class, 'update'])->middleware('permission:ai_node.manage');
     Route::patch('/ai-nodes/{aiNode}/status', [AiNodeController::class, 'updateStatus'])->middleware('permission:ai_node.manage');
+
+    // Credential lifecycle (CAM-004). The plaintext token is returned once,
+    // in the store() response, and never again.
+    Route::get('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'index'])->middleware('permission:ai_node.manage');
+    Route::post('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'store'])->middleware('permission:ai_node.manage');
+    Route::post('/ai-nodes/{aiNode}/credentials/{credential}/revoke', [AiNodeCredentialController::class, 'revoke'])->middleware('permission:ai_node.manage');
 });

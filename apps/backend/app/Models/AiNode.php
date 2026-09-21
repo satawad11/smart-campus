@@ -71,4 +71,9 @@ class AiNode extends Model
     {
         return $this->hasMany(AiNodeHealthLog::class);
     }
+
+    public function credentials(): HasMany
+    {
+        return $this->hasMany(AiNodeCredential::class);
+    }
 }

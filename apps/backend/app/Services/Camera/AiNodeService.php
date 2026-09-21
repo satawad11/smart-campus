@@ -147,20 +147,19 @@ class AiNodeService
         });
     }
 
-    // ---- Node-facing (internal.token) ----
+    // ---- Node-facing (per-node credential, CAM-004) ----
 
     /**
-     * A node checks in / confirms identity. Rejects an unknown node_code —
-     * the node must already have been provisioned by an admin. Updates only
+     * A node checks in / confirms identity. $node is already resolved and
+     * authenticated by the ai_node.token middleware from its own credential
+     * — never looked up from client-supplied input, so a credential can
+     * never be used to check in as a different node. Updates only
      * self-reported facts; never site_id or status.
      *
      * @param  array<string, mixed>  $data
      */
-    public function checkIn(string $nodeCode, array $data, ?AuditRequestContext $context): AiNode
+    public function checkIn(AiNode $node, array $data, ?AuditRequestContext $context): AiNode
     {
-        $node = AiNode::where('node_code', $nodeCode)->first()
-            ?? throw ApiException::unprocessable('AI_NODE_NOT_REGISTERED', 'This node_code has not been provisioned by an administrator.');
-
         return DB::transaction(function () use ($node, $data, $context) {
             foreach (['hostname', 'ip_address', 'api_url', 'software_version', 'capabilities'] as $field) {
                 if (array_key_exists($field, $data)) {
@@ -184,18 +183,17 @@ class AiNodeService
     }
 
     /**
-     * Records one raw telemetry snapshot and refreshes last_seen_at. Does
-     * NOT compute ONLINE/DEGRADED/OFFLINE health policy (CAM-014) — a
-     * received heartbeat is recorded ONLINE because it is itself the
-     * observation of the node being alive right now.
+     * Records one raw telemetry snapshot and refreshes last_seen_at. $node
+     * is already resolved/authenticated by the ai_node.token middleware —
+     * a node can only ever report telemetry for itself. Does NOT compute
+     * ONLINE/DEGRADED/OFFLINE health policy (CAM-014) — a received
+     * heartbeat is recorded ONLINE because it is itself the observation of
+     * the node being alive right now.
      *
      * @param  array<string, mixed>  $data
      */
-    public function heartbeat(string $nodeCode, array $data): AiNode
+    public function heartbeat(AiNode $node, array $data): AiNode
     {
-        $node = AiNode::where('node_code', $nodeCode)->first()
-            ?? throw ApiException::unprocessable('AI_NODE_NOT_REGISTERED', 'This node_code has not been provisioned by an administrator.');
-
         return DB::transaction(function () use ($node, $data) {
             $node->last_seen_at = now();
             $node->save();

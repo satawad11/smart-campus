@@ -95,7 +95,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-001 Create Camera/AINode/health schemas
 [x] CAM-002 Implement camera CRUD/test/snapshot
 [x] CAM-003 Implement AI node registration/heartbeat
-[ ] CAM-004 Implement per-node authentication
+[x] CAM-004 Implement per-node authentication
 [ ] CAM-005 Implement VideoSource abstraction
 [ ] CAM-006 Implement RTSP source and reconnect
 [ ] CAM-007 Implement frame sampler

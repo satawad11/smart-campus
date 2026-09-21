@@ -1,7 +1,7 @@
 <?php
 
 use App\Exceptions\ApiException;
-use App\Http\Middleware\EnsureInternalServiceToken;
+use App\Http\Middleware\EnsureAiNodeToken;
 use App\Http\Middleware\EnsureSessionActive;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
@@ -24,9 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
         then: function () {
-            // Machine-to-machine surface (CAM-003), deliberately outside the
-            // human-session api/v1 stack (no cookies/CSRF/session — see
-            // PROJECT_RULES §6). Auth is internal.token, applied per-route.
+            // Machine-to-machine surface (CAM-003/CAM-004), deliberately
+            // outside the human-session api/v1 stack (no cookies/CSRF/session
+            // — see PROJECT_RULES §6). Auth is per-node bearer credential
+            // (ai_node.token), applied per-route.
             Route::prefix('internal/v1')->group(base_path('routes/internal.php'));
         },
     )
@@ -40,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => RequirePermission::class,
             'active' => EnsureUserActive::class,
             'session.active' => EnsureSessionActive::class,
-            'internal.token' => EnsureInternalServiceToken::class,
+            'ai_node.token' => EnsureAiNodeToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
