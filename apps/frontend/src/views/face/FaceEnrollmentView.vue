@@ -1,0 +1,242 @@
+<script setup>
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import facesService from '@/services/faces'
+
+const router = useRouter()
+const authStore = useAuthStore()
+
+// State
+const personUuid = ref('')
+const selectedFile = ref(null)
+const previewUrl = ref('')
+const pose = ref('FRONT')
+const source = ref('UPLOAD')
+const loading = ref(false)
+const errorMessage = ref('')
+const successData = ref(null)
+const duplicateReviewData = ref(null)
+
+const canEnroll = computed(() => authStore.can('face.enroll'))
+
+function onFileSelected(event) {
+  const file = event.target.files?.[0]
+  if (!file) return
+
+  selectedFile.value = file
+  previewUrl.value = URL.createObjectURL(file)
+  errorMessage.value = ''
+  successData.value = null
+  duplicateReviewData.value = null
+}
+
+async function handleEnroll() {
+  if (!personUuid.value.trim()) {
+    errorMessage.value = 'Target Person UUID is required.'
+    return
+  }
+
+  if (!selectedFile.value) {
+    errorMessage.value = 'Please select or capture a face image.'
+    return
+  }
+
+  loading.value = true
+  errorMessage.value = ''
+  successData.value = null
+  duplicateReviewData.value = null
+
+  const formData = new FormData()
+  formData.append('image', selectedFile.value)
+  formData.append('person_uuid', personUuid.value.trim())
+  formData.append('pose', pose.value)
+  formData.append('source', source.value)
+
+  try {
+    const res = await facesService.enrollFace(formData, personUuid.value.trim())
+    successData.value = res.data
+
+    // Check for potential duplicate review candidate
+    try {
+      const dupRes = await facesService.checkDuplicateReview(personUuid.value.trim(), true)
+      if (dupRes?.data?.duplicate_found) {
+        duplicateReviewData.value = dupRes.data
+      }
+    } catch {
+      // Duplicate review check failure is non-fatal to completed enrollment
+    }
+  } catch (err) {
+    errorMessage.value = err.message || 'Face enrollment failed. Please check image quality and try again.'
+  } finally {
+    loading.value = false
+  }
+}
+
+function resetForm() {
+  selectedFile.value = null
+  previewUrl.value = ''
+  successData.value = null
+  duplicateReviewData.value = null
+  errorMessage.value = ''
+}
+</script>
+
+<template>
+  <div class="face-enrollment-container max-w-4xl mx-auto p-6 space-y-6">
+    <div class="flex items-center justify-between border-b pb-4">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Biometric Enrollment</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          Enroll official facial biometrics directly to Person identity root (FACE-016).
+        </p>
+      </div>
+      <button
+        @click="router.push({ name: 'faces.index' })"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        View All Profiles
+      </button>
+    </div>
+
+    <!-- Permission Guard Warning -->
+    <div v-if="!canEnroll" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+      You do not have permission (<code class="font-semibold">face.enroll</code>) to perform face enrollment.
+    </div>
+
+    <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Input Panel -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">1. Target Person & Sample</h2>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            Person UUID <span class="text-red-500">*</span>
+          </label>
+          <input
+            v-model="personUuid"
+            type="text"
+            placeholder="00000000-0000-0000-0000-000000000000"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pose</label>
+          <select
+            v-model="pose"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
+          >
+            <option value="FRONT">Front Face</option>
+            <option value="LEFT">Left Profile</option>
+            <option value="RIGHT">Right Profile</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capture Image</label>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            @change="onFileSelected"
+            class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+          />
+        </div>
+
+        <div v-if="previewUrl" class="mt-4">
+          <p class="text-xs font-medium text-gray-500 mb-2">Image Preview</p>
+          <img :src="previewUrl" alt="Face Preview" class="w-full h-56 object-cover rounded-lg border" />
+        </div>
+
+        <button
+          @click="handleEnroll"
+          :disabled="loading || !selectedFile || !personUuid"
+          class="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center space-x-2"
+        >
+          <span v-if="loading">Processing Perception Pipeline...</span>
+          <span v-else>Submit Biometric Enrollment</span>
+        </button>
+
+        <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+          {{ errorMessage }}
+        </div>
+      </div>
+
+      <!-- Result Panel -->
+      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">2. Verification & Quality Feedback</h2>
+
+        <div v-if="!successData && !loading" class="text-center py-12 text-gray-400 text-sm">
+          Enrollment results, quality evaluation metrics, and model provenance will appear here upon submission.
+        </div>
+
+        <div v-if="loading" class="flex flex-col items-center justify-center py-12 space-y-3">
+          <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
+          <p class="text-sm text-gray-500">Evaluating quality, generating embedding vector, and persisting profile...</p>
+        </div>
+
+        <div v-if="successData" class="space-y-4">
+          <div class="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
+            <p class="font-bold">✓ Biometric Enrollment Complete</p>
+            <p class="text-xs text-green-700">Face profile successfully created and activated.</p>
+          </div>
+
+          <!-- Profile Details -->
+          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-500">Profile UUID:</span>
+              <span class="font-mono font-medium">{{ successData.face_profile_uuid }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Status:</span>
+              <span class="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">
+                {{ successData.status }}
+              </span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Model Provenance:</span>
+              <span class="font-medium">{{ successData.model?.code }} v{{ successData.model?.version }}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-500">Quality Score:</span>
+              <span class="font-bold text-blue-600">{{ (successData.quality_score * 100).toFixed(1) }}%</span>
+            </div>
+          </div>
+
+          <!-- Quality Metrics -->
+          <div v-if="successData.sample" class="grid grid-cols-3 gap-2 text-center text-xs">
+            <div class="p-2 bg-gray-100 rounded">
+              <div class="text-gray-500">Blur Score</div>
+              <div class="font-bold text-gray-800">{{ (successData.sample.blur_score * 100).toFixed(0) }}%</div>
+            </div>
+            <div class="p-2 bg-gray-100 rounded">
+              <div class="text-gray-500">Brightness</div>
+              <div class="font-bold text-gray-800">{{ (successData.sample.brightness_score * 100).toFixed(0) }}%</div>
+            </div>
+            <div class="p-2 bg-gray-100 rounded">
+              <div class="text-gray-500">Pose</div>
+              <div class="font-bold text-gray-800">{{ successData.sample.pose }}</div>
+            </div>
+          </div>
+
+          <!-- Duplicate Warning Banner -->
+          <div v-if="duplicateReviewData" class="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">
+            <p class="font-bold text-sm">⚠️ Possible Duplicate Face Detected</p>
+            <p class="text-xs mt-1">
+              Top candidate match found with similarity
+              {{ (duplicateReviewData.top_candidate?.similarity * 100).toFixed(1) }}%.
+              Review record created for administrative resolution.
+            </p>
+          </div>
+
+          <button
+            @click="resetForm"
+            class="w-full py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 text-sm"
+          >
+            Enroll Another Person
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>

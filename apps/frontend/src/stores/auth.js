@@ -171,6 +171,7 @@ export const useAuthStore = defineStore('auth', () => {
     mustChangePassword,
     isSuperAdmin,
     can,
+    hasPermission: can,
     bootstrap,
     login,
     verifyMfa,

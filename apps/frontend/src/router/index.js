@@ -78,6 +78,40 @@ const routes = [
         meta: { requiresAuth: true, permission: 'user.update' },
       },
       {
+        path: 'students',
+        name: 'students.index',
+        component: () => import('@/views/students/StudentListView.vue'),
+        meta: { requiresAuth: true, permission: 'student.view' },
+      },
+      {
+        path: 'students/new',
+        name: 'students.create',
+        component: () => import('@/views/students/StudentCreateView.vue'),
+        meta: { requiresAuth: true, permission: 'student.create' },
+      },
+      {
+        path: 'students/create',
+        redirect: { name: 'students.create' },
+      },
+      {
+        path: 'students/import',
+        name: 'students.import',
+        component: () => import('@/views/students/StudentImportView.vue'),
+        meta: { requiresAuth: true, permission: 'student.import' },
+      },
+      {
+        path: 'students/:uuid',
+        name: 'students.show',
+        component: () => import('@/views/students/StudentDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'student.view' },
+      },
+      {
+        path: 'students/:uuid/edit',
+        name: 'students.edit',
+        component: () => import('@/views/students/StudentEditView.vue'),
+        meta: { requiresAuth: true, permission: 'student.update' },
+      },
+      {
         path: 'roles',
 
         name: 'roles.index',
@@ -107,6 +141,30 @@ const routes = [
         name: 'roles.permissions',
         component: () => import('@/views/roles/RolePermissionsView.vue'),
         meta: { requiresAuth: true, permission: 'role.view' },
+      },
+      {
+        path: 'faces',
+        name: 'faces.index',
+        component: () => import('@/views/face/FaceProfileListView.vue'),
+        meta: { requiresAuth: true, permission: 'face.view' },
+      },
+      {
+        path: 'faces/enroll',
+        name: 'faces.enroll',
+        component: () => import('@/views/face/FaceEnrollmentView.vue'),
+        meta: { requiresAuth: true, permission: 'face.enroll' },
+      },
+      {
+        path: 'faces/test',
+        name: 'faces.test',
+        component: () => import('@/views/face/RecognitionTestView.vue'),
+        meta: { requiresAuth: true, permission: 'face.test' },
+      },
+      {
+        path: 'faces/:uuid',
+        name: 'faces.show',
+        component: () => import('@/views/face/FaceProfileDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'face.view' },
       },
     ],
   },
