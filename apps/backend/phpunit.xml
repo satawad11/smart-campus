@@ -33,5 +33,19 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+
+        <!--
+        FACE-021 human-approved pilot recognition policy (docs/FACE-021-PILOT-THRESHOLDS-REVIEW.md).
+        Explicit test-environment configuration only — config/face.php itself carries
+        NO silent production fallback logic of its own beyond these same env() defaults,
+        and tests that must verify the fail-closed path unset these values locally via
+        config([...]) inside the test method (see Module03AcceptanceSecurityTest).
+        -->
+        <env name="FACE_RECOGNITION_MATCH_THRESHOLD" value="0.80"/>
+        <env name="FACE_RECOGNITION_REVIEW_THRESHOLD" value="0.60"/>
+        <env name="FACE_RECOGNITION_AMBIGUITY_MARGIN" value="0.05"/>
+        <env name="FACE_DUPLICATE_REVIEW_SIMILARITY_THRESHOLD" value="0.65"/>
+        <env name="FACE_LIVENESS_THRESHOLD_REAL" value="0.70"/>
+        <env name="FACE_LIVENESS_THRESHOLD_SPOOF" value="0.40"/>
     </php>
 </phpunit>

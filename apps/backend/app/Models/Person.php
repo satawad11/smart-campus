@@ -67,4 +67,13 @@ class Person extends Model
     {
         return $this->hasOne(StudentProfile::class);
     }
+
+    /**
+     * The optional biometric face profile for this person (FACE-002, database blueprint §5).
+     * Canonical 0..1:1 (face_profiles.person_id is unique).
+     */
+    public function faceProfile(): HasOne
+    {
+        return $this->hasOne(FaceProfile::class);
+    }
 }

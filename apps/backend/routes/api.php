@@ -12,7 +12,13 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\Face\FaceDuplicateReviewController;
+use App\Http\Controllers\Face\FaceEnrollmentController;
+use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
+use App\Http\Controllers\Face\FaceLifecycleController;
+use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\Student\StudentController;
+use App\Http\Controllers\Student\StudentImportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -143,4 +149,62 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::post('/students', [StudentController::class, 'store'])->middleware('permission:student.create');
     Route::get('/students/{student}', [StudentController::class, 'show'])->middleware('permission:student.view');
     Route::put('/students/{student}', [StudentController::class, 'update'])->middleware('permission:student.update');
+    Route::patch('/students/{student}/status', [StudentController::class, 'changeStatus'])->middleware('permission:student.status.change');
+    Route::get('/students/{student}/status-history', [StudentController::class, 'statusHistory'])->middleware('permission:student.view');
+    Route::patch('/students/{student}/archive', [StudentController::class, 'archive'])->middleware('permission:student.archive');
+    Route::post('/students/{student}/photo', [StudentController::class, 'uploadPhoto'])->middleware('permission:student.update');
+    Route::delete('/students/{student}/photo', [StudentController::class, 'deletePhoto'])->middleware('permission:student.update');
+});
+
+/*
+| Student Import (STD-012, STD-013). File upload, validation, preview, and execution.
+| UUID public identity for import jobs. Requires permission:student.import.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::post('/students/import', [StudentImportController::class, 'upload'])->middleware('permission:student.import');
+    Route::get('/students/imports/{importJob}', [StudentImportController::class, 'show'])->middleware('permission:student.import');
+    Route::get('/students/imports/{importJob}/errors', [StudentImportController::class, 'errors'])->middleware('permission:student.import');
+    Route::get('/students/imports/{importJob}/preview', [StudentImportController::class, 'preview'])->middleware('permission:student.import');
+    Route::post('/students/imports/{importJob}/process', [StudentImportController::class, 'process'])->middleware('permission:student.import');
+
+    // Canonical API contract aliases (docs/02-api-contract.md §7)
+    Route::get('/imports/{importJob}', [StudentImportController::class, 'show'])->middleware('permission:student.import');
+    Route::get('/imports/{importJob}/errors', [StudentImportController::class, 'errors'])->middleware('permission:student.import');
+    Route::post('/imports/{importJob}/process', [StudentImportController::class, 'process'])->middleware('permission:student.import');
+});
+
+/*
+| Face Biometrics & Enrollment (FACE-009, FACE-010, docs/02-api-contract.md §8).
+| Target identity is Person (person_id). Internal numeric IDs and raw embedding
+| vectors are never accepted or exposed. Requires permission:face.enroll.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::post('/persons/{person}/face/enroll', [FaceEnrollmentController::class, 'enroll'])->middleware('permission:face.enroll');
+    Route::post('/faces/enroll', [FaceEnrollmentController::class, 'enroll'])->middleware('permission:face.enroll');
+
+    // FACE-010: Face Enrollment Verification
+    Route::post('/persons/{person}/face/verify', [FaceEnrollmentVerificationController::class, 'verifyByPerson'])->middleware('permission:face.enroll');
+    Route::post('/faces/{faceProfile}/verify', [FaceEnrollmentVerificationController::class, 'verifyByProfile'])->middleware('permission:face.enroll');
+    Route::post('/face-profiles/{faceProfile}/verify', [FaceEnrollmentVerificationController::class, 'verifyByProfile'])->middleware('permission:face.enroll');
+    Route::post('/faces/verify', [FaceEnrollmentVerificationController::class, 'verify'])->middleware('permission:face.enroll');
+
+    // FACE-011: Duplicate Face Review
+    Route::get('/persons/{person}/face/duplicate-review', [FaceDuplicateReviewController::class, 'checkByPerson'])->middleware('permission:face.view');
+    Route::get('/faces/{faceProfile}/duplicate-review', [FaceDuplicateReviewController::class, 'checkByProfile'])->middleware('permission:face.view');
+    Route::get('/face-profiles/{faceProfile}/duplicate-review', [FaceDuplicateReviewController::class, 'checkByProfile'])->middleware('permission:face.view');
+    Route::post('/faces/duplicate-reviews/{duplicateReview}/decision', [FaceDuplicateReviewController::class, 'submitDecision'])->middleware('permission:face.enroll');
+    Route::post('/face-duplicate-reviews/{duplicateReview}/decision', [FaceDuplicateReviewController::class, 'submitDecision'])->middleware('permission:face.enroll');
+
+    // FACE-012: Restricted Recognition Diagnostic Test
+    Route::post('/faces/recognition-test', [FaceRecognitionTestController::class, 'test'])
+        ->middleware(['permission:face.test', 'throttle:60,1']);
+
+    // FACE-014 / FACE-017: Face Profile Query & Lifecycle (Revoke / Re-enroll)
+    Route::get('/faces', [FaceLifecycleController::class, 'index'])->middleware('permission:face.view');
+    Route::get('/faces/{faceProfile}', [FaceLifecycleController::class, 'show'])->middleware('permission:face.view');
+    Route::get('/persons/{person}/faces', [FaceLifecycleController::class, 'personFaces'])->middleware('permission:face.view');
+    Route::post('/faces/{faceProfile}/revoke', [FaceLifecycleController::class, 'revoke'])->middleware('permission:face.revoke');
+    Route::post('/persons/{person}/face/revoke', [FaceLifecycleController::class, 'revokeByPerson'])->middleware('permission:face.revoke');
+    Route::post('/faces/{faceProfile}/reenroll', [FaceLifecycleController::class, 'reenroll'])->middleware('permission:face.reenroll');
+    Route::post('/persons/{person}/face/reenroll', [FaceLifecycleController::class, 'reenrollByPerson'])->middleware('permission:face.reenroll');
 });
