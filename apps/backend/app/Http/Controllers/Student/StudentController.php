@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\StatusChangeSource;
 use App\Enums\StudentAcademicStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Student\ChangeStudentStatusRequest;
 use App\Http\Requests\Student\StoreStudentRequest;
 use App\Http\Requests\Student\UpdateStudentRequest;
 use App\Http\Resources\StudentResource;
+use App\Http\Resources\StudentStatusHistoryResource;
 use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Program;
@@ -159,6 +162,112 @@ class StudentController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Student updated',
+            'data' => new StudentResource($updated->load(['person', 'department', 'program', 'classroom'])),
+            'meta' => null,
+        ]);
+    }
+
+    public function changeStatus(ChangeStudentStatusRequest $request, StudentProfile $student): JsonResponse
+    {
+        $validated = $request->validated();
+        $statusValue = $validated['status'] ?? $validated['academic_status'];
+        $targetStatus = StudentAcademicStatus::from($statusValue);
+        $reason = $validated['reason'] ?? null;
+
+        $updated = $this->service->changeAcademicStatus(
+            profile: $student,
+            newStatus: $targetStatus,
+            source: StatusChangeSource::API,
+            reason: $reason,
+            actor: $request->user(),
+            context: AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student status updated',
+            'data' => new StudentResource($updated->load(['person', 'department', 'program', 'classroom'])),
+            'meta' => null,
+        ]);
+    }
+
+    public function statusHistory(Request $request, StudentProfile $student): JsonResponse
+    {
+        $validated = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $perPage = (int) ($validated['per_page'] ?? 10);
+
+        $paginator = $student->statusHistories()
+            ->with('changedBy')
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => StudentStatusHistoryResource::collection($paginator->items()),
+            'meta' => [
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
+        ]);
+    }
+
+    public function archive(Request $request, StudentProfile $student): JsonResponse
+    {
+        $updated = $this->service->archiveStudent(
+            profile: $student,
+            actor: $request->user(),
+            context: AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Student archived',
+            'data' => new StudentResource($updated->load(['person', 'department', 'program', 'classroom'])),
+            'meta' => null,
+        ]);
+    }
+
+    public function uploadPhoto(Request $request, StudentProfile $student): JsonResponse
+    {
+        $request->validate([
+            'photo' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+        ]);
+
+        $updated = $this->service->updatePhoto(
+            profile: $student,
+            photo: $request->file('photo'),
+            actor: $request->user(),
+            context: AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile photo updated',
+            'data' => new StudentResource($updated->load(['person', 'department', 'program', 'classroom'])),
+            'meta' => null,
+        ]);
+    }
+
+    public function deletePhoto(Request $request, StudentProfile $student): JsonResponse
+    {
+        $updated = $this->service->deletePhoto(
+            profile: $student,
+            actor: $request->user(),
+            context: AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Profile photo removed',
             'data' => new StudentResource($updated->load(['person', 'department', 'program', 'classroom'])),
             'meta' => null,
         ]);

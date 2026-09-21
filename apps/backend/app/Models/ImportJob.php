@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
+use App\Enums\ImportConflictMode;
 use App\Enums\ImportJobStatus;
 use App\Enums\ImportJobType;
 use Database\Factories\ImportJobFactory;
@@ -30,11 +31,13 @@ class ImportJob extends Model
         'type',
         'file_path',
         'status',
+        'conflict_mode',
         'total_rows',
         'valid_rows',
         'invalid_rows',
         'success_rows',
         'failed_rows',
+        'skipped_rows',
         'created_by',
         'started_at',
         'completed_at',
@@ -44,11 +47,13 @@ class ImportJob extends Model
     protected $attributes = [
         'type' => ImportJobType::STUDENT->value,
         'status' => ImportJobStatus::PENDING->value,
+        'conflict_mode' => ImportConflictMode::CREATE_ONLY->value,
         'total_rows' => 0,
         'valid_rows' => 0,
         'invalid_rows' => 0,
         'success_rows' => 0,
         'failed_rows' => 0,
+        'skipped_rows' => 0,
     ];
 
     /**
@@ -59,11 +64,13 @@ class ImportJob extends Model
         return [
             'type' => ImportJobType::class,
             'status' => ImportJobStatus::class,
+            'conflict_mode' => ImportConflictMode::class,
             'total_rows' => 'integer',
             'valid_rows' => 'integer',
             'invalid_rows' => 'integer',
             'success_rows' => 'integer',
             'failed_rows' => 'integer',
+            'skipped_rows' => 'integer',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
         ];

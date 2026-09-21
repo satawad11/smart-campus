@@ -3,6 +3,7 @@
 namespace App\Services\Student;
 
 use App\Enums\AuditAction;
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use App\Enums\StatusChangeSource;
 use App\Enums\StudentAcademicStatus;
@@ -17,8 +18,10 @@ use App\Models\User;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Audit\AuditService;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Canonical Student domain service (STD-006).
@@ -61,8 +64,11 @@ use Illuminate\Support\Facades\DB;
  */
 class StudentService
 {
-    /** Sources a caller may use on the manual/API student path. */
+    /** Sources a caller may use on the manual/API status transition path. */
     private const CALLER_SOURCES = [StatusChangeSource::MANUAL, StatusChangeSource::API];
+
+    /** Sources a caller may use on the student creation path (including import/sync). */
+    private const CREATION_SOURCES = [StatusChangeSource::MANUAL, StatusChangeSource::API, StatusChangeSource::IMPORT, StatusChangeSource::SIS_SYNC];
 
     public function __construct(
         private readonly AuditService $audit,
@@ -242,6 +248,73 @@ class StudentService
     }
 
     /**
+     * Apply an authoritative academic-status transition triggered by import (STD-014).
+     *
+     * Invariant: Source is fixed to StatusChangeSource::IMPORT.
+     */
+    public function changeAcademicStatusForImport(
+        StudentProfile $profile,
+        StudentAcademicStatus $newStatus,
+        ?string $reason = 'Updated via student import',
+        ?Carbon $effectiveFrom = null,
+        ?User $actor = null,
+        ?AuditRequestContext $context = null,
+    ): StudentProfile {
+        $effective = $effectiveFrom !== null
+            ? CarbonImmutable::instance($effectiveFrom)
+            : CarbonImmutable::now();
+
+        return DB::transaction(function () use ($profile, $newStatus, $reason, $effective, $actor, $context) {
+            /** @var StudentProfile $locked */
+            $locked = StudentProfile::whereKey($profile->getKey())->lockForUpdate()->firstOrFail();
+
+            $oldStatus = $locked->academic_status;
+
+            if ($oldStatus === $newStatus) {
+                return $locked;
+            }
+
+            $open = StudentStatusHistory::where('student_profile_id', $locked->id)
+                ->whereNull('effective_to')
+                ->orderByDesc('effective_from')
+                ->orderByDesc('id')
+                ->lockForUpdate()
+                ->first();
+            $open?->forceFill(['effective_to' => $effective])->save();
+
+            $locked->academic_status = $newStatus;
+            $locked->status_start_date = $effective->toDateString();
+            $locked->status_end_date = null;
+            $locked->save();
+
+            StudentStatusHistory::create([
+                'student_profile_id' => $locked->id,
+                'old_status' => $oldStatus,
+                'new_status' => $newStatus,
+                'effective_from' => $effective,
+                'effective_to' => null,
+                'reason' => $reason,
+                'source' => StatusChangeSource::IMPORT,
+                'changed_by_user_id' => $actor?->id,
+            ]);
+
+            $this->audit->record(
+                AuditAction::STUDENT_STATUS_CHANGED, $actor, 'STUDENT', $locked->uuid,
+                oldValues: ['academic_status' => $oldStatus?->value],
+                newValues: [
+                    'academic_status' => $newStatus->value,
+                    'reason' => $reason,
+                    'source' => StatusChangeSource::IMPORT->value,
+                    'effective_from' => $effective->toIso8601String(),
+                ],
+                context: $context, module: 'student',
+            );
+
+            return $locked;
+        });
+    }
+
+    /**
      * Generic Student update (STD-007). Mutates only the approved identity and
      * academic-profile fields, atomically, and writes a STUDENT_UPDATED audit
      * record when anything changed.
@@ -288,6 +361,119 @@ class StudentService
                     context: $context, module: 'student',
                 );
             }
+
+            return $profile;
+        });
+    }
+
+    /**
+     * Archive student lifecycle (STD-009).
+     *
+     * Transitions Person.status -> ARCHIVED.
+     * Invariant: StudentProfile.academic_status remains unchanged.
+     * StudentStatusHistory intervals remain untouched.
+     * Linked User account status remains untouched.
+     */
+    public function archiveStudent(StudentProfile $profile, ?User $actor, ?AuditRequestContext $context): StudentProfile
+    {
+        return DB::transaction(function () use ($profile, $actor, $context) {
+            $person = $profile->person()->lockForUpdate()->firstOrFail();
+
+            $oldStatus = $person->status;
+            if ($oldStatus === PersonStatus::ARCHIVED) {
+                return $profile;
+            }
+
+            $person->status = PersonStatus::ARCHIVED;
+            $person->save();
+
+            $this->audit->record(
+                AuditAction::STUDENT_ARCHIVED, $actor, 'STUDENT', $profile->uuid,
+                oldValues: ['person_status' => $oldStatus->value],
+                newValues: ['person_status' => PersonStatus::ARCHIVED->value, 'student_code' => $profile->student_code],
+                context: $context, module: 'student',
+            );
+
+            return $profile;
+        });
+    }
+
+    /**
+     * Upload/replace profile photo for a student (STD-010).
+     *
+     * Saves photo relative storage key to persons.primary_photo.
+     * Invariant: Does not invoke Face AI or write Face embeddings.
+     */
+    public function updatePhoto(StudentProfile $profile, UploadedFile $photo, ?User $actor, ?AuditRequestContext $context): StudentProfile
+    {
+        $mime = $photo->getMimeType();
+        $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (! in_array($mime, $allowedMimes, true)) {
+            throw ApiException::unprocessable('INVALID_IMAGE_FORMAT', 'Only JPEG, PNG, and WebP images are allowed.');
+        }
+
+        $extension = strtolower($photo->getClientOriginalExtension() ?: $photo->extension() ?: 'jpg');
+        if (in_array($extension, ['svg', 'exe', 'php', 'sh', 'html'], true)) {
+            throw ApiException::unprocessable('INVALID_IMAGE_FORMAT', 'The specified file format is prohibited.');
+        }
+
+        $filename = "photos/students/{$profile->uuid}_".uniqid().".{$extension}";
+        $disk = Storage::disk('public');
+        $stored = $disk->putFileAs('', $photo, $filename);
+
+        if (! $stored) {
+            throw ApiException::internal('STORAGE_FAILED', 'Failed to store profile photo.');
+        }
+
+        return DB::transaction(function () use ($profile, $filename, $disk, $actor, $context) {
+            $person = $profile->person()->lockForUpdate()->firstOrFail();
+            $oldPhoto = $person->primary_photo;
+
+            $person->primary_photo = $filename;
+            $person->save();
+
+            if ($oldPhoto && $disk->exists($oldPhoto)) {
+                $disk->delete($oldPhoto);
+            }
+
+            $this->audit->record(
+                AuditAction::STUDENT_PHOTO_UPDATED, $actor, 'STUDENT', $profile->uuid,
+                oldValues: ['primary_photo' => $oldPhoto],
+                newValues: ['primary_photo' => $filename, 'student_code' => $profile->student_code],
+                context: $context, module: 'student',
+            );
+
+            return $profile;
+        });
+    }
+
+    /**
+     * Delete/remove profile photo for a student (STD-010).
+     */
+    public function deletePhoto(StudentProfile $profile, ?User $actor, ?AuditRequestContext $context): StudentProfile
+    {
+        return DB::transaction(function () use ($profile, $actor, $context) {
+            $person = $profile->person()->lockForUpdate()->firstOrFail();
+            $oldPhoto = $person->primary_photo;
+
+            if (! $oldPhoto) {
+                return $profile;
+            }
+
+            $person->primary_photo = null;
+            $person->save();
+
+            $disk = Storage::disk('public');
+            if ($disk->exists($oldPhoto)) {
+                $disk->delete($oldPhoto);
+            }
+
+            $this->audit->record(
+                AuditAction::STUDENT_PHOTO_DELETED, $actor, 'STUDENT', $profile->uuid,
+                oldValues: ['primary_photo' => $oldPhoto],
+                newValues: ['primary_photo' => null, 'student_code' => $profile->student_code],
+                context: $context, module: 'student',
+            );
 
             return $profile;
         });
@@ -385,8 +571,8 @@ class StudentService
         $parsed = StatusChangeSource::tryFrom($source)
             ?? throw ApiException::unprocessable('STUDENT_STATUS_SOURCE_INVALID', 'The status change source is not recognized.');
 
-        if (! in_array($parsed, self::CALLER_SOURCES, true)) {
-            throw ApiException::unprocessable('STUDENT_STATUS_SOURCE_INVALID', 'Only MANUAL or API status changes are permitted on this path.');
+        if (! in_array($parsed, self::CREATION_SOURCES, true)) {
+            throw ApiException::unprocessable('STUDENT_STATUS_SOURCE_INVALID', 'The status change source is not permitted for student creation.');
         }
 
         return $parsed;

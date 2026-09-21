@@ -172,11 +172,12 @@ class StudentStatusHistorySchemaTest extends TestCase
         $this->assertSame(0, StudentStatusHistory::count());
     }
 
-    // 17: no status-history HTTP routes exist.
+    // 17: no standalone status-history resource routes exist.
     public function test_no_status_history_routes(): void
     {
         foreach (Route::getRoutes() as $route) {
-            $this->assertStringNotContainsString('status-histor', $route->uri());
+            $this->assertNotSame('api/v1/status-histories', $route->uri());
+            $this->assertNotSame('status-histories', $route->uri());
             $this->assertStringNotContainsString('student_status', $route->uri());
         }
     }
