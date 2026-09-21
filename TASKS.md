@@ -99,7 +99,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-005 Implement VideoSource abstraction
 [x] CAM-006 Implement RTSP source and reconnect
 [x] CAM-007 Implement frame sampler
-[ ] CAM-008 Implement face tracking
+[x] CAM-008 Implement face tracking
 [ ] CAM-009 Implement recognition worker queue
 [ ] CAM-010 Implement track/local recognition cache
 [ ] CAM-011 Implement recognition-event delivery
