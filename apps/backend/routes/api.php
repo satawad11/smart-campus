@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\Camera\CameraController;
 use App\Http\Controllers\Face\FaceDuplicateReviewController;
 use App\Http\Controllers\Face\FaceEnrollmentController;
 use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
@@ -207,4 +208,22 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::post('/persons/{person}/face/revoke', [FaceLifecycleController::class, 'revokeByPerson'])->middleware('permission:face.revoke');
     Route::post('/faces/{faceProfile}/reenroll', [FaceLifecycleController::class, 'reenroll'])->middleware('permission:face.reenroll');
     Route::post('/persons/{person}/face/reenroll', [FaceLifecycleController::class, 'reenrollByPerson'])->middleware('permission:face.reenroll');
+});
+
+/*
+| Camera CRUD / connection test / snapshot (CAM-002). {camera} binds by
+| Camera uuid; internal ids are never accepted or exposed. RTSP credentials
+| are encrypted at rest and never returned. No DELETE (camera lifecycle is
+| enable/disable via the dedicated status operation). Runtime RTSP/video
+| acquisition is CAM-005/006/007 — connection test/snapshot are bounded,
+| non-biometric operational checks only.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/cameras', [CameraController::class, 'index'])->middleware('permission:camera.view');
+    Route::post('/cameras', [CameraController::class, 'store'])->middleware('permission:camera.create');
+    Route::get('/cameras/{camera}', [CameraController::class, 'show'])->middleware('permission:camera.view');
+    Route::put('/cameras/{camera}', [CameraController::class, 'update'])->middleware('permission:camera.update');
+    Route::patch('/cameras/{camera}/status', [CameraController::class, 'updateStatus'])->middleware('permission:camera.enable');
+    Route::post('/cameras/{camera}/test', [CameraController::class, 'test'])->middleware('permission:camera.test');
+    Route::post('/cameras/{camera}/snapshot', [CameraController::class, 'snapshot'])->middleware('permission:camera.live');
 });
