@@ -41,4 +41,13 @@ return [
         'url' => env('AI_SERVICE_URL', 'http://ai-service:8001'),
     ],
 
+    // Shared secret gating /internal/v1/* machine-to-machine endpoints
+    // (CAM-003). Temporary: CAM-004 replaces this with per-node issued
+    // credentials; the internal route/middleware shape will not need to
+    // change. Fails closed — an unset token means the internal API is
+    // unreachable, never that it is open.
+    'internal' => [
+        'token' => env('INTERNAL_SERVICE_TOKEN'),
+    ],
+
 ];

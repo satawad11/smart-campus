@@ -1,6 +1,7 @@
 <?php
 
 use App\Exceptions\ApiException;
+use App\Http\Middleware\EnsureInternalServiceToken;
 use App\Http\Middleware\EnsureSessionActive;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
@@ -11,6 +12,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Foundation\Http\Middleware\ValidateCsrfToken;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Session\TokenMismatchException;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -21,6 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: 'api/v1',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+        then: function () {
+            // Machine-to-machine surface (CAM-003), deliberately outside the
+            // human-session api/v1 stack (no cookies/CSRF/session — see
+            // PROJECT_RULES §6). Auth is internal.token, applied per-route.
+            Route::prefix('internal/v1')->group(base_path('routes/internal.php'));
+        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->api(append: [
@@ -32,11 +40,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => RequirePermission::class,
             'active' => EnsureUserActive::class,
             'session.active' => EnsureSessionActive::class,
+            'internal.token' => EnsureInternalServiceToken::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Validation failed',
@@ -49,7 +58,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (AuthenticationException $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unauthenticated',
@@ -62,7 +71,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (HttpException $e, $request) {
-            if ($e->getStatusCode() === 419 && ($request->is('api/*') || $request->expectsJson())) {
+            if ($e->getStatusCode() === 419 && ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson())) {
                 return response()->json([
                     'success' => false,
                     'message' => 'CSRF token mismatch',
@@ -75,7 +84,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (ApiException $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => $e->getMessage(),
@@ -88,7 +97,7 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
         $exceptions->render(function (TokenMismatchException $e, $request) {
-            if ($request->is('api/*') || $request->expectsJson()) {
+            if ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'CSRF token mismatch',

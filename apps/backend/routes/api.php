@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\Camera\AiNodeController;
 use App\Http\Controllers\Camera\CameraController;
 use App\Http\Controllers\Face\FaceDuplicateReviewController;
 use App\Http\Controllers\Face\FaceEnrollmentController;
@@ -226,4 +227,18 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::patch('/cameras/{camera}/status', [CameraController::class, 'updateStatus'])->middleware('permission:camera.enable');
     Route::post('/cameras/{camera}/test', [CameraController::class, 'test'])->middleware('permission:camera.test');
     Route::post('/cameras/{camera}/snapshot', [CameraController::class, 'snapshot'])->middleware('permission:camera.live');
+});
+
+/*
+| AI Node administrative CRUD (CAM-003). {aiNode} binds by AiNode uuid. The
+| node-facing check-in/heartbeat surface is separate, under /internal/v1
+| (routes/internal.php), authenticated by internal.token — never this
+| human-session stack. No DELETE.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/ai-nodes', [AiNodeController::class, 'index'])->middleware('permission:ai_node.view');
+    Route::post('/ai-nodes', [AiNodeController::class, 'store'])->middleware('permission:ai_node.manage');
+    Route::get('/ai-nodes/{aiNode}', [AiNodeController::class, 'show'])->middleware('permission:ai_node.view');
+    Route::put('/ai-nodes/{aiNode}', [AiNodeController::class, 'update'])->middleware('permission:ai_node.manage');
+    Route::patch('/ai-nodes/{aiNode}/status', [AiNodeController::class, 'updateStatus'])->middleware('permission:ai_node.manage');
 });

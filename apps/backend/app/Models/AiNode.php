@@ -13,7 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 /**
  * Perception-processing node (CAM-001, database blueprint §6). May serve one
  * or more sites, so site_id is nullable. Registration/heartbeat behavior is
- * CAM-003; per-node authentication is CAM-004 — schema only here.
+ * CAM-003; per-node authentication is CAM-004.
+ *
+ * software_version/capabilities are self-reported facts a node contributes
+ * about itself on register/heartbeat — never authorization or scope. Site
+ * assignment stays admin-owned; a node cannot change it via self-report.
  */
 class AiNode extends Model
 {
@@ -29,6 +33,8 @@ class AiNode extends Model
         'ip_address',
         'api_url',
         'hardware_type',
+        'software_version',
+        'capabilities',
         'cpu_model',
         'gpu_name',
         'gpu_memory_mb',
@@ -44,6 +50,7 @@ class AiNode extends Model
     {
         return [
             'status' => DeviceStatus::class,
+            'capabilities' => 'array',
             'gpu_memory_mb' => 'integer',
             'max_camera' => 'integer',
             'last_seen_at' => 'datetime',
