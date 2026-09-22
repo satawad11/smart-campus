@@ -156,6 +156,28 @@ async function handleLogout() {
           </router-link>
 
           <router-link
+            v-if="authStore.can('ai_node.view')"
+            to="/ai-nodes"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+            จัดการ AI Node
+          </router-link>
+
+          <router-link
             v-if="authStore.can('face.test')"
             to="/faces/test"
             class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"

@@ -184,6 +184,24 @@ const routes = [
         component: () => import('@/views/cameras/CameraDetailView.vue'),
         meta: { requiresAuth: true, permission: 'camera.view' },
       },
+      {
+        path: 'ai-nodes',
+        name: 'ai-nodes.index',
+        component: () => import('@/views/aiNodes/AiNodeListView.vue'),
+        meta: { requiresAuth: true, permission: 'ai_node.view' },
+      },
+      {
+        path: 'ai-nodes/create',
+        name: 'ai-nodes.create',
+        component: () => import('@/views/aiNodes/AiNodeCreateView.vue'),
+        meta: { requiresAuth: true, permission: 'ai_node.manage' },
+      },
+      {
+        path: 'ai-nodes/:uuid',
+        name: 'ai-nodes.show',
+        component: () => import('@/views/aiNodes/AiNodeDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'ai_node.view' },
+      },
     ],
   },
   {
