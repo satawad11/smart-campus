@@ -111,7 +111,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-017 Build camera management UI
 [x] CAM-018 Build AI-node management UI
 [x] CAM-019 Build camera/node health UI
-[ ] CAM-020 Benchmark 1/2/4/8-camera load
+[x] CAM-020 Benchmark 1/2/4/8-camera load
 [ ] CAM-021 Add camera/AI-node acceptance tests
 
 # MODULE 05 — EVENT + POLICY + REALTIME
