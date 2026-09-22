@@ -51,3 +51,6 @@ class RecognitionWorkerResult:
     rejected_locally: bool
     reasons: list[str] = field(default_factory=list)
     processed_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    from_cache: bool = False
+    """True when this result was served from RecognitionCache (CAM-010)
+    rather than freshly computed this call — the pipeline did not re-run."""

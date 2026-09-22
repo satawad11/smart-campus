@@ -101,7 +101,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-007 Implement frame sampler
 [x] CAM-008 Implement face tracking
 [x] CAM-009 Implement recognition worker queue
-[ ] CAM-010 Implement track/local recognition cache
+[x] CAM-010 Implement track/local recognition cache
 [ ] CAM-011 Implement recognition-event delivery
 [ ] CAM-012 Implement durable offline event buffer/retry
 [ ] CAM-013 Implement camera health collection

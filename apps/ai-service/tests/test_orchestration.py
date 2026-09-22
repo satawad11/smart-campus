@@ -12,6 +12,7 @@ import numpy as np
 import pytest
 
 from app.alignment.mock import MockFaceAligner
+from app.caching.cache import RecognitionCache
 from app.detection.schemas import BoundingBox, FaceDetection, LandmarkPoint
 from app.embeddings.mock import MockFaceEmbedder
 from app.liveness.mock import MockFaceLivenessDetector
@@ -26,6 +27,19 @@ from app.quality.schemas import FaceQualityResult, QualityRejectionReason
 from app.sampling.schemas import SampledFrame
 from app.streams.schemas import Frame
 from app.tracking.schemas import Track
+
+
+class FakeClock:
+    """Deterministic, manually-advanced clock for RecognitionCache TTL tests."""
+
+    def __init__(self, start: float = 0.0):
+        self._now = start
+
+    def __call__(self) -> float:
+        return self._now
+
+    def advance(self, seconds: float) -> None:
+        self._now += seconds
 
 
 def make_detection(confidence: float = 0.95) -> FaceDetection:
@@ -97,7 +111,7 @@ def make_worker(
     backend_client=None,
     quality_evaluator=None,
     liveness_detector=None,
-    recheck_interval_hits: int = 30,
+    cache=None,
     id_factory=None,
 ) -> tuple[RecognitionWorker, FakeBackendClient]:
     client = backend_client or FakeBackendClient()
@@ -111,7 +125,7 @@ def make_worker(
         model_code="arcface-r50-v1",
         model_version="1.0.0",
         liveness_detector=liveness_detector,
-        recheck_interval_hits=recheck_interval_hits,
+        cache=cache,
         id_factory=id_factory,
     )
     return worker, client
@@ -231,28 +245,42 @@ class TestBackendFailure:
 
 class TestTrackDedup:
     def test_same_stable_track_is_not_reprocessed_every_frame(self) -> None:
-        worker, client = make_worker(recheck_interval_hits=5)
+        worker, client = make_worker(cache=RecognitionCache(ttl_seconds=30, clock_fn=FakeClock()))
 
         first = worker.process(make_sampled_frame(), make_detection(), make_track(hits=1))
-        assert first is not None
+        assert first.from_cache is False
 
-        # Still within the recheck interval -> skipped.
-        skipped = worker.process(make_sampled_frame(), make_detection(), make_track(hits=2))
-        assert skipped is None
+        # Still within the TTL, track still tracked (hits increased) -> served from cache.
+        cached = worker.process(make_sampled_frame(), make_detection(), make_track(hits=2))
+        assert cached.from_cache is True
+        assert cached.classification == first.classification
         assert len(client.calls) == 1
 
-    def test_track_is_reprocessed_after_recheck_interval_elapses(self) -> None:
-        worker, client = make_worker(recheck_interval_hits=3)
+    def test_track_is_reprocessed_after_ttl_expires(self) -> None:
+        clock = FakeClock()
+        worker, client = make_worker(cache=RecognitionCache(ttl_seconds=5, clock_fn=clock))
 
         worker.process(make_sampled_frame(), make_detection(), make_track(hits=1))
-        worker.process(make_sampled_frame(), make_detection(), make_track(hits=2))
-        result = worker.process(make_sampled_frame(), make_detection(), make_track(hits=4))
+        clock.advance(10)  # past the 5s TTL
+        result = worker.process(make_sampled_frame(), make_detection(), make_track(hits=2))
 
-        assert result is not None
+        assert result.from_cache is False
+        assert len(client.calls) == 2
+
+    def test_track_reuse_bypasses_stale_cache_entry(self) -> None:
+        # A lower hits value than what was cached means the track_id was
+        # reused for a different physical track (or the tracker reset) —
+        # the stale entry must never be served.
+        worker, client = make_worker(cache=RecognitionCache(ttl_seconds=30, clock_fn=FakeClock()))
+
+        worker.process(make_sampled_frame(), make_detection(), make_track(hits=10))
+        reused = worker.process(make_sampled_frame(), make_detection(), make_track(hits=1))
+
+        assert reused.from_cache is False
         assert len(client.calls) == 2
 
     def test_different_tracks_are_independently_deduped(self) -> None:
-        worker, client = make_worker(recheck_interval_hits=5)
+        worker, client = make_worker(cache=RecognitionCache(ttl_seconds=30, clock_fn=FakeClock()))
 
         worker.process(make_sampled_frame(), make_detection(), make_track(track_id="a", hits=1))
         worker.process(make_sampled_frame(), make_detection(), make_track(track_id="b", hits=1))
@@ -260,20 +288,25 @@ class TestTrackDedup:
         assert len(client.calls) == 2
 
     def test_should_process_reflects_dedup_state(self) -> None:
-        worker, _ = make_worker(recheck_interval_hits=5)
+        worker, _ = make_worker(cache=RecognitionCache(ttl_seconds=30, clock_fn=FakeClock()))
         track = make_track(hits=1)
         assert worker.should_process(track) is True
         worker.process(make_sampled_frame(), make_detection(), track)
         assert worker.should_process(make_track(hits=2)) is False
-        assert worker.should_process(make_track(hits=6)) is True
+        # Lower hits than cached -> treated as a reused track -> must reprocess.
+        assert worker.should_process(make_track(hits=0)) is True
 
 
 class TestEventUuidStability:
     def test_event_uuid_assigned_once_per_processed_attempt(self) -> None:
-        worker, _ = make_worker(recheck_interval_hits=1)
-        r1 = worker.process(make_sampled_frame(), make_detection(), make_track(hits=1))
-        r2 = worker.process(make_sampled_frame(), make_detection(), make_track(hits=2))
-        assert r1.event_uuid != r2.event_uuid  # distinct attempts -> distinct events
+        worker, _ = make_worker()
+        r1 = worker.process(
+            make_sampled_frame(), make_detection(), make_track(track_id="a", hits=1)
+        )
+        r2 = worker.process(
+            make_sampled_frame(), make_detection(), make_track(track_id="b", hits=1)
+        )
+        assert r1.event_uuid != r2.event_uuid  # distinct tracks -> distinct events
 
     def test_event_uuid_uses_injected_id_factory(self) -> None:
         counter = {"n": 0}
@@ -313,7 +346,6 @@ class TestWorkerPoolBackpressure:
             backend_client=BlockingBackend(),
             model_code="arcface-r50-v1",
             model_version="1.0.0",
-            recheck_interval_hits=0,
         )
         pool = RecognitionWorkerPool(worker, max_workers=1, queue_size=1)
 
@@ -333,7 +365,7 @@ class TestWorkerPoolBackpressure:
             pool.shutdown(wait=True)
 
     def test_results_are_retrievable_after_processing(self) -> None:
-        worker, _ = make_worker(recheck_interval_hits=0)
+        worker, _ = make_worker()
         pool = RecognitionWorkerPool(worker, max_workers=2, queue_size=5)
         try:
             pool.submit(make_sampled_frame(), make_detection(), make_track("t1"))

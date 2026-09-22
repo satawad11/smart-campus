@@ -1,4 +1,4 @@
-"""Recognition worker orchestration (CAM-009).
+"""Recognition worker orchestration (CAM-009/CAM-010).
 
 Composes the existing Module 03 pipeline (detection is done upstream by the
 tracker/sampler already; this module runs alignment -> quality -> [liveness]
@@ -12,9 +12,11 @@ import threading
 import uuid
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from app.alignment.base import FaceAligner
+from app.caching.cache import RecognitionCache
 from app.detection.schemas import FaceDetection
 from app.embeddings.base import FaceEmbedder
 from app.liveness.base import FaceLivenessDetector
@@ -29,11 +31,11 @@ class RecognitionWorker:
     """Synchronous per-(frame, track) recognition pipeline for one camera.
 
     Avoids re-running recognition on every frame of an already-classified,
-    still-tracked face: a track is only (re)processed if it has never been
-    processed, or at least `recheck_interval_hits` matched frames (Track.hits)
-    have passed since it was last processed. process() returns None when a
-    track is skipped for this reason — the caller (CAM-010's cache layer)
-    owns any richer TTL/generation-aware policy on top of this.
+    still-tracked face via a RecognitionCache (CAM-010): a cache hit returns
+    the previously computed result (result.from_cache=True) without
+    re-running any pipeline stage. The cache itself owns TTL expiry, model/
+    version-change invalidation, and stale-track-reuse protection — see
+    app.caching.cache.RecognitionCache.
     """
 
     def __init__(
@@ -47,7 +49,7 @@ class RecognitionWorker:
         model_code: str,
         model_version: str,
         liveness_detector: FaceLivenessDetector | None = None,
-        recheck_interval_hits: int = 30,
+        cache: RecognitionCache | None = None,
         id_factory: Callable[[], str] | None = None,
     ):
         self._camera_uuid = camera_uuid
@@ -59,25 +61,26 @@ class RecognitionWorker:
         self._model_code = model_code
         self._model_version = model_version
         self._liveness_detector = liveness_detector
-        self._recheck_interval_hits = recheck_interval_hits
         self._id_factory = id_factory or (lambda: str(uuid.uuid4()))
+        self._cache = cache if cache is not None else RecognitionCache()
 
-        # track_id -> hits value at last processing (dedup state).
-        self._last_processed_hits: dict[str, int] = {}
+    @property
+    def cache(self) -> RecognitionCache:
+        return self._cache
 
     def should_process(self, track: Track) -> bool:
-        last = self._last_processed_hits.get(track.track_id)
-        if last is None:
-            return True
-        return (track.hits - last) >= self._recheck_interval_hits
+        """True if there is no valid (unexpired, same-model, same-track-
+        generation) cached result for this track — i.e. the pipeline would
+        actually run on the next process() call."""
+        cached = self._cache.get(self._camera_uuid, track, self._model_code, self._model_version)
+        return cached is None
 
     def process(
         self, sampled_frame: SampledFrame, detection: FaceDetection, track: Track
-    ) -> RecognitionWorkerResult | None:
-        if not self.should_process(track):
-            return None
-
-        self._last_processed_hits[track.track_id] = track.hits
+    ) -> RecognitionWorkerResult:
+        cached = self._cache.get(self._camera_uuid, track, self._model_code, self._model_version)
+        if cached is not None:
+            return replace(cached, from_cache=True)
 
         observed_at = sampled_frame.frame.captured_at
         event_uuid = self._id_factory()
@@ -86,7 +89,7 @@ class RecognitionWorker:
 
         quality = self._quality_evaluator.evaluate(aligned, detection)
         if not quality.accepted:
-            return RecognitionWorkerResult(
+            result = RecognitionWorkerResult(
                 event_uuid=event_uuid,
                 camera_uuid=self._camera_uuid,
                 ai_node_uuid=self._ai_node_uuid,
@@ -103,13 +106,15 @@ class RecognitionWorker:
                 rejected_locally=True,
                 reasons=[str(r) for r in quality.rejection_reasons] or ["LOW_QUALITY"],
             )
+            self._cache.put(self._camera_uuid, track, result, self._model_code, self._model_version)
+            return result
 
         liveness_status = None
         if self._liveness_detector is not None:
             liveness = self._liveness_detector.evaluate(sampled_frame.frame.data)
             liveness_status = liveness.status
             if not liveness.is_live:
-                return RecognitionWorkerResult(
+                result = RecognitionWorkerResult(
                     event_uuid=event_uuid,
                     camera_uuid=self._camera_uuid,
                     ai_node_uuid=self._ai_node_uuid,
@@ -126,6 +131,10 @@ class RecognitionWorker:
                     rejected_locally=True,
                     reasons=liveness.rejection_reasons or ["LIVENESS_FAILED"],
                 )
+                self._cache.put(
+                    self._camera_uuid, track, result, self._model_code, self._model_version
+                )
+                return result
 
         embedding = self._embedder.generate(aligned)
 
@@ -136,6 +145,8 @@ class RecognitionWorker:
                 model_version=embedding.model_version,
             )
         except RecognitionBackendError as exc:
+            # Not cached: a transient backend outage should not pin this
+            # track to UNKNOWN for the cache TTL — retry on the next frame.
             return RecognitionWorkerResult(
                 event_uuid=event_uuid,
                 camera_uuid=self._camera_uuid,
@@ -154,7 +165,7 @@ class RecognitionWorker:
                 reasons=[f"BACKEND_UNAVAILABLE: {exc}"],
             )
 
-        return RecognitionWorkerResult(
+        result = RecognitionWorkerResult(
             event_uuid=event_uuid,
             camera_uuid=self._camera_uuid,
             ai_node_uuid=self._ai_node_uuid,
@@ -171,6 +182,8 @@ class RecognitionWorker:
             rejected_locally=False,
             reasons=backend_result.reasons,
         )
+        self._cache.put(self._camera_uuid, track, result, self._model_code, self._model_version)
+        return result
 
 
 class RecognitionWorkerPool:
