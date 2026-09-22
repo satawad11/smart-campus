@@ -166,6 +166,24 @@ const routes = [
         component: () => import('@/views/face/FaceProfileDetailView.vue'),
         meta: { requiresAuth: true, permission: 'face.view' },
       },
+      {
+        path: 'cameras',
+        name: 'cameras.index',
+        component: () => import('@/views/cameras/CameraListView.vue'),
+        meta: { requiresAuth: true, permission: 'camera.view' },
+      },
+      {
+        path: 'cameras/create',
+        name: 'cameras.create',
+        component: () => import('@/views/cameras/CameraCreateView.vue'),
+        meta: { requiresAuth: true, permission: 'camera.create' },
+      },
+      {
+        path: 'cameras/:uuid',
+        name: 'cameras.show',
+        component: () => import('@/views/cameras/CameraDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'camera.view' },
+      },
     ],
   },
   {

@@ -108,7 +108,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-014 Implement AI node health collection
 [x] CAM-015 Implement camera configuration sync
 [x] CAM-016 Implement ROI support
-[ ] CAM-017 Build camera management UI
+[x] CAM-017 Build camera management UI
 [ ] CAM-018 Build AI-node management UI
 [ ] CAM-019 Build camera/node health UI
 [ ] CAM-020 Benchmark 1/2/4/8-camera load
