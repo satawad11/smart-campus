@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Internal\AiNodeInternalController;
+use App\Http\Controllers\Internal\CameraHealthInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
 use Illuminate\Support\Facades\Route;
 
@@ -24,4 +25,10 @@ Route::middleware('ai_node.token')->group(function () {
     // the node already computed locally. No access decision; no raw
     // embedding is ever returned.
     Route::post('/face/recognize', [FaceRecognitionInternalController::class, 'recognize']);
+
+    // CAM-013: raw camera telemetry snapshot. cameraUuid is resolved
+    // manually in the controller (no SubstituteBindings middleware on this
+    // machine-to-machine stack); the service rejects a node reporting for
+    // a camera it is not assigned to.
+    Route::post('/cameras/{cameraUuid}/health', [CameraHealthInternalController::class, 'record']);
 });

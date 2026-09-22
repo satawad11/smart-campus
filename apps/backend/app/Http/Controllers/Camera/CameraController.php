@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Camera\StoreCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraStatusRequest;
+use App\Http\Resources\CameraHealthLogResource;
 use App\Http\Resources\CameraResource;
 use App\Models\AiNode;
 use App\Models\Camera;
@@ -183,6 +184,32 @@ class CameraController extends Controller
                 'source' => $result->source,
             ],
             'meta' => null,
+        ]);
+    }
+
+    public function health(Camera $camera, Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $paginator = $camera->healthLogs()->orderBy('recorded_at', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => CameraHealthLogResource::collection($paginator->items()),
+            'meta' => [
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
         ]);
     }
 }
