@@ -45,6 +45,7 @@ class AiNodeConfigService
             'face_recognition_enabled' => $camera->face_recognition_enabled,
             'liveness_enabled' => $camera->liveness_enabled,
             'snapshot_enabled' => $camera->snapshot_enabled,
+            'roi' => $camera->roi_polygon,
             'status' => $camera->status?->value ?? $camera->status,
         ];
     }

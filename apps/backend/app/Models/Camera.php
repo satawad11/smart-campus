@@ -45,6 +45,7 @@ class Camera extends Model
         'face_recognition_enabled',
         'liveness_enabled',
         'snapshot_enabled',
+        'roi_polygon',
         'status',
         'last_seen_at',
     ];
@@ -73,6 +74,7 @@ class Camera extends Model
             'face_recognition_enabled' => 'boolean',
             'liveness_enabled' => 'boolean',
             'snapshot_enabled' => 'boolean',
+            'roi_polygon' => 'array',
             'last_seen_at' => 'datetime',
         ];
     }

@@ -7,6 +7,7 @@ use App\Exceptions\ApiException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Camera\StoreCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraRequest;
+use App\Http\Requests\Camera\UpdateCameraRoiRequest;
 use App\Http\Requests\Camera\UpdateCameraStatusRequest;
 use App\Http\Resources\CameraHealthLogResource;
 use App\Http\Resources\CameraResource;
@@ -183,6 +184,23 @@ class CameraController extends Controller
                 'image_base64' => base64_encode($result->bytes),
                 'source' => $result->source,
             ],
+            'meta' => null,
+        ]);
+    }
+
+    public function updateRoi(UpdateCameraRoiRequest $request, Camera $camera): JsonResponse
+    {
+        $updated = $this->service->updateRoi(
+            $camera,
+            $request->validated('points'),
+            $request->user(),
+            AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Camera ROI updated',
+            'data' => new CameraResource($updated->load(['site', 'zone', 'aiNode'])),
             'meta' => null,
         ]);
     }

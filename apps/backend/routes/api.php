@@ -226,6 +226,7 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/cameras/{camera}', [CameraController::class, 'show'])->middleware('permission:camera.view');
     Route::put('/cameras/{camera}', [CameraController::class, 'update'])->middleware('permission:camera.update');
     Route::patch('/cameras/{camera}/status', [CameraController::class, 'updateStatus'])->middleware('permission:camera.enable');
+    Route::patch('/cameras/{camera}/roi', [CameraController::class, 'updateRoi'])->middleware('permission:camera.update');
     Route::post('/cameras/{camera}/test', [CameraController::class, 'test'])->middleware('permission:camera.test');
     Route::post('/cameras/{camera}/snapshot', [CameraController::class, 'snapshot'])->middleware('permission:camera.live');
     Route::get('/cameras/{camera}/health', [CameraController::class, 'health'])->middleware('permission:camera.view');

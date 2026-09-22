@@ -210,6 +210,34 @@ class CameraService
     }
 
     /**
+     * Sets or clears the camera's region-of-interest polygon (CAM-016).
+     * $points is either null/empty (clear the ROI — process the whole
+     * frame) or an already-validated list of >= 3 {x, y} vertices
+     * (UpdateCameraRoiRequest). Storage is a plain array of points; the
+     * ai-service is the one that interprets it as a polygon
+     * (app.roi.schemas.RegionOfInterest) when filtering detections.
+     */
+    public function updateRoi(Camera $camera, ?array $points, ?User $actor, ?AuditRequestContext $context): Camera
+    {
+        return DB::transaction(function () use ($camera, $points, $actor, $context) {
+            $old = $camera->roi_polygon;
+            $new = $points === [] ? null : $points;
+
+            $camera->roi_polygon = $new;
+            $camera->save();
+
+            $this->audit->record(
+                AuditAction::CAMERA_ROI_UPDATED, $actor, 'CAMERA', $camera->uuid,
+                oldValues: ['roi_configured' => $old !== null],
+                newValues: ['roi_configured' => $new !== null, 'camera_code' => $camera->camera_code],
+                context: $context, module: 'camera',
+            );
+
+            return $camera;
+        });
+    }
+
+    /**
      * Bounded-timeout TCP reachability check against the camera's stream
      * host/port. Never performs a full RTSP handshake (CAM-006) and never
      * logs/audits the raw RTSP URL or credentials — only host/port/outcome.
