@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Internal\AiNodeConfigInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
@@ -31,4 +32,9 @@ Route::middleware('ai_node.token')->group(function () {
     // machine-to-machine stack); the service rejects a node reporting for
     // a camera it is not assigned to.
     Route::post('/cameras/{cameraUuid}/health', [CameraHealthInternalController::class, 'record']);
+
+    // CAM-015: camera configuration sync, including decrypted RTSP
+    // credentials — the one legitimate consumer of that plaintext. A node
+    // may only ever fetch its own configuration.
+    Route::get('/ai-nodes/{aiNodeUuid}/config', [AiNodeConfigInternalController::class, 'show']);
 });
