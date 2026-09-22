@@ -244,6 +244,7 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes/{aiNode}', [AiNodeController::class, 'show'])->middleware('permission:ai_node.view');
     Route::put('/ai-nodes/{aiNode}', [AiNodeController::class, 'update'])->middleware('permission:ai_node.manage');
     Route::patch('/ai-nodes/{aiNode}/status', [AiNodeController::class, 'updateStatus'])->middleware('permission:ai_node.manage');
+    Route::get('/ai-nodes/{aiNode}/health', [AiNodeController::class, 'health'])->middleware('permission:ai_node.view');
 
     // Credential lifecycle (CAM-004). The plaintext token is returned once,
     // in the store() response, and never again.

@@ -32,11 +32,11 @@ use Illuminate\Support\Facades\DB;
  *    rejects an unknown node_code rather than creating one: the backend,
  *    not the node, decides whether a node identity may exist.
  *
- * Heartbeat writes raw telemetry to ai_node_health_logs but does not compute
- * ONLINE/DEGRADED/OFFLINE policy from thresholds — that reconciliation
- * (including stale-heartbeat -> OFFLINE detection) is CAM-014. A live
- * heartbeat is recorded as ONLINE because the call arriving IS the
- * observation of aliveness at that instant.
+ * Heartbeat writes raw telemetry to ai_node_health_logs and classifies
+ * ONLINE/DEGRADED from configured thresholds (CAM-014, config/ai_node.php).
+ * A live heartbeat is never classified OFFLINE — the call arriving IS the
+ * observation of aliveness at that instant; stale-heartbeat -> OFFLINE
+ * detection is the separate ai-nodes:detect-stale scheduled command.
  */
 class AiNodeService
 {
@@ -185,10 +185,12 @@ class AiNodeService
     /**
      * Records one raw telemetry snapshot and refreshes last_seen_at. $node
      * is already resolved/authenticated by the ai_node.token middleware —
-     * a node can only ever report telemetry for itself. Does NOT compute
-     * ONLINE/DEGRADED/OFFLINE health policy (CAM-014) — a received
-     * heartbeat is recorded ONLINE because it is itself the observation of
-     * the node being alive right now.
+     * a node can only ever report telemetry for itself. Classifies
+     * ONLINE/DEGRADED from the reported usage figures (CAM-014) but never
+     * OFFLINE here: the call arriving is itself the observation of the
+     * node being alive right now. Stale-heartbeat -> OFFLINE detection is
+     * a separate sweep (ai-nodes:detect-stale), since genuine silence — no
+     * call at all — cannot be observed synchronously from inside a call.
      *
      * @param  array<string, mixed>  $data
      */
@@ -207,12 +209,33 @@ class AiNodeService
                 'temperature' => $data['temperature'] ?? null,
                 'active_camera_count' => $data['active_camera_count'] ?? null,
                 'queue_depth' => $data['queue_depth'] ?? null,
-                'status' => HealthStatus::ONLINE->value,
+                'status' => $this->classifyHeartbeat($data)->value,
                 'recorded_at' => now(),
             ]);
 
             return $node;
         });
+    }
+
+    private function classifyHeartbeat(array $data): HealthStatus
+    {
+        $thresholds = config('ai_node.health');
+
+        $checks = [
+            [$data['cpu_usage'] ?? null, $thresholds['degraded_cpu_usage']],
+            [$data['ram_usage'] ?? null, $thresholds['degraded_ram_usage']],
+            [$data['gpu_usage'] ?? null, $thresholds['degraded_gpu_usage']],
+            [$data['temperature'] ?? null, $thresholds['degraded_temperature']],
+            [$data['queue_depth'] ?? null, $thresholds['degraded_queue_depth']],
+        ];
+
+        foreach ($checks as [$value, $limit]) {
+            if ($value !== null && $value >= $limit) {
+                return HealthStatus::DEGRADED;
+            }
+        }
+
+        return HealthStatus::ONLINE;
     }
 
     // ---- Helpers ----

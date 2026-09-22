@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\AiNode\StoreAiNodeRequest;
 use App\Http\Requests\AiNode\UpdateAiNodeRequest;
 use App\Http\Requests\AiNode\UpdateAiNodeStatusRequest;
+use App\Http\Resources\AiNodeHealthLogResource;
 use App\Http\Resources\AiNodeResource;
 use App\Models\AiNode;
 use App\Models\Site;
@@ -138,6 +139,32 @@ class AiNodeController extends Controller
             'message' => 'AI node status updated',
             'data' => new AiNodeResource($updated->load('site')),
             'meta' => null,
+        ]);
+    }
+
+    public function health(AiNode $aiNode, Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'page' => ['sometimes', 'integer', 'min:1'],
+            'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $perPage = (int) ($validated['per_page'] ?? 20);
+
+        $paginator = $aiNode->healthLogs()->orderBy('recorded_at', 'desc')->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => AiNodeHealthLogResource::collection($paginator->items()),
+            'meta' => [
+                'pagination' => [
+                    'current_page' => $paginator->currentPage(),
+                    'per_page' => $paginator->perPage(),
+                    'total' => $paginator->total(),
+                    'last_page' => $paginator->lastPage(),
+                ],
+            ],
         ]);
     }
 }

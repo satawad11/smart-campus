@@ -105,7 +105,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-011 Implement recognition-event delivery
 [x] CAM-012 Implement durable offline event buffer/retry
 [x] CAM-013 Implement camera health collection
-[ ] CAM-014 Implement AI node health collection
+[x] CAM-014 Implement AI node health collection
 [ ] CAM-015 Implement camera configuration sync
 [ ] CAM-016 Implement ROI support
 [ ] CAM-017 Build camera management UI
