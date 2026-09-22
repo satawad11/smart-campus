@@ -202,6 +202,12 @@ const routes = [
         component: () => import('@/views/aiNodes/AiNodeDetailView.vue'),
         meta: { requiresAuth: true, permission: 'ai_node.view' },
       },
+      {
+        path: 'health',
+        name: 'health.overview',
+        component: () => import('@/views/HealthOverviewView.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {

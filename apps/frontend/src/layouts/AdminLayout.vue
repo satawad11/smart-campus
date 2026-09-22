@@ -178,6 +178,28 @@ async function handleLogout() {
           </router-link>
 
           <router-link
+            v-if="authStore.can('camera.view') || authStore.can('ai_node.view')"
+            to="/health"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+            ภาพรวมสถานะระบบ
+          </router-link>
+
+          <router-link
             v-if="authStore.can('face.test')"
             to="/faces/test"
             class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
