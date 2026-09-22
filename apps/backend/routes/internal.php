@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Internal\AiNodeInternalController;
+use App\Http\Controllers\Internal\FaceRecognitionInternalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -18,4 +19,9 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('ai_node.token')->group(function () {
     Route::post('/ai-nodes/register', [AiNodeInternalController::class, 'register']);
     Route::post('/ai-nodes/heartbeat', [AiNodeInternalController::class, 'heartbeat']);
+
+    // CAM-009: pgvector search + FACE-013 classification for an embedding
+    // the node already computed locally. No access decision; no raw
+    // embedding is ever returned.
+    Route::post('/face/recognize', [FaceRecognitionInternalController::class, 'recognize']);
 });
