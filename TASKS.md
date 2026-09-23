@@ -129,7 +129,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-011 Implement review concurrency protection
 [x] EVT-012 Implement notifications
 [x] EVT-013 Implement Reverb/WebSocket events
-[ ] EVT-014 Implement channel authorization/scope
+[x] EVT-014 Implement channel authorization/scope
 [ ] EVT-015 Implement missed-event recovery
 [ ] EVT-016 Build Live Monitor UI
 [ ] EVT-017 Build event detail/review UI
