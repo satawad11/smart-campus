@@ -15,9 +15,21 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Event history API (EVT-008). Read-only: browsing already-persisted
- * AccessEvent + AccessDecision rows. Never accepts or computes a decision
- * itself — reviewing one is EVT-009/EVT-010, not built yet.
+ * Event history + review queue API (EVT-008/EVT-009). Read-only: browsing
+ * already-persisted AccessEvent + AccessDecision rows. Never accepts or
+ * computes a decision itself — submitting a manual review is EVT-010, not
+ * built yet.
+ *
+ * The review queue (docs/00-system-blueprint.md §9, ACCEPTANCE_CRITERIA.md
+ * "Review queue works") is not a separate endpoint — docs/02-api-contract.md
+ * §12 defines only GET /events with a `decision` filter, no dedicated queue
+ * route. `?decision=REVIEW` IS the queue: it matches each event's latest
+ * decision (never the original), so an event drops out the moment an
+ * officer's review supersedes it with ALLOW/DENY (docs/09 "Officer review
+ * adds a new decision. It never overwrites system decision"). The only
+ * queue-specific behavior added here is default ordering: oldest-first
+ * (FIFO) when filtering to decision=REVIEW, since that is how a work queue
+ * is worked, vs. newest-first for general history browsing.
  *
  * Filters match docs/02-api-contract.md §12 exactly: from, to, person_uuid,
  * student_code, event_type, decision, site_uuid, zone_uuid, camera_uuid,
@@ -48,7 +60,10 @@ class EventController extends Controller
 
         $perPage = (int) ($validated['per_page'] ?? 20);
         $sort = $validated['sort'] ?? 'occurred_at';
-        $order = $validated['order'] ?? 'desc';
+        // Review queue (decision=REVIEW): default oldest-first, matching how
+        // a work queue is worked. General history browsing: newest-first.
+        $defaultOrder = ($validated['decision'] ?? null) === 'REVIEW' ? 'asc' : 'desc';
+        $order = $validated['order'] ?? $defaultOrder;
 
         $query = AccessEvent::query()->with(['person', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
 

@@ -124,7 +124,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-006 Implement AccessContext and policy matcher
 [x] EVT-007 Implement decision persistence
 [x] EVT-008 Implement event APIs/history filters
-[ ] EVT-009 Implement review queue
+[x] EVT-009 Implement review queue
 [ ] EVT-010 Implement manual review append-only decisions
 [ ] EVT-011 Implement review concurrency protection
 [ ] EVT-012 Implement notifications
