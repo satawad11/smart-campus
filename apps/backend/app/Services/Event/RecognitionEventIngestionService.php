@@ -3,6 +3,7 @@
 namespace App\Services\Event;
 
 use App\Exceptions\ApiException;
+use App\Models\AccessDecision;
 use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
@@ -11,10 +12,14 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Recognition-event ingestion (EVT-003) with event_uuid idempotency
- * (EVT-004) and semantic cooldown/deduplication (EVT-005). Composes an
- * already-computed recognition result (from CAM-011's delivery client)
- * into a durable AccessEvent row — perception only. Does not evaluate
- * policy or persist a decision (EVT-006/EVT-007, not built yet).
+ * (EVT-004), semantic cooldown/deduplication (EVT-005), and decision
+ * persistence (EVT-007). Composes an already-computed recognition result
+ * (from CAM-011's delivery client) into a durable AccessEvent row —
+ * perception only — then, for a genuinely new event only, evaluates policy
+ * (EVT-006's AccessContextResolver + AccessPolicyMatcher) and persists the
+ * resulting AccessDecision. "Event != Decision" stays true even here: the
+ * two are always separate rows, created back-to-back in the same
+ * transaction, never merged into one.
  *
  * Three distinct dedup layers, in order:
  *  1. Camera ownership — always enforced, before anything else runs.
@@ -28,9 +33,18 @@ use Illuminate\Support\Facades\DB;
  *     — is suppressed (the recent prior event is returned instead of
  *     inserting another row). Keyed camera+person for a resolved MATCH,
  *     camera+track for an UNKNOWN_PERSON event (no person to key on).
+ *
+ * A retried or cooldown-suppressed event never gets a second decision —
+ * only a freshly-created AccessEvent triggers policy evaluation, since the
+ * original already has one from when it was first ingested.
  */
 class RecognitionEventIngestionService
 {
+    public function __construct(
+        private readonly AccessContextResolver $contextResolver,
+        private readonly AccessPolicyMatcher $matcher,
+    ) {}
+
     public function ingest(AiNode $resolvedNode, array $data): AccessEvent
     {
         return DB::transaction(function () use ($resolvedNode, $data) {
@@ -75,7 +89,7 @@ class RecognitionEventIngestionService
                 return $suppressedBy;
             }
 
-            return AccessEvent::create([
+            $event = AccessEvent::create([
                 'uuid' => $data['event_uuid'],
                 'person_id' => $personId,
                 'site_id' => $camera->site_id,
@@ -99,7 +113,35 @@ class RecognitionEventIngestionService
                     'reasons' => $data['reasons'] ?? [],
                 ],
             ]);
+
+            $this->persistDecision($event);
+
+            return $event;
         });
+    }
+
+    /**
+     * EVT-007: evaluates policy for a freshly-created event and persists
+     * the result as its first AccessDecision. decided_by_user_id stays
+     * null — this is a system/policy decision, never an officer's; a
+     * manual review later (EVT-010) adds its own separate row without
+     * ever touching this one.
+     */
+    private function persistDecision(AccessEvent $event): void
+    {
+        $context = $this->contextResolver->resolve($event);
+        $result = $this->matcher->match($context);
+
+        AccessDecision::create([
+            'event_id' => $event->id,
+            'person_id' => $event->person_id,
+            'decision' => $result->decision,
+            'reason_code' => $result->reasonCode,
+            'access_policy_id' => $result->matchedPolicyId,
+            'decision_source' => $result->decisionSource,
+            'decided_by_user_id' => null,
+            'reason_text' => null,
+        ]);
     }
 
     /**
