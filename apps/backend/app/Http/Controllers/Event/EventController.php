@@ -18,6 +18,7 @@ use App\Services\Audit\AuditRequestContext;
 use App\Services\Event\EventReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 /**
  * Event history + review queue + manual review API (EVT-008/EVT-009/EVT-010).
@@ -78,10 +79,20 @@ class EventController extends Controller
         $query = AccessEvent::query()->with(['person', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
 
         if (! empty($validated['from'])) {
-            $query->where('occurred_at', '>=', $validated['from']);
+            // Parse to a Carbon instance rather than passing the raw string
+            // through: SQLite stores occurred_at as `Y-m-d H:i:s` (space
+            // separator, no offset), but a client sends ISO 8601
+            // (`T`/microseconds/`Z`) — comparing those as raw TEXT is a
+            // same-day lexicographic trap (' ' < 'T' in ASCII, so a same-day
+            // `>=` silently evaluates false regardless of the actual time).
+            // PostgreSQL's native timestamp type parses either representation
+            // correctly, which is why this never surfaced there. Query
+            // builder bindings format a DateTime through the connection's own
+            // grammar, so this is correct on both drivers.
+            $query->where('occurred_at', '>=', Carbon::parse($validated['from']));
         }
         if (! empty($validated['to'])) {
-            $query->where('occurred_at', '<=', $validated['to']);
+            $query->where('occurred_at', '<=', Carbon::parse($validated['to']));
         }
         if (! empty($validated['event_type'])) {
             $query->where('event_type', $validated['event_type']);

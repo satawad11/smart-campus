@@ -130,7 +130,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-012 Implement notifications
 [x] EVT-013 Implement Reverb/WebSocket events
 [x] EVT-014 Implement channel authorization/scope
-[ ] EVT-015 Implement missed-event recovery
+[x] EVT-015 Implement missed-event recovery
 [ ] EVT-016 Build Live Monitor UI
 [ ] EVT-017 Build event detail/review UI
 [ ] EVT-018 Build unknown-person page
