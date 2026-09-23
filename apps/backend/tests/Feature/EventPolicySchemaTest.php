@@ -59,13 +59,6 @@ class EventPolicySchemaTest extends TestCase
         ]));
     }
 
-    public function test_access_policy_id_does_not_exist_yet(): void
-    {
-        // access_policies is EVT-002's table; the FK column arrives with it.
-        $this->assertFalse(Schema::hasColumn('access_decisions', 'access_policy_id'));
-        $this->assertFalse(Schema::hasTable('access_policies'));
-    }
-
     // ================= Immutability (append-only) =================
 
     public function test_access_events_has_no_updated_at_column(): void

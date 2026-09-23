@@ -18,9 +18,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * overwrites system decision") — hence no $timestamps update column, same
  * convention as AccessEvent/CameraHealthLog/AiNodeHealthLog.
  *
- * access_policy_id intentionally does not exist yet — access_policies is
- * EVT-002's table; that task adds the column.
- *
  * @use HasFactory<AccessDecisionFactory>
  */
 class AccessDecision extends Model
@@ -38,6 +35,7 @@ class AccessDecision extends Model
         'person_id',
         'decision',
         'reason_code',
+        'access_policy_id',
         'decision_source',
         'decided_by_user_id',
         'reason_text',
@@ -58,6 +56,11 @@ class AccessDecision extends Model
     public function event(): BelongsTo
     {
         return $this->belongsTo(AccessEvent::class, 'event_id');
+    }
+
+    public function policy(): BelongsTo
+    {
+        return $this->belongsTo(AccessPolicy::class, 'access_policy_id');
     }
 
     public function person(): BelongsTo
