@@ -32,6 +32,7 @@ class EventReviewService
 {
     public function __construct(
         private readonly AuditService $audit,
+        private readonly NotificationService $notifier,
     ) {}
 
     public function review(
@@ -75,6 +76,8 @@ class EventReviewService
                 ],
                 context: $context, module: 'event',
             );
+
+            $this->notifier->notifyIfActionable($locked, $created, excludeUserId: $actor->id);
 
             return $created;
         });

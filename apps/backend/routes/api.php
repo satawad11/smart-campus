@@ -21,6 +21,7 @@ use App\Http\Controllers\Face\FaceEnrollmentController;
 use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
 use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
+use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use Illuminate\Support\Facades\Route;
@@ -265,4 +266,15 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/events', [EventController::class, 'index'])->middleware('permission:event.view');
     Route::get('/events/{accessEvent}', [EventController::class, 'show'])->middleware('permission:event.view');
     Route::post('/events/{accessEvent}/review', [EventController::class, 'review'])->middleware('permission:event.review');
+});
+
+/*
+| Notifications (EVT-012). Always scoped to the authenticated user — no
+| permission middleware needed, since a user's own inbox isn't a shared
+| resource with role-based access like AccessEvent is.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
 });

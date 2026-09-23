@@ -102,4 +102,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(ImportJob::class, 'created_by');
     }
+
+    /**
+     * EVT-012 personal notification inbox. Deliberately NOT named
+     * `notifications()` — that accessor already belongs to the Notifiable
+     * trait's built-in morph relation, pointing at a differently-shaped
+     * `notifications` table this app doesn't use.
+     */
+    public function appNotifications(): HasMany
+    {
+        return $this->hasMany(Notification::class);
+    }
 }

@@ -43,6 +43,7 @@ class RecognitionEventIngestionService
     public function __construct(
         private readonly AccessContextResolver $contextResolver,
         private readonly AccessPolicyMatcher $matcher,
+        private readonly NotificationService $notifier,
     ) {}
 
     public function ingest(AiNode $resolvedNode, array $data): AccessEvent
@@ -132,7 +133,7 @@ class RecognitionEventIngestionService
         $context = $this->contextResolver->resolve($event);
         $result = $this->matcher->match($context);
 
-        AccessDecision::create([
+        $decision = AccessDecision::create([
             'event_id' => $event->id,
             'person_id' => $event->person_id,
             'decision' => $result->decision,
@@ -142,6 +143,8 @@ class RecognitionEventIngestionService
             'decided_by_user_id' => null,
             'reason_text' => null,
         ]);
+
+        $this->notifier->notifyIfActionable($event, $decision);
     }
 
     /**
