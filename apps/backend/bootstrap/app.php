@@ -6,6 +6,8 @@ use App\Http\Middleware\EnsureSessionActive;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -32,7 +34,20 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Canonical Laravel session+CSRF cookie stack (same composition and
+        // order as the framework's own default `web` group), appended to
+        // `api` so this SPA can use cookie-session auth over /api/v1
+        // without introducing Sanctum. EncryptCookies/AddQueuedCookiesToResponse
+        // MUST run outermost, before StartSession/ValidateCsrfToken: without
+        // them, the XSRF-TOKEN cookie is set in plaintext, but
+        // ValidateCsrfToken::getTokenFromRequest() always decrypts the
+        // X-XSRF-TOKEN header the browser echoes back — that decrypt fails
+        // against a plaintext value, so every real login silently 419s
+        // (invisible to the test suite, which bypasses CSRF entirely via
+        // Application::runningUnitTests()).
         $middleware->api(append: [
+            EncryptCookies::class,
+            AddQueuedCookiesToResponse::class,
             StartSession::class,
             ValidateCsrfToken::class,
         ]);

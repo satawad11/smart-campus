@@ -8,6 +8,21 @@ import api from './api'
  */
 export const authService = {
   /**
+   * Establishes the XSRF-TOKEN cookie. Must be called before any
+   * state-changing request (login, in particular) from a session that has
+   * no cookie yet — a protected GET like /auth/me only ever reaches
+   * ValidateCsrfToken's cookie-issuing response path when it succeeds
+   * (200), which it never does for a fresh, unauthenticated visitor (it
+   * 401s), so this dedicated always-succeeding endpoint is the only
+   * reliable way to obtain the token first. Same convention as Sanctum's
+   * GET /sanctum/csrf-cookie, without requiring Sanctum.
+   * @returns {Promise<void>}
+   */
+  async ensureCsrfCookie() {
+    await api.get('/auth/csrf-cookie')
+  },
+
+  /**
    * Bootstrap current session profile.
    * @returns {Promise<{ user: object }>}
    */
@@ -22,6 +37,7 @@ export const authService = {
    * @returns {Promise<{ user?: object, status?: string, challenge?: object }>}
    */
   async login({ username, password }) {
+    await this.ensureCsrfCookie()
     const response = await api.post('/auth/login', { username, password })
     return response.data.data
   },

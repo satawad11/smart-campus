@@ -39,6 +39,7 @@ use Illuminate\Support\Facades\Route;
 */
 Route::prefix('auth')->group(function () {
     // Guest endpoints
+    Route::get('/csrf-cookie', [AuthController::class, 'csrfCookie']);
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/mfa/verify', [MfaController::class, 'verify'])->middleware('throttle:mfa');
 

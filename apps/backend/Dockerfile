@@ -27,5 +27,18 @@ RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts -
 COPY . .
 RUN composer dump-autoload --optimize
 
+# php-fpm's worker processes run as www-data (see the pool config baked into
+# this image), but everything above was just COPY'd in as root — without
+# this, www-data can write to none of storage/, bootstrap/cache/, or
+# database/ (the SQLite dev DB's directory: SQLite needs to write a
+# rollback-journal file *alongside* database.sqlite on every write, so the
+# directory itself must be writable, not just the .sqlite file). Left
+# unfixed, every session write, log write, view/cache compile, and SQLite
+# write from a real request silently fails ("attempt to write a readonly
+# database"), while CLI commands (which typically run as root) keep working
+# — masking the bug until it's hit through a real HTTP request.
+RUN mkdir -p database \
+    && chown -R www-data:www-data storage bootstrap/cache database
+
 EXPOSE 9000
 CMD ["php-fpm"]

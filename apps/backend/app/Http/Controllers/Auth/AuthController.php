@@ -31,6 +31,27 @@ class AuthController extends Controller
     ) {}
 
     /**
+     * CSRF bootstrap (AUTH-005 baseline fix). Guest-accessible, never throws
+     * — its only job is to reach a normal (non-exception) response so
+     * ValidateCsrfToken's cookie-issuing tap() callback actually runs.
+     *
+     * Without this, a fresh unauthenticated visitor's first call is always
+     * either a protected GET (401s, e.g. /auth/me) or the login POST itself
+     * (can't self-bootstrap the token it needs to submit) — both bypass
+     * that tap() callback entirely, since Laravel's Kernel builds the 401/
+     * exception response at a layer outside any middleware's own response
+     * post-processing, so no prior request ever actually sets the cookie.
+     * The SPA must call this once (e.g. on app boot, before login) exactly
+     * like Sanctum's GET /sanctum/csrf-cookie convention — this project
+     * does not use Sanctum, so the equivalent bootstrap route is added
+     * directly here instead of installing it.
+     */
+    public function csrfCookie(): JsonResponse
+    {
+        return response()->json(['success' => true, 'message' => 'CSRF cookie set', 'data' => null]);
+    }
+
+    /**
      * Authenticate credentials and establish a user session.
      */
     public function login(LoginRequest $request): JsonResponse
