@@ -53,9 +53,18 @@ class AccessEventBroadcast implements ShouldBroadcastNow
                 'event_type' => $this->event->event_type,
                 'occurred_at' => $this->event->occurred_at?->toISOString(),
                 'site_uuid' => $this->event->site->uuid,
+                'site_name' => $this->event->site->name,
                 'zone_uuid' => $this->event->zone?->uuid,
+                'zone_name' => $this->event->zone?->name,
                 'camera_uuid' => $this->event->camera?->uuid,
+                'camera_name' => $this->event->camera?->name,
                 'person_uuid' => $this->event->person?->uuid,
+                // Denormalized onto the push itself (EVT-016's Live Monitor
+                // needs a name to render immediately) — the same fields
+                // GET /events already exposes via AccessEventResource, just
+                // flattened here since a broadcast payload has no eager-load
+                // step a client can ask for.
+                'person_display_name' => $this->event->person?->display_name,
             ],
             'decision' => [
                 'uuid' => $this->decision->uuid,

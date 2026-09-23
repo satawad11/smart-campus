@@ -73,9 +73,13 @@ class AccessEventBroadcastTest extends TestCase
         $this->assertSame($event->uuid, $payload['event']['uuid']);
         $this->assertSame($event->event_type, $payload['event']['event_type']);
         $this->assertSame($event->site->uuid, $payload['event']['site_uuid']);
+        $this->assertSame($event->site->name, $payload['event']['site_name']);
         $this->assertSame($zone->uuid, $payload['event']['zone_uuid']);
+        $this->assertSame($zone->name, $payload['event']['zone_name']);
         $this->assertSame($camera->uuid, $payload['event']['camera_uuid']);
+        $this->assertSame($camera->name, $payload['event']['camera_name']);
         $this->assertSame($person->uuid, $payload['event']['person_uuid']);
+        $this->assertSame($person->display_name, $payload['event']['person_display_name']);
 
         $this->assertSame($decision->uuid, $payload['decision']['uuid']);
         $this->assertSame('DENY', $payload['decision']['decision']);
@@ -94,7 +98,10 @@ class AccessEventBroadcastTest extends TestCase
         $payload = (new AccessEventBroadcast($event, $decision))->broadcastWith();
 
         $this->assertNull($payload['event']['zone_uuid']);
+        $this->assertNull($payload['event']['zone_name']);
         $this->assertNull($payload['event']['camera_uuid']);
+        $this->assertNull($payload['event']['camera_name']);
         $this->assertNull($payload['event']['person_uuid']);
+        $this->assertNull($payload['event']['person_display_name']);
     }
 }

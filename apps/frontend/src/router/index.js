@@ -208,6 +208,12 @@ const routes = [
         component: () => import('@/views/HealthOverviewView.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: 'monitor',
+        name: 'monitor.live',
+        component: () => import('@/views/monitor/LiveMonitorView.vue'),
+        meta: { requiresAuth: true, permission: 'monitor.view' },
+      },
     ],
   },
   {
