@@ -15,7 +15,8 @@ use Tests\TestCase;
 /**
  * EVT-003/EVT-004 — internal (AI-node-facing)
  * POST /internal/v1/events/recognition recognition-event ingestion,
- * including event_uuid idempotency.
+ * including event_uuid idempotency. Semantic cooldown/deduplication
+ * (EVT-005) has its own test file, RecognitionEventDeduplicationTest.
  */
 class RecognitionEventIngestionTest extends TestCase
 {
@@ -28,6 +29,11 @@ class RecognitionEventIngestionTest extends TestCase
         // this endpoint maps into (FACE_RECOGNIZED/UNKNOWN_PERSON/
         // LIVENESS_FAILED) must exist first.
         $this->seed(EventTypeSeeder::class);
+        // Isolate these tests from EVT-005's semantic cooldown — several
+        // send multiple events for the same camera/person in quick
+        // succession on purpose, which the default cooldown would
+        // otherwise suppress into one row.
+        config(['event.semantic_cooldown_seconds' => 0, 'event.unknown_cooldown_seconds' => 0]);
     }
 
     private function bearerFor(AiNode $node): array

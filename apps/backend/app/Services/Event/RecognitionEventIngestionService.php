@@ -11,22 +11,23 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Recognition-event ingestion (EVT-003) with event_uuid idempotency
- * (EVT-004). Composes an already-computed recognition result (from
- * CAM-011's delivery client) into a durable AccessEvent row — perception
- * only. Does not evaluate policy or persist a decision (EVT-006/EVT-007,
- * not built yet), and does not apply semantic cooldown/deduplication
- * (EVT-005, a different concern: that's about collapsing distinct-but-
- * near-duplicate recognitions, not about a single delivery being retried).
+ * (EVT-004) and semantic cooldown/deduplication (EVT-005). Composes an
+ * already-computed recognition result (from CAM-011's delivery client)
+ * into a durable AccessEvent row — perception only. Does not evaluate
+ * policy or persist a decision (EVT-006/EVT-007, not built yet).
  *
- * Idempotency (docs/09 "Deduplication: event_uuid unique"): a retried
- * delivery of the same event_uuid with materially the same content (same
- * camera, same derived event_type, same track_id) is a no-op — the
- * already-stored event is returned unchanged, not re-created, and the
- * caller (CAM-012's offline-buffer retry, in particular — that mechanism
- * guarantees at-least-once delivery, so a duplicate is an expected, normal
- * occurrence, not an error). A retry whose content genuinely differs is a
- * real conflict (the same event_uuid reused for a different event) and is
- * rejected with 409, exactly as it was before this task.
+ * Three distinct dedup layers, in order:
+ *  1. Camera ownership — always enforced, before anything else runs.
+ *  2. EVT-004 idempotency: the SAME event_uuid retried (at-least-once
+ *     delivery from CAM-012's offline buffer) is a no-op if content
+ *     matches, a 409 conflict if it doesn't.
+ *  3. EVT-005 semantic cooldown: a genuinely NEW event_uuid that still
+ *     describes the same real-world occurrence as a very recent one — a
+ *     track lost and re-acquired produces a new track_id/event_uuid on
+ *     the AI-node side, but is still the same person at the same camera
+ *     — is suppressed (the recent prior event is returned instead of
+ *     inserting another row). Keyed camera+person for a resolved MATCH,
+ *     camera+track for an UNKNOWN_PERSON event (no person to key on).
  */
 class RecognitionEventIngestionService
 {
@@ -43,6 +44,13 @@ class RecognitionEventIngestionService
             $camera = Camera::where('uuid', $data['camera_uuid'])->first()
                 ?? throw ApiException::unprocessable('CAMERA_NOT_FOUND', 'The specified camera does not exist.');
 
+            if ($camera->ai_node_id !== $resolvedNode->id) {
+                throw ApiException::unprocessable(
+                    'CAMERA_NOT_ASSIGNED_TO_NODE',
+                    'This AI node is not assigned to the specified camera.',
+                );
+            }
+
             $eventType = $this->resolveEventType($data);
 
             $existing = AccessEvent::where('uuid', $data['event_uuid'])->first();
@@ -57,16 +65,14 @@ class RecognitionEventIngestionService
                 );
             }
 
-            if ($camera->ai_node_id !== $resolvedNode->id) {
-                throw ApiException::unprocessable(
-                    'CAMERA_NOT_ASSIGNED_TO_NODE',
-                    'This AI node is not assigned to the specified camera.',
-                );
-            }
-
             $personId = null;
             if ($data['classification'] === 'MATCH' && ! empty($data['candidate_person_uuid'])) {
                 $personId = Person::where('uuid', $data['candidate_person_uuid'])->value('id');
+            }
+
+            $suppressedBy = $this->findWithinSemanticCooldown($camera, $eventType, $personId, $data['track_id']);
+            if ($suppressedBy !== null) {
+                return $suppressedBy;
             }
 
             return AccessEvent::create([
@@ -113,6 +119,48 @@ class RecognitionEventIngestionService
         return $existing->camera_id === $camera->id
             && $existing->event_type === $eventType
             && $existing->track_id === $data['track_id'];
+    }
+
+    /**
+     * EVT-005: finds a very recent event at this camera that this new one
+     * would be a semantic duplicate of, or null if none exists (the event
+     * should be created). Person-keyed when a person was resolved (a
+     * MATCH); otherwise, for an UNKNOWN_PERSON event, track-keyed — an
+     * UNKNOWN event never has a person_id to key on. A REVIEW/MATCH-with-
+     * no-candidate/LIVENESS_FAILED event has no cooldown applied: each is
+     * either already person-keyed above or specific enough (a liveness
+     * failure) that suppressing it could hide a genuine repeated problem.
+     */
+    private function findWithinSemanticCooldown(Camera $camera, string $eventType, ?int $personId, string $trackId): ?AccessEvent
+    {
+        if ($personId !== null) {
+            $cooldownSeconds = (int) config('event.semantic_cooldown_seconds');
+            if ($cooldownSeconds <= 0) {
+                return null;
+            }
+
+            return AccessEvent::where('camera_id', $camera->id)
+                ->where('person_id', $personId)
+                ->where('occurred_at', '>=', now()->subSeconds($cooldownSeconds))
+                ->orderByDesc('occurred_at')
+                ->first();
+        }
+
+        if ($eventType === 'UNKNOWN_PERSON') {
+            $cooldownSeconds = (int) config('event.unknown_cooldown_seconds');
+            if ($cooldownSeconds <= 0) {
+                return null;
+            }
+
+            return AccessEvent::where('camera_id', $camera->id)
+                ->where('track_id', $trackId)
+                ->where('event_type', 'UNKNOWN_PERSON')
+                ->where('occurred_at', '>=', now()->subSeconds($cooldownSeconds))
+                ->orderByDesc('occurred_at')
+                ->first();
+        }
+
+        return null;
     }
 
     /**
