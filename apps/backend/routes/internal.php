@@ -4,6 +4,7 @@ use App\Http\Controllers\Internal\AiNodeConfigInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
+use App\Http\Controllers\Internal\RecognitionEventInternalController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -37,4 +38,8 @@ Route::middleware('ai_node.token')->group(function () {
     // credentials — the one legitimate consumer of that plaintext. A node
     // may only ever fetch its own configuration.
     Route::get('/ai-nodes/{aiNodeUuid}/config', [AiNodeConfigInternalController::class, 'show']);
+
+    // EVT-003: recognition-event ingestion. Perception only — no access
+    // decision is ever accepted here or produced by this endpoint.
+    Route::post('/events/recognition', [RecognitionEventInternalController::class, 'store']);
 });

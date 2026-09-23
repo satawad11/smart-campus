@@ -18,6 +18,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * column, matching CameraHealthLog/AiNodeHealthLog's append-only
  * convention — an event is superseded by a later event, never edited.
  *
+ * Unlike every other HasPublicUuid model, `uuid` here is not always
+ * server-generated: EVT-003's ingestion service deliberately sets it to
+ * the AI node's own event_uuid (the idempotency key CAM-011 already
+ * assigned — HasUuids only autogenerates when the attribute is unset, so
+ * an explicit value passed to create() is preserved as-is). `uuid` is
+ * fillable for exactly that reason.
+ *
  * @use HasFactory<AccessEventFactory>
  */
 class AccessEvent extends Model
@@ -31,6 +38,7 @@ class AccessEvent extends Model
 
     /** @var list<string> */
     protected $fillable = [
+        'uuid',
         'person_id',
         'site_id',
         'zone_id',
