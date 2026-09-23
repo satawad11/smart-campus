@@ -1,20 +1,14 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
 
 const profile = ref(null)
 const loading = ref(true)
 const errorMessage = ref('')
-
-const canView = computed(() => authStore.can('face.view'))
-const canRevoke = computed(() => authStore.can('face.revoke'))
-const canReenroll = computed(() => authStore.can('face.reenroll'))
 
 async function fetchProfile() {
   const uuid = route.params.uuid
