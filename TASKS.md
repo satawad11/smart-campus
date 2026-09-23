@@ -116,7 +116,7 @@ Only mark `[x]` when the relevant tests pass.
 
 # MODULE 05 — EVENT + POLICY + REALTIME
 
-[ ] EVT-001 Create event type/access event/access decision schemas
+[x] EVT-001 Create event type/access event/access decision schemas
 [ ] EVT-002 Create access policy schema/seed defaults
 [ ] EVT-003 Implement recognition-event ingestion
 [ ] EVT-004 Implement event UUID idempotency
