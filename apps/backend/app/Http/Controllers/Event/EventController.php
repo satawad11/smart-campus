@@ -55,13 +55,18 @@ class EventController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date'],
-            'person_uuid' => ['sometimes', 'string', 'exists:persons,uuid'],
+            // 'bail' + 'uuid' before 'exists': PostgreSQL's uuid column rejects
+            // a malformed string at the SQL level (invalid input syntax), so
+            // format must be checked first or an invalid value 500s instead
+            // of failing validation cleanly (SQLite's text-typed uuid column
+            // never surfaced this). See ReviewEventRequest.
+            'person_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:persons,uuid'],
             'student_code' => ['sometimes', 'string'],
             'event_type' => ['sometimes', 'string'],
             'decision' => ['sometimes', 'string', 'in:ALLOW,REVIEW,DENY,UNKNOWN'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
-            'zone_uuid' => ['sometimes', 'string', 'exists:zones,uuid'],
-            'camera_uuid' => ['sometimes', 'string', 'exists:cameras,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
+            'zone_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:zones,uuid'],
+            'camera_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:cameras,uuid'],
             'academic_status' => ['sometimes', 'string'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],

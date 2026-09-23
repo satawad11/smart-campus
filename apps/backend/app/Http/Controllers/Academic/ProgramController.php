@@ -37,7 +37,11 @@ class ProgramController extends Controller
             'keyword' => ['sometimes', 'string', 'max:255'],
             'status' => ['sometimes', 'string', 'in:'.implode(',', array_column(AcademicStatus::cases(), 'value'))],
             'education_level' => ['sometimes', 'string', 'in:VOC_CERT,HIGH_VOC_CERT,SHORT_COURSE,OTHER'],
-            'department_uuid' => ['sometimes', 'string', 'exists:departments,uuid'],
+            // 'bail' + 'uuid' before 'exists': PostgreSQL's uuid column rejects
+            // a malformed string at the SQL level (invalid input syntax), so
+            // format must be checked first or an invalid value 500s instead
+            // of failing validation cleanly. See ReviewEventRequest.
+            'department_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:departments,uuid'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);

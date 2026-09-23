@@ -18,6 +18,7 @@ use App\Models\Zone;
 use Database\Seeders\EventTypeSeeder;
 use Database\Seeders\PermissionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 /**
@@ -33,6 +34,11 @@ class EventHistoryApiTest extends TestCase
         parent::setUp();
         $this->seed(PermissionSeeder::class);
         $this->seed(EventTypeSeeder::class);
+    }
+
+    private function isPgsql(): bool
+    {
+        return DB::connection()->getDriverName() === 'pgsql';
     }
 
     private function userWith(array $codes): User
@@ -220,6 +226,29 @@ class EventHistoryApiTest extends TestCase
         $data = $res->json('data.0');
         foreach (['embedding', 'snapshot_bytes', 'metadata'] as $forbidden) {
             $this->assertArrayNotHasKey($forbidden, $data);
+        }
+    }
+
+    /**
+     * On PostgreSQL, person_uuid/site_uuid/zone_uuid/camera_uuid are native uuid
+     * columns: `exists` runs a raw SQL comparison, which throws "invalid input
+     * syntax for type uuid" (500) for a non-uuid string unless the validator's
+     * `uuid` rule rejects the format first (bails before `exists` runs). SQLite's
+     * text-typed uuid column never surfaces this, so the assertion only holds on
+     * pgsql — see ReviewEventRequest for the same fix applied to expected_decision_uuid.
+     */
+    public function test_malformed_uuid_filters_return_422_not_500(): void
+    {
+        if (! $this->isPgsql()) {
+            $this->markTestIncomplete('invalid uuid syntax only throws a raw SQL error on PostgreSQL');
+        }
+
+        $user = $this->userWith(['event.view']);
+
+        foreach (['person_uuid', 'site_uuid', 'zone_uuid', 'camera_uuid'] as $param) {
+            $res = $this->actingAs($user, 'web')->getJson("/api/v1/events?{$param}=not-a-uuid");
+            $res->assertStatus(422);
+            $res->assertJsonValidationErrors($param);
         }
     }
 

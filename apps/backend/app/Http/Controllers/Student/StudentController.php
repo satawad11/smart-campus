@@ -49,9 +49,13 @@ class StudentController extends Controller
             'education_level' => ['sometimes', 'string', 'in:VOC_CERT,HIGH_VOC_CERT,SHORT_COURSE,OTHER'],
             'year_level' => ['sometimes', 'integer', 'min:1', 'max:65535'],
             'admission_year' => ['sometimes', 'integer', 'min:1', 'max:65535'],
-            'department_uuid' => ['sometimes', 'string', 'exists:departments,uuid'],
-            'program_uuid' => ['sometimes', 'string', 'exists:programs,uuid'],
-            'classroom_uuid' => ['sometimes', 'string', 'exists:classrooms,uuid'],
+            // 'bail' + 'uuid' before 'exists': PostgreSQL's uuid column rejects
+            // a malformed string at the SQL level (invalid input syntax), so
+            // format must be checked first or an invalid value 500s instead
+            // of failing validation cleanly. See ReviewEventRequest.
+            'department_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:departments,uuid'],
+            'program_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:programs,uuid'],
+            'classroom_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:classrooms,uuid'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);

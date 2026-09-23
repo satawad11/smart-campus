@@ -35,7 +35,11 @@ class UpdateCameraRequest extends FormRequest
             'username' => ['sometimes', 'nullable', 'string', 'max:255'],
             'password' => ['sometimes', 'nullable', 'string', 'max:255'],
             'onvif_url' => ['sometimes', 'nullable', 'string', 'max:2048'],
-            'ai_node_uuid' => ['sometimes', 'nullable', 'string', 'exists:ai_nodes,uuid'],
+            // 'bail' + 'uuid' before 'exists': PostgreSQL's uuid column rejects
+            // a malformed string at the SQL level (invalid input syntax), so
+            // format must be checked first or an invalid value 500s instead
+            // of failing validation cleanly. See ReviewEventRequest.
+            'ai_node_uuid' => ['bail', 'sometimes', 'nullable', 'string', 'uuid', 'exists:ai_nodes,uuid'],
             'face_detection_enabled' => ['sometimes', 'boolean'],
             'face_recognition_enabled' => ['sometimes', 'boolean'],
             'liveness_enabled' => ['sometimes', 'boolean'],

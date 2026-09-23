@@ -46,9 +46,13 @@ class CameraController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
             'keyword' => ['sometimes', 'string', 'max:255'],
             'status' => ['sometimes', 'string', 'in:'.implode(',', array_column(DeviceStatus::cases(), 'value'))],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
-            'zone_uuid' => ['sometimes', 'string', 'exists:zones,uuid'],
-            'ai_node_uuid' => ['sometimes', 'string', 'exists:ai_nodes,uuid'],
+            // 'bail' + 'uuid' before 'exists': PostgreSQL's uuid column rejects
+            // a malformed string at the SQL level (invalid input syntax), so
+            // format must be checked first or an invalid value 500s instead
+            // of failing validation cleanly. See ReviewEventRequest.
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
+            'zone_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:zones,uuid'],
+            'ai_node_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:ai_nodes,uuid'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);
