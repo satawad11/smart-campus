@@ -2,6 +2,7 @@
 
 namespace App\Services\Event;
 
+use App\Events\AccessEventBroadcast;
 use App\Exceptions\ApiException;
 use App\Models\AccessDecision;
 use App\Models\AccessEvent;
@@ -127,6 +128,10 @@ class RecognitionEventIngestionService
      * null — this is a system/policy decision, never an officer's; a
      * manual review later (EVT-010) adds its own separate row without
      * ever touching this one.
+     *
+     * EVT-013/EVT-012: broadcasts to the Live Monitor, then notifies
+     * monitor.view users if the decision needs attention — same order as
+     * docs/09's pipeline ("... -> commit -> broadcast -> notify").
      */
     private function persistDecision(AccessEvent $event): void
     {
@@ -144,6 +149,7 @@ class RecognitionEventIngestionService
             'reason_text' => null,
         ]);
 
+        broadcast(new AccessEventBroadcast($event, $decision));
         $this->notifier->notifyIfActionable($event, $decision);
     }
 

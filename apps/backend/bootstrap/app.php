@@ -33,6 +33,15 @@ return Application::configure(basePath: dirname(__DIR__))
             Route::prefix('internal/v1')->group(base_path('routes/internal.php'));
         },
     )
+    // EVT-013: registers POST /api/v1/broadcasting/auth for Echo's private-
+    // channel handshake, under the same auth stack (session+CSRF via the
+    // `api` middleware group below, then auth:web/active/session.active) as
+    // every other authenticated route — this app has no separate `web`
+    // group to hang the framework's default broadcasting route on.
+    ->withBroadcasting(
+        __DIR__.'/../routes/channels.php',
+        ['prefix' => 'api/v1', 'middleware' => ['api', 'auth:web', 'active', 'session.active']],
+    )
     ->withMiddleware(function (Middleware $middleware): void {
         // Canonical Laravel session+CSRF cookie stack (same composition and
         // order as the framework's own default `web` group), appended to

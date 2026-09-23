@@ -5,6 +5,7 @@ namespace App\Services\Event;
 use App\Enums\AccessDecisionOutcome;
 use App\Enums\AuditAction;
 use App\Enums\DecisionSource;
+use App\Events\AccessEventBroadcast;
 use App\Exceptions\ApiException;
 use App\Models\AccessDecision;
 use App\Models\AccessEvent;
@@ -77,6 +78,7 @@ class EventReviewService
                 context: $context, module: 'event',
             );
 
+            broadcast(new AccessEventBroadcast($locked, $created));
             $this->notifier->notifyIfActionable($locked, $created, excludeUserId: $actor->id);
 
             return $created;
