@@ -121,7 +121,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-003 Implement recognition-event ingestion
 [x] EVT-004 Implement event UUID idempotency
 [x] EVT-005 Implement semantic cooldown/deduplication
-[ ] EVT-006 Implement AccessContext and policy matcher
+[x] EVT-006 Implement AccessContext and policy matcher
 [ ] EVT-007 Implement decision persistence
 [ ] EVT-008 Implement event APIs/history filters
 [ ] EVT-009 Implement review queue
