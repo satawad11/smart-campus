@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers\Event;
 
+use App\Enums\AccessDecisionOutcome;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Event\ReviewEventRequest;
+use App\Http\Resources\AccessDecisionResource;
 use App\Http\Resources\AccessEventResource;
 use App\Models\AccessDecision;
 use App\Models\AccessEvent;
@@ -11,14 +14,17 @@ use App\Models\Person;
 use App\Models\Site;
 use App\Models\StudentProfile;
 use App\Models\Zone;
+use App\Services\Audit\AuditRequestContext;
+use App\Services\Event\EventReviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 /**
- * Event history + review queue API (EVT-008/EVT-009). Read-only: browsing
- * already-persisted AccessEvent + AccessDecision rows. Never accepts or
- * computes a decision itself — submitting a manual review is EVT-010, not
- * built yet.
+ * Event history + review queue + manual review API (EVT-008/EVT-009/EVT-010).
+ * Browsing (index/show) is read-only over already-persisted AccessEvent +
+ * AccessDecision rows. review() is the one write path: it always appends a
+ * new AccessDecision, never edits an existing one (docs/09: "Officer review
+ * adds a new decision. It never overwrites system decision").
  *
  * The review queue (docs/00-system-blueprint.md §9, ACCEPTANCE_CRITERIA.md
  * "Review queue works") is not a separate endpoint — docs/02-api-contract.md
@@ -38,6 +44,10 @@ use Illuminate\Http\Request;
 class EventController extends Controller
 {
     private const SORTABLE = ['occurred_at', 'received_at', 'created_at'];
+
+    public function __construct(
+        private readonly EventReviewService $reviewService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -133,5 +143,26 @@ class EventController extends Controller
             'data' => new AccessEventResource($accessEvent),
             'meta' => null,
         ]);
+    }
+
+    public function review(ReviewEventRequest $request, AccessEvent $accessEvent): JsonResponse
+    {
+        $validated = $request->validated();
+
+        $created = $this->reviewService->review(
+            $accessEvent,
+            AccessDecisionOutcome::from($validated['decision']),
+            $validated['reason_code'],
+            $validated['reason_text'] ?? null,
+            $request->user(),
+            AuditRequestContext::fromRequest($request),
+        );
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Review recorded.',
+            'data' => new AccessDecisionResource($created),
+            'meta' => null,
+        ], 201);
     }
 }

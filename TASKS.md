@@ -125,7 +125,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-007 Implement decision persistence
 [x] EVT-008 Implement event APIs/history filters
 [x] EVT-009 Implement review queue
-[ ] EVT-010 Implement manual review append-only decisions
+[x] EVT-010 Implement manual review append-only decisions
 [ ] EVT-011 Implement review concurrency protection
 [ ] EVT-012 Implement notifications
 [ ] EVT-013 Implement Reverb/WebSocket events

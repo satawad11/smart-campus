@@ -257,10 +257,12 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 });
 
 /*
-| Event history (EVT-008). Read-only browsing of already-persisted
-| AccessEvent/AccessDecision rows. {accessEvent} binds by uuid.
+| Event history + review (EVT-008/EVT-009/EVT-010). {accessEvent} binds by
+| uuid. Browsing needs event.view; submitting a manual review needs the
+| stronger event.review permission.
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/events', [EventController::class, 'index'])->middleware('permission:event.view');
     Route::get('/events/{accessEvent}', [EventController::class, 'show'])->middleware('permission:event.view');
+    Route::post('/events/{accessEvent}/review', [EventController::class, 'review'])->middleware('permission:event.review');
 });
