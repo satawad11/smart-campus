@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Durable recognition-occurrence record (EVT-001, database blueprint §7).
@@ -104,5 +105,17 @@ class AccessEvent extends Model
     public function decisions(): HasMany
     {
         return $this->hasMany(AccessDecision::class, 'event_id');
+    }
+
+    /**
+     * The current decision — the latest-appended row (docs/09: "Officer
+     * review adds a new decision. It never overwrites system decision"),
+     * so "current" always means "most recent", not "the original".
+     * Ordered by id (no updated_at on this append-only table, and id is
+     * already strictly insertion-ordered).
+     */
+    public function latestDecision(): HasOne
+    {
+        return $this->hasOne(AccessDecision::class, 'event_id')->latestOfMany('id');
     }
 }

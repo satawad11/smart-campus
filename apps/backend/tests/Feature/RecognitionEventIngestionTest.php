@@ -84,8 +84,8 @@ class RecognitionEventIngestionTest extends TestCase
 
         $res->assertStatus(201);
         $res->assertJsonPath('data.event_type', 'FACE_RECOGNIZED');
-        $res->assertJsonPath('data.person_uuid', $person->uuid);
-        $res->assertJsonPath('data.camera_uuid', $camera->uuid);
+        $res->assertJsonPath('data.person.uuid', $person->uuid);
+        $res->assertJsonPath('data.camera.uuid', $camera->uuid);
 
         $this->assertDatabaseHas('access_events', [
             'person_id' => $person->id,
@@ -113,7 +113,7 @@ class RecognitionEventIngestionTest extends TestCase
 
         $res->assertStatus(201);
         $res->assertJsonPath('data.event_type', 'UNKNOWN_PERSON');
-        $res->assertJsonPath('data.person_uuid', null);
+        $res->assertJsonPath('data.person', null);
     }
 
     public function test_spoof_liveness_maps_to_liveness_failed_event_type_regardless_of_classification(): void
@@ -149,7 +149,7 @@ class RecognitionEventIngestionTest extends TestCase
         ]));
 
         $res->assertStatus(201);
-        $res->assertJsonPath('data.person_uuid', null);
+        $res->assertJsonPath('data.person', null);
     }
 
     public function test_rejects_a_node_reporting_an_event_for_a_camera_it_is_not_assigned_to(): void

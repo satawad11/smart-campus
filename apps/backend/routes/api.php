@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\Camera\AiNodeController;
 use App\Http\Controllers\Camera\AiNodeCredentialController;
 use App\Http\Controllers\Camera\CameraController;
+use App\Http\Controllers\Event\EventController;
 use App\Http\Controllers\Face\FaceDuplicateReviewController;
 use App\Http\Controllers\Face\FaceEnrollmentController;
 use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
@@ -253,4 +254,13 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'index'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'store'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials/{credential}/revoke', [AiNodeCredentialController::class, 'revoke'])->middleware('permission:ai_node.manage');
+});
+
+/*
+| Event history (EVT-008). Read-only browsing of already-persisted
+| AccessEvent/AccessDecision rows. {accessEvent} binds by uuid.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/events', [EventController::class, 'index'])->middleware('permission:event.view');
+    Route::get('/events/{accessEvent}', [EventController::class, 'show'])->middleware('permission:event.view');
 });
