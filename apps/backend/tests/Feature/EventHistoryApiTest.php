@@ -248,7 +248,8 @@ class EventHistoryApiTest extends TestCase
         foreach (['person_uuid', 'site_uuid', 'zone_uuid', 'camera_uuid'] as $param) {
             $res = $this->actingAs($user, 'web')->getJson("/api/v1/events?{$param}=not-a-uuid");
             $res->assertStatus(422);
-            $res->assertJsonValidationErrors($param);
+            $res->assertJsonPath('error.code', 'VALIDATION_ERROR');
+            $this->assertArrayHasKey($param, $res->json('error.fields'), "expected a validation error for {$param}");
         }
     }
 
