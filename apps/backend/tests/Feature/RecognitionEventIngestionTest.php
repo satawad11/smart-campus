@@ -13,8 +13,9 @@ use Illuminate\Support\Str;
 use Tests\TestCase;
 
 /**
- * EVT-003 — internal (AI-node-facing) POST /internal/v1/events/recognition
- * recognition-event ingestion.
+ * EVT-003/EVT-004 — internal (AI-node-facing)
+ * POST /internal/v1/events/recognition recognition-event ingestion,
+ * including event_uuid idempotency.
  */
 class RecognitionEventIngestionTest extends TestCase
 {
@@ -190,8 +191,12 @@ class RecognitionEventIngestionTest extends TestCase
         $res->assertJsonPath('error.code', 'CAMERA_NOT_FOUND');
     }
 
-    public function test_duplicate_event_uuid_returns_409_and_does_not_create_a_second_row(): void
+    public function test_retrying_the_same_event_uuid_with_the_same_content_is_idempotent(): void
     {
+        // EVT-004: CAM-012's offline buffer guarantees at-least-once
+        // delivery, so a network-blip retry of the exact same event is
+        // routine, not an error — it must return the original event
+        // unchanged (200), never a second row.
         $node = AiNode::factory()->create();
         $camera = Camera::factory()->create(['ai_node_id' => $node->id]);
         $eventUuid = (string) Str::uuid();
@@ -202,12 +207,41 @@ class RecognitionEventIngestionTest extends TestCase
             'ai_node_uuid' => $node->uuid,
         ]);
 
-        $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $payload)->assertStatus(201);
+        $first = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $payload);
+        $first->assertStatus(201);
 
-        $res = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $payload);
+        $retry = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $payload);
+        $retry->assertStatus(200);
+        $retry->assertJsonPath('data.uuid', $eventUuid);
+
+        $this->assertDatabaseCount('access_events', 1);
+    }
+
+    public function test_reusing_an_event_uuid_for_a_genuinely_different_event_is_a_409_conflict(): void
+    {
+        $node = AiNode::factory()->create();
+        $camera = Camera::factory()->create(['ai_node_id' => $node->id]);
+        $otherCamera = Camera::factory()->create(['ai_node_id' => $node->id]);
+        $eventUuid = (string) Str::uuid();
+
+        $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $this->basePayload([
+            'event_uuid' => $eventUuid,
+            'camera_uuid' => $camera->uuid,
+            'ai_node_uuid' => $node->uuid,
+            'track_id' => 'track-1',
+        ]))->assertStatus(201);
+
+        // Same event_uuid, but a different camera/track — not the same
+        // occurrence, so idempotency must not silently accept it.
+        $res = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $this->basePayload([
+            'event_uuid' => $eventUuid,
+            'camera_uuid' => $otherCamera->uuid,
+            'ai_node_uuid' => $node->uuid,
+            'track_id' => 'track-2',
+        ]));
+
         $res->assertStatus(409);
         $res->assertJsonPath('error.code', 'EVENT_ALREADY_EXISTS');
-
         $this->assertDatabaseCount('access_events', 1);
     }
 

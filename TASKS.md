@@ -119,7 +119,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-001 Create event type/access event/access decision schemas
 [x] EVT-002 Create access policy schema/seed defaults
 [x] EVT-003 Implement recognition-event ingestion
-[ ] EVT-004 Implement event UUID idempotency
+[x] EVT-004 Implement event UUID idempotency
 [ ] EVT-005 Implement semantic cooldown/deduplication
 [ ] EVT-006 Implement AccessContext and policy matcher
 [ ] EVT-007 Implement decision persistence
