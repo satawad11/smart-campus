@@ -156,6 +156,7 @@ class EventController extends Controller
             $validated['reason_text'] ?? null,
             $request->user(),
             AuditRequestContext::fromRequest($request),
+            $validated['expected_decision_uuid'] ?? null,
         );
 
         return response()->json([
