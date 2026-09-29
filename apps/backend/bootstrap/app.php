@@ -6,6 +6,7 @@ use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureSessionActive;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -60,7 +61,14 @@ return Application::configure(basePath: dirname(__DIR__))
             AddQueuedCookiesToResponse::class,
             StartSession::class,
             ValidateCsrfToken::class,
+            SecurityHeadersMiddleware::class,
         ]);
+
+        $middleware->web(append: [
+            SecurityHeadersMiddleware::class,
+        ]);
+
+        $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
 
         $middleware->alias([
             'permission' => RequirePermission::class,

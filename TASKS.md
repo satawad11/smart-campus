@@ -168,7 +168,7 @@ Only mark `[x]` when the relevant tests pass.
 
 [x] SEC-001 Implement system settings service/UI
 [x] SEC-002 Implement backend-enforced feature flags
-[ ] SEC-003 Configure production security headers/CORS
+[x] SEC-003 Configure production security headers/CORS
 [ ] SEC-004 Configure secrets strategy
 [ ] SEC-005 Define least-privilege DB/service users
 [ ] SEC-006 Implement backup job tracking
