@@ -158,9 +158,9 @@ Only mark `[x]` when the relevant tests pass.
 [x] RPT-016 Implement queued PDF export
 [x] RPT-017 Implement export notification/expiration
 [x] RPT-018 Implement scheduled reports
-[ ] RPT-019 Build dashboard UI
-[ ] RPT-020 Build historical search UI
-[ ] RPT-021 Build report UI/export history
+[x] RPT-019 Build dashboard UI
+[x] RPT-020 Build historical search UI
+[x] RPT-021 Build report UI/export history
 [ ] RPT-022 Add reporting correctness/timezone/scope tests
 [ ] RPT-023 Performance test million-event dataset
 

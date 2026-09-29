@@ -113,6 +113,50 @@ async function handleLogout() {
           </router-link>
 
           <router-link
+            v-if="authStore.can('report.view')"
+            to="/history"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            ค้นหาประวัติการเข้า-ออก
+          </router-link>
+
+          <router-link
+            v-if="authStore.can('report.view')"
+            to="/reports"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+            รายงานและการส่งออก
+          </router-link>
+
+          <router-link
             v-if="authStore.can('student.view')"
             to="/students"
             class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"

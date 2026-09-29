@@ -232,6 +232,24 @@ const routes = [
         component: () => import('@/views/events/UnknownPersonsView.vue'),
         meta: { requiresAuth: true, permission: 'event.view' },
       },
+      {
+        path: 'history',
+        name: 'history.search',
+        component: () => import('@/views/history/HistorySearchView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
+      {
+        path: 'persons/:uuid/timeline',
+        name: 'persons.timeline',
+        component: () => import('@/views/history/PersonTimelineView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
+      {
+        path: 'reports',
+        name: 'reports.index',
+        component: () => import('@/views/reports/ReportsView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
     ],
   },
   {
