@@ -334,12 +334,21 @@ Route::get('/settings/public', [SystemSettingController::class, 'publicSettings'
 Route::get('/features', [FeatureFlagController::class, 'index']);
 
 /*
-| System Settings Management (SEC-001, docs/02-api-contract.md §18).
+| System Settings Management & Health Monitoring (SEC-001, SEC-011, SEC-012, SEC-014, docs/02-api-contract.md §18).
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/settings', [SystemSettingController::class, 'index'])->middleware('permission:system.view');
     Route::get('/settings/{group}', [SystemSettingController::class, 'show'])->middleware('permission:system.view');
     Route::put('/settings/{group}', [SystemSettingController::class, 'update'])->middleware('permission:system.manage');
+
+    Route::get('/system/health', [\App\Http\Controllers\System\SystemMonitoringController::class, 'health'])->middleware('permission:system.view');
+    Route::get('/system/alerts', [\App\Http\Controllers\System\SystemMonitoringController::class, 'alerts'])->middleware('permission:system.view');
+    Route::post('/system/alerts/{alert}/acknowledge', [\App\Http\Controllers\System\SystemMonitoringController::class, 'acknowledgeAlert'])->middleware('permission:system.manage');
+    Route::post('/system/alerts/{alert}/resolve', [\App\Http\Controllers\System\SystemMonitoringController::class, 'resolveAlert'])->middleware('permission:system.manage');
+
+    Route::get('/system/incidents', [\App\Http\Controllers\System\SystemMonitoringController::class, 'incidents'])->middleware('permission:system.view');
+    Route::post('/system/incidents', [\App\Http\Controllers\System\SystemMonitoringController::class, 'storeIncident'])->middleware('permission:system.manage');
+    Route::put('/system/incidents/{incident}', [\App\Http\Controllers\System\SystemMonitoringController::class, 'updateIncident'])->middleware('permission:system.manage');
 });
 
 /*

@@ -256,6 +256,12 @@ const routes = [
         component: () => import('@/views/settings/SystemSettingsView.vue'),
         meta: { requiresAuth: true, permission: 'system.view' },
       },
+      {
+        path: 'system/health',
+        name: 'system.health',
+        component: () => import('@/views/system/SystemHealthView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
     ],
   },
   {

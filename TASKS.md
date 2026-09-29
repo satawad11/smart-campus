@@ -176,10 +176,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-008 Implement object-storage backup procedure
 [x] SEC-009 Document and execute restore drill
 [x] SEC-010 Implement retention cleanup jobs
-[ ] SEC-011 Implement system health dashboard
-[ ] SEC-012 Implement system alert lifecycle
-[ ] SEC-013 Configure metrics/logging/monitoring
-[ ] SEC-014 Create incident schema/workflow
+[x] SEC-011 Implement system health dashboard
+[x] SEC-012 Implement system alert lifecycle
+[x] SEC-013 Configure metrics/logging/monitoring
+[x] SEC-014 Create incident schema/workflow
 [ ] SEC-015 Create deployment runbook
 [ ] SEC-016 Create rollback runbook
 [ ] SEC-017 Create disaster-recovery runbook
