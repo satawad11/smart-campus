@@ -166,8 +166,8 @@ Only mark `[x]` when the relevant tests pass.
 
 # MODULE 07 — SECURITY + PILOT READINESS
 
-[ ] SEC-001 Implement system settings service/UI
-[ ] SEC-002 Implement backend-enforced feature flags
+[x] SEC-001 Implement system settings service/UI
+[x] SEC-002 Implement backend-enforced feature flags
 [ ] SEC-003 Configure production security headers/CORS
 [ ] SEC-004 Configure secrets strategy
 [ ] SEC-005 Define least-privilege DB/service users

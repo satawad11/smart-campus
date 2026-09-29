@@ -250,6 +250,12 @@ const routes = [
         component: () => import('@/views/reports/ReportsView.vue'),
         meta: { requiresAuth: true, permission: 'report.view' },
       },
+      {
+        path: 'settings',
+        name: 'settings.index',
+        component: () => import('@/views/settings/SystemSettingsView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
     ],
   },
   {

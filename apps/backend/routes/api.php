@@ -30,6 +30,8 @@ use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Report\ReportExportController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
+use App\Http\Controllers\System\FeatureFlagController;
+use App\Http\Controllers\System\SystemSettingController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -323,4 +325,41 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::post('/reports/exports', [ReportExportController::class, 'store'])->middleware('permission:report.export');
     Route::get('/reports/exports/{reportExport}', [ReportExportController::class, 'show'])->middleware('permission:report.export');
     Route::get('/reports/exports/{reportExport}/download', [ReportExportController::class, 'download'])->middleware('permission:report.export');
+});
+
+/*
+| Public Settings & Feature Flags (SEC-001, SEC-002, docs/02-api-contract.md §18).
+*/
+Route::get('/settings/public', [SystemSettingController::class, 'publicSettings']);
+Route::get('/features', [FeatureFlagController::class, 'index']);
+
+/*
+| System Settings Management (SEC-001, docs/02-api-contract.md §18).
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/settings', [SystemSettingController::class, 'index'])->middleware('permission:system.view');
+    Route::get('/settings/{group}', [SystemSettingController::class, 'show'])->middleware('permission:system.view');
+    Route::put('/settings/{group}', [SystemSettingController::class, 'update'])->middleware('permission:system.manage');
+});
+
+/*
+| Backend-Enforced Feature Flag Gate Validation Routes (SEC-002).
+| Production V1 locked modules strictly fail closed (403 FEATURE_DISABLED).
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::middleware('feature:door')->prefix('doors')->group(function () {
+        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    });
+    Route::middleware('feature:visitor')->prefix('visitors')->group(function () {
+        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    });
+    Route::middleware('feature:vehicle')->prefix('vehicles')->group(function () {
+        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    });
+    Route::middleware('feature:alpr')->prefix('alpr')->group(function () {
+        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    });
+    Route::middleware('feature:ai_assistant')->prefix('ai-assistant')->group(function () {
+        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    });
 });

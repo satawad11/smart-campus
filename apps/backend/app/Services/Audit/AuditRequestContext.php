@@ -15,6 +15,11 @@ readonly class AuditRequestContext
         public ?string $requestId = null,
     ) {}
 
+    public static function empty(): self
+    {
+        return new self;
+    }
+
     public static function fromRequest(?Request $request): self
     {
         if ($request === null) {

@@ -2,6 +2,7 @@
 
 use App\Exceptions\ApiException;
 use App\Http\Middleware\EnsureAiNodeToken;
+use App\Http\Middleware\EnsureFeatureEnabled;
 use App\Http\Middleware\EnsureSessionActive;
 use App\Http\Middleware\EnsureUserActive;
 use App\Http\Middleware\RequirePermission;
@@ -66,6 +67,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => EnsureUserActive::class,
             'session.active' => EnsureSessionActive::class,
             'ai_node.token' => EnsureAiNodeToken::class,
+            'feature' => EnsureFeatureEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
