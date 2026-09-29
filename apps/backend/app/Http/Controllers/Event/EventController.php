@@ -7,18 +7,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Event\ReviewEventRequest;
 use App\Http\Resources\AccessDecisionResource;
 use App\Http\Resources\AccessEventResource;
-use App\Models\AccessDecision;
 use App\Models\AccessEvent;
-use App\Models\Camera;
-use App\Models\Person;
-use App\Models\Site;
-use App\Models\StudentProfile;
-use App\Models\Zone;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Event\EventReviewService;
+use App\Services\Event\EventSearchQuery;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 
 /**
  * Event history + review queue + manual review API (EVT-008/EVT-009/EVT-010).
@@ -48,6 +42,7 @@ class EventController extends Controller
 
     public function __construct(
         private readonly EventReviewService $reviewService,
+        private readonly EventSearchQuery $searchQuery,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -76,56 +71,7 @@ class EventController extends Controller
         $defaultOrder = ($validated['decision'] ?? null) === 'REVIEW' ? 'asc' : 'desc';
         $order = $validated['order'] ?? $defaultOrder;
 
-        $query = AccessEvent::query()->with(['person', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
-
-        if (! empty($validated['from'])) {
-            // Parse to a Carbon instance rather than passing the raw string
-            // through: SQLite stores occurred_at as `Y-m-d H:i:s` (space
-            // separator, no offset), but a client sends ISO 8601
-            // (`T`/microseconds/`Z`) — comparing those as raw TEXT is a
-            // same-day lexicographic trap (' ' < 'T' in ASCII, so a same-day
-            // `>=` silently evaluates false regardless of the actual time).
-            // PostgreSQL's native timestamp type parses either representation
-            // correctly, which is why this never surfaced there. Query
-            // builder bindings format a DateTime through the connection's own
-            // grammar, so this is correct on both drivers.
-            $query->where('occurred_at', '>=', Carbon::parse($validated['from']));
-        }
-        if (! empty($validated['to'])) {
-            $query->where('occurred_at', '<=', Carbon::parse($validated['to']));
-        }
-        if (! empty($validated['event_type'])) {
-            $query->where('event_type', $validated['event_type']);
-        }
-
-        foreach ([
-            'person_uuid' => [Person::class, 'person_id'],
-            'site_uuid' => [Site::class, 'site_id'],
-            'zone_uuid' => [Zone::class, 'zone_id'],
-            'camera_uuid' => [Camera::class, 'camera_id'],
-        ] as $param => [$model, $column]) {
-            if (! empty($validated[$param])) {
-                $id = $model::where('uuid', $validated[$param])->value('id');
-                $query->where($column, $id);
-            }
-        }
-
-        if (! empty($validated['student_code'])) {
-            $personId = StudentProfile::where('student_code', $validated['student_code'])->value('person_id');
-            $query->where('person_id', $personId ?? 0); // 0 matches nothing — a real but unmatched filter, not "all"
-        }
-
-        if (! empty($validated['academic_status'])) {
-            $personIds = StudentProfile::where('academic_status', $validated['academic_status'])->pluck('person_id');
-            $query->whereIn('person_id', $personIds);
-        }
-
-        if (! empty($validated['decision'])) {
-            $latestDecisionIds = AccessDecision::selectRaw('MAX(id)')->groupBy('event_id');
-            $query->whereHas('decisions', function ($q) use ($validated, $latestDecisionIds) {
-                $q->where('decision', $validated['decision'])->whereIn('id', $latestDecisionIds);
-            });
-        }
+        $query = $this->searchQuery->build($validated);
 
         $paginator = $query->orderBy($sort, $order)->paginate($perPage);
 
