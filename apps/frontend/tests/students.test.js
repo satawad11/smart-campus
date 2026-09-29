@@ -547,6 +547,102 @@ describe('STD-015: Student Management UI', () => {
     })
   })
 
+  // ================= 4b. Person Event Timeline (EVT-019) =================
+  describe('4b. Person Event Timeline integration (PersonEventTimeline.vue)', () => {
+    beforeEach(async () => {
+      await router.push('/students/std-uuid-12345')
+    })
+
+    it('is hidden without event.view, and never queries GET /events', async () => {
+      const auth = useAuthStore()
+      auth.user = {
+        uuid: 'admin-uuid',
+        username: 'admin',
+        permissions: ['student.view', 'student.update'], // no event.view
+      }
+      vi.spyOn(studentsService, 'get').mockResolvedValue(sampleStudent)
+      const getSpy = vi.spyOn(api, 'get').mockResolvedValue({ data: { data: [], meta: null } })
+
+      const wrapper = mount(StudentDetailView, { global: { plugins: [router] } })
+      await flushPromises()
+
+      expect(wrapper.text()).not.toContain('ประวัติการรับรู้ใบหน้า')
+      expect(wrapper.html()).not.toContain('ALLOW')
+      expect(wrapper.html()).not.toContain('DENY')
+      expect(getSpy).not.toHaveBeenCalledWith('/events', expect.anything())
+    })
+
+    it('loads the persons events filtered by person_uuid when event.view is held', async () => {
+      const auth = useAuthStore()
+      auth.user = {
+        uuid: 'officer-uuid',
+        username: 'officer',
+        permissions: ['student.view', 'event.view'],
+      }
+      vi.spyOn(studentsService, 'get').mockResolvedValue(sampleStudent)
+      const getSpy = vi.spyOn(api, 'get').mockImplementation((url) => {
+        if (url === '/events') {
+          return Promise.resolve({
+            data: {
+              data: [
+                {
+                  uuid: 'evt-1',
+                  event_type: 'FACE_RECOGNIZED',
+                  occurred_at: '2026-09-23T09:00:00Z',
+                  site: { uuid: 's-1', name: 'Main Campus' },
+                  camera: { uuid: 'c-1', name: 'Gate 1' },
+                  current_decision: { decision: 'ALLOW', reason_code: 'STUDENT_ACTIVE' },
+                },
+              ],
+              meta: { pagination: { current_page: 1, per_page: 5, total: 1, last_page: 1 } },
+            },
+          })
+        }
+        return Promise.resolve({ data: { data: null } })
+      })
+
+      const wrapper = mount(StudentDetailView, { global: { plugins: [router] } })
+      await flushPromises()
+
+      expect(getSpy).toHaveBeenCalledWith('/events', {
+        params: {
+          person_uuid: 'person-uuid-999',
+          sort: 'occurred_at',
+          order: 'desc',
+          page: 1,
+          per_page: 5,
+        },
+      })
+      expect(wrapper.text()).toContain('ประวัติการรับรู้ใบหน้า')
+      expect(wrapper.text()).toContain('FACE_RECOGNIZED')
+      expect(wrapper.text()).toContain('ALLOW')
+      expect(wrapper.text()).toContain('Gate 1')
+    })
+
+    it('shows an empty state when the person has no recognition events', async () => {
+      const auth = useAuthStore()
+      auth.user = {
+        uuid: 'officer-uuid-2',
+        username: 'officer2',
+        permissions: ['student.view', 'event.view'],
+      }
+      vi.spyOn(studentsService, 'get').mockResolvedValue(sampleStudent)
+      vi.spyOn(api, 'get').mockImplementation((url) => {
+        if (url === '/events') {
+          return Promise.resolve({
+            data: { data: [], meta: { pagination: { current_page: 1, per_page: 5, total: 0, last_page: 1 } } },
+          })
+        }
+        return Promise.resolve({ data: { data: null } })
+      })
+
+      const wrapper = mount(StudentDetailView, { global: { plugins: [router] } })
+      await flushPromises()
+
+      expect(wrapper.text()).toContain('ยังไม่มีบันทึกเหตุการณ์การรับรู้ใบหน้า')
+    })
+  })
+
   // ================= 5. Student Edit View =================
   describe('5. Student Edit View (StudentEditView.vue)', () => {
     beforeEach(async () => {

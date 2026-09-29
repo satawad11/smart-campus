@@ -7,6 +7,7 @@ import AcademicStatusBadge from '@/components/students/AcademicStatusBadge.vue'
 import EducationLevelBadge from '@/components/students/EducationLevelBadge.vue'
 import ChangeStatusModal from '@/components/students/ChangeStatusModal.vue'
 import StatusHistoryTimeline from '@/components/students/StatusHistoryTimeline.vue'
+import PersonEventTimeline from '@/components/students/PersonEventTimeline.vue'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -419,6 +420,9 @@ onMounted(() => {
 
       <!-- Card 4: ประวัติการเปลี่ยนสถานะการศึกษา (Academic Status History) -->
       <StatusHistoryTimeline ref="historyTimelineRef" :student-uuid="student.uuid" />
+
+      <!-- Card 5: ประวัติการรับรู้ใบหน้า (Event Timeline, EVT-019) -->
+      <PersonEventTimeline v-if="student.person?.uuid" :person-uuid="student.person.uuid" />
 
       <!-- Change Status Modal -->
       <ChangeStatusModal

@@ -134,7 +134,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-016 Build Live Monitor UI
 [x] EVT-017 Build event detail/review UI
 [x] EVT-018 Build unknown-person page
-[ ] EVT-019 Build person event timeline integration
+[x] EVT-019 Build person event timeline integration
 [ ] EVT-020 Add event/policy/realtime acceptance tests
 [ ] EVT-021 Load test event ingestion/realtime
 
