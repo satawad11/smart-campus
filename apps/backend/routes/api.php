@@ -24,6 +24,7 @@ use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
@@ -295,4 +296,8 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->middleware('permission:report.view');
+    Route::get('/dashboard/events-by-hour', [DashboardChartsController::class, 'byHour'])->middleware('permission:report.view');
+    Route::get('/dashboard/events-by-decision', [DashboardChartsController::class, 'byDecision'])->middleware('permission:report.view');
+    Route::get('/dashboard/events-by-camera', [DashboardChartsController::class, 'byCamera'])->middleware('permission:report.view');
+    Route::get('/dashboard/events-by-department', [DashboardChartsController::class, 'byDepartment'])->middleware('permission:report.view');
 });
