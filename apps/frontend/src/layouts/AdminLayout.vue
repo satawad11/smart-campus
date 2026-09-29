@@ -91,6 +91,28 @@ async function handleLogout() {
           </router-link>
 
           <router-link
+            v-if="authStore.can('event.view')"
+            to="/unknown-persons"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 15a3 3 0 100-6 3 3 0 000 6zM12 15v4m-4-9.5C8 7 9.79 5 12 5s4 2 4 4.5M5.5 21h13a2 2 0 001.85-2.75l-1.315-3.5A2 2 0 0016.685 13H7.315a2 2 0 00-1.85 1.75l-1.315 3.5A2 2 0 005.5 21z"
+              />
+            </svg>
+            บุคคลไม่ทราบตัวตน
+          </router-link>
+
+          <router-link
             v-if="authStore.can('student.view')"
             to="/students"
             class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"

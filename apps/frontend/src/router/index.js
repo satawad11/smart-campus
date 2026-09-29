@@ -226,6 +226,12 @@ const routes = [
         component: () => import('@/views/events/EventDetailView.vue'),
         meta: { requiresAuth: true, permission: 'event.view' },
       },
+      {
+        path: 'unknown-persons',
+        name: 'unknown-persons.index',
+        component: () => import('@/views/events/UnknownPersonsView.vue'),
+        meta: { requiresAuth: true, permission: 'event.view' },
+      },
     ],
   },
   {
