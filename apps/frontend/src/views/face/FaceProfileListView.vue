@@ -87,7 +87,10 @@ async function submitRevoke() {
   revokeError.value = ''
 
   try {
-    await facesService.revokeProfile(targetProfile.value.face_profile_uuid, revokeReason.value.trim())
+    await facesService.revokeProfile(
+      targetProfile.value.face_profile_uuid,
+      revokeReason.value.trim(),
+    )
     showRevokeModal.value = false
     await fetchProfiles()
   } catch (err) {
@@ -160,7 +163,9 @@ onMounted(() => {
 <template>
   <div class="face-profiles-view max-w-7xl mx-auto p-6 space-y-6">
     <!-- Header -->
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
+    >
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Biometric Profiles</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -179,7 +184,9 @@ onMounted(() => {
     </div>
 
     <!-- Filters Bar -->
-    <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+    <div
+      class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
+    >
       <input
         v-model="filters.search"
         @keyup.enter="fetchProfiles"
@@ -209,12 +216,17 @@ onMounted(() => {
     </div>
 
     <!-- Error Alert -->
-    <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+    <div
+      v-if="errorMessage"
+      class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+    >
       {{ errorMessage }}
     </div>
 
     <!-- Table -->
-    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div
+      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+    >
       <div v-if="loading" class="text-center py-12 text-gray-500">Loading face profiles...</div>
 
       <div v-else-if="profiles.length === 0" class="text-center py-12 text-gray-400">
@@ -224,31 +236,48 @@ onMounted(() => {
       <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
         <thead class="bg-gray-50 dark:bg-gray-700/50">
           <tr>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Person / Profile</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">
+              Person / Profile
+            </th>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Model Provenance</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">
+              Model Provenance
+            </th>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Quality</th>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Enrolled At</th>
             <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr v-for="profile in profiles" :key="profile.face_profile_uuid" class="hover:bg-gray-50 dark:hover:bg-gray-700/30">
+          <tr
+            v-for="profile in profiles"
+            :key="profile.face_profile_uuid"
+            class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
+          >
             <td class="px-6 py-4">
-              <div class="font-mono text-xs font-semibold text-gray-900 dark:text-white">{{ profile.face_profile_uuid }}</div>
+              <div class="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+                {{ profile.face_profile_uuid }}
+              </div>
               <div class="text-xs text-gray-500">Person: {{ profile.person_uuid }}</div>
             </td>
             <td class="px-6 py-4">
-              <span class="px-2.5 py-1 rounded-full text-xs font-semibold" :class="getStatusBadgeClass(profile.status)">
+              <span
+                class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                :class="getStatusBadgeClass(profile.status)"
+              >
                 {{ profile.status }}
               </span>
             </td>
             <td class="px-6 py-4 text-xs">
-              <div class="font-medium text-gray-800 dark:text-gray-200">{{ profile.model?.code || 'N/A' }}</div>
+              <div class="font-medium text-gray-800 dark:text-gray-200">
+                {{ profile.model?.code || 'N/A' }}
+              </div>
               <div class="text-gray-400">v{{ profile.model?.version || '1.0' }}</div>
             </td>
             <td class="px-6 py-4 text-xs font-semibold">
-              <span v-if="profile.quality_score">{{ (profile.quality_score * 100).toFixed(1) }}%</span>
+              <span v-if="profile.quality_score"
+                >{{ (profile.quality_score * 100).toFixed(1) }}%</span
+              >
               <span v-else class="text-gray-400">-</span>
             </td>
             <td class="px-6 py-4 text-xs text-gray-500">
@@ -256,7 +285,9 @@ onMounted(() => {
             </td>
             <td class="px-6 py-4 text-right space-x-2">
               <button
-                @click="router.push({ name: 'faces.show', params: { uuid: profile.face_profile_uuid } })"
+                @click="
+                  router.push({ name: 'faces.show', params: { uuid: profile.face_profile_uuid } })
+                "
                 class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs"
               >
                 Detail
@@ -282,9 +313,14 @@ onMounted(() => {
     </div>
 
     <!-- Revoke Modal -->
-    <div v-if="showRevokeModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      v-if="showRevokeModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    >
       <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Revoke Biometric Face Profile</h3>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+          Revoke Biometric Face Profile
+        </h3>
         <p class="text-sm text-gray-500">
           Revoking will exclude this face profile from active recognition and door access policies.
         </p>
@@ -325,9 +361,14 @@ onMounted(() => {
     </div>
 
     <!-- Re-enroll Modal -->
-    <div v-if="showReenrollModal" class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div
+      v-if="showReenrollModal"
+      class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    >
       <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">Re-enroll Biometric Face Profile</h3>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
+          Re-enroll Biometric Face Profile
+        </h3>
         <p class="text-sm text-gray-500">
           Upload a new face photo to reactivate or update baseline biometrics for this Person.
         </p>

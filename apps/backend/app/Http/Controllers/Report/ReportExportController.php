@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Enums\AuditAction;
 use App\Enums\ReportExportFormat;
 use App\Enums\ReportExportStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\ExportReportJob;
 use App\Models\ReportExport;
+use App\Services\Audit\AuditRequestContext;
+use App\Services\Audit\AuditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -17,6 +20,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 class ReportExportController extends Controller
 {
+    public function __construct(
+        private readonly AuditService $auditService,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $exports = ReportExport::query()
@@ -57,6 +64,18 @@ class ReportExportController extends Controller
         ]);
 
         ExportReportJob::dispatch($export);
+
+        $this->auditService->record(
+            AuditAction::REPORT_EXPORTED,
+            $request->user(),
+            'REPORT_EXPORT',
+            $export->uuid,
+            null,
+            ['report_type' => $export->report_type, 'format' => $export->format->value],
+            ['filters' => $export->filters],
+            AuditRequestContext::fromRequest($request),
+            'reporting'
+        );
 
         return response()->json([
             'success' => true,
@@ -128,6 +147,18 @@ class ReportExportController extends Controller
 
         $extension = strtolower($reportExport->format->value);
         $fileName = "report-{$reportExport->report_type}-{$reportExport->uuid}.{$extension}";
+
+        $this->auditService->record(
+            AuditAction::REPORT_EXPORT_DOWNLOADED,
+            request()->user(),
+            'REPORT_EXPORT',
+            $reportExport->uuid,
+            null,
+            null,
+            ['report_type' => $reportExport->report_type, 'format' => $reportExport->format->value],
+            AuditRequestContext::fromRequest(request()),
+            'reporting'
+        );
 
         return Storage::disk('local')->download($reportExport->file_path, $fileName);
     }

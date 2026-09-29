@@ -82,4 +82,8 @@ enum AuditAction: string
 
     // Module 05 — manual event review (EVT-010)
     case EVENT_REVIEWED = 'EVENT_REVIEWED';
+
+    // Module 06 — report export (RPT-014..RPT-017)
+    case REPORT_EXPORTED = 'REPORT_EXPORTED';
+    case REPORT_EXPORT_DOWNLOADED = 'REPORT_EXPORT_DOWNLOADED';
 }

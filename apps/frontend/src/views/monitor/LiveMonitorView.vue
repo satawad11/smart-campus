@@ -183,7 +183,9 @@ function personLabel(event) {
 
 <template>
   <div class="live-monitor-view max-w-7xl mx-auto p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
+    >
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ศูนย์เฝ้าระวังแบบเรียลไทม์</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
@@ -200,16 +202,24 @@ function personLabel(event) {
       </div>
     </div>
 
-    <div v-if="!canViewMonitor" class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+    <div
+      v-if="!canViewMonitor"
+      class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm"
+    >
       คุณไม่มีสิทธิ์เข้าถึงศูนย์เฝ้าระวังนี้ (ต้องมีสิทธิ์ monitor.view)
     </div>
 
     <template v-else>
-      <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+      <div
+        v-if="errorMessage"
+        class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+      >
         {{ errorMessage }}
       </div>
 
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+      <div
+        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
+      >
         <label class="text-sm text-gray-500 dark:text-gray-400">สถานที่:</label>
         <select
           v-model="selectedSiteUuid"
@@ -232,9 +242,15 @@ function personLabel(event) {
 
       <!-- Daily KPIs -->
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div v-for="decision in ['ALLOW', 'REVIEW', 'DENY', 'UNKNOWN']" :key="decision"
-          class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
-          <div class="text-xs font-medium uppercase" :class="decisionBadgeClass(decision).split(' ')[1]">
+        <div
+          v-for="decision in ['ALLOW', 'REVIEW', 'DENY', 'UNKNOWN']"
+          :key="decision"
+          class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700"
+        >
+          <div
+            class="text-xs font-medium uppercase"
+            :class="decisionBadgeClass(decision).split(' ')[1]"
+          >
             {{ decision }}
           </div>
           <div class="text-2xl font-bold text-gray-900 dark:text-white mt-1">
@@ -246,14 +262,20 @@ function personLabel(event) {
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Selected camera preview -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 space-y-3"
+        >
           <h2 class="font-semibold text-gray-900 dark:text-white">กล้องที่เลือก</h2>
           <select
             v-model="selectedCameraUuid"
             class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           >
             <option value="">-- เลือกกล้อง --</option>
-            <option v-for="camera in camerasForSelectedSite" :key="camera.uuid" :value="camera.uuid">
+            <option
+              v-for="camera in camerasForSelectedSite"
+              :key="camera.uuid"
+              :value="camera.uuid"
+            >
               {{ camera.name }}
             </option>
           </select>
@@ -269,10 +291,17 @@ function personLabel(event) {
 
           <!-- Unknown-person events -->
           <div>
-            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">บุคคลไม่ทราบตัวตนล่าสุด</h3>
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              บุคคลไม่ทราบตัวตนล่าสุด
+            </h3>
             <ul v-if="unknownPersonEvents.length > 0" class="space-y-1 text-xs">
-              <li v-for="event in unknownPersonEvents" :key="event.uuid" class="text-gray-600 dark:text-gray-400">
-                {{ new Date(event.occurred_at).toLocaleTimeString() }} — {{ event.camera_name || event.camera?.name || '-' }}
+              <li
+                v-for="event in unknownPersonEvents"
+                :key="event.uuid"
+                class="text-gray-600 dark:text-gray-400"
+              >
+                {{ new Date(event.occurred_at).toLocaleTimeString() }} —
+                {{ event.camera_name || event.camera?.name || '-' }}
               </li>
             </ul>
             <p v-else class="text-xs text-gray-400">ไม่มีเหตุการณ์บุคคลไม่ทราบตัวตน</p>
@@ -280,7 +309,9 @@ function personLabel(event) {
         </div>
 
         <!-- Realtime event feed -->
-        <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div
+          class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4"
+        >
           <h2 class="font-semibold text-gray-900 dark:text-white mb-3">เหตุการณ์แบบเรียลไทม์</h2>
           <div v-if="!selectedSiteUuid" class="text-center py-12 text-gray-400 text-sm">
             กรุณาเลือกสถานที่เพื่อดูเหตุการณ์
@@ -288,7 +319,10 @@ function personLabel(event) {
           <div v-else-if="liveEvents.length === 0" class="text-center py-12 text-gray-400 text-sm">
             ยังไม่มีเหตุการณ์
           </div>
-          <ul v-else class="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
+          <ul
+            v-else
+            class="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto"
+          >
             <li
               v-for="event in liveEvents"
               :key="event.uuid"

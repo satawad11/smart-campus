@@ -2,11 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AuditAction;
 use App\Enums\ReportExportFormat;
 use App\Enums\ReportExportStatus;
 use App\Enums\RoleStatus;
 use App\Enums\UserStatus;
 use App\Jobs\ExportReportJob;
+use App\Models\AuditLog;
 use App\Models\EventDailySummary;
 use App\Models\Notification;
 use App\Models\Permission;
@@ -84,6 +86,7 @@ class ReportExportApiTest extends TestCase
         $res->assertJsonPath('data.status', 'PENDING');
 
         Queue::assertPushed(ExportReportJob::class);
+        $this->assertTrue(AuditLog::where('action', AuditAction::REPORT_EXPORTED->value)->exists());
     }
 
     public function test_generate_and_download_csv_export(): void
@@ -121,6 +124,7 @@ class ReportExportApiTest extends TestCase
         $res = $this->actingAs($user, 'web')->get("/api/v1/reports/exports/{$export->uuid}/download");
         $res->assertOk();
         $this->assertStringContainsString('Hour', $res->streamedContent());
+        $this->assertTrue(AuditLog::where('action', AuditAction::REPORT_EXPORT_DOWNLOADED->value)->exists());
     }
 
     public function test_generate_and_download_xlsx_export(): void

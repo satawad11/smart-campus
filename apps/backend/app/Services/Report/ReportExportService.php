@@ -418,24 +418,24 @@ class ReportExportService
      */
     private function extractHistoryData(array $filters, ?int $siteId): array
     {
-        $query = AccessEvent::query()->with(['person', 'camera', 'site'])->latest('event_time')->limit(1000);
+        $query = AccessEvent::query()->with(['person', 'camera', 'site', 'currentDecision'])->latest('occurred_at')->limit(1000);
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
         if (! empty($filters['from'])) {
-            $query->where('event_time', '>=', $filters['from']);
+            $query->where('occurred_at', '>=', $filters['from']);
         }
         if (! empty($filters['to'])) {
-            $query->where('event_time', '<=', $filters['to']);
+            $query->where('occurred_at', '<=', $filters['to']);
         }
 
         $events = $query->get();
 
         $headers = ['Event Time', 'Event Type', 'Decision', 'Person Name', 'Camera Name', 'Site Name'];
         $rows = $events->map(fn ($e) => [
-            $e->event_time?->toIso8601String() ?? '',
+            $e->occurred_at?->toIso8601String() ?? '',
             $e->event_type?->value ?? (string) $e->event_type,
-            $e->decision?->value ?? (string) $e->decision,
+            $e->currentDecision?->decision?->value ?? (string) ($e->currentDecision?->decision ?? 'N/A'),
             $e->person?->name ?? 'N/A',
             $e->camera?->name ?? 'N/A',
             $e->site?->name ?? 'N/A',

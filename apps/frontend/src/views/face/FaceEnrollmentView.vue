@@ -67,7 +67,8 @@ async function handleEnroll() {
       // Duplicate review check failure is non-fatal to completed enrollment
     }
   } catch (err) {
-    errorMessage.value = err.message || 'Face enrollment failed. Please check image quality and try again.'
+    errorMessage.value =
+      err.message || 'Face enrollment failed. Please check image quality and try again.'
   } finally {
     loading.value = false
   }
@@ -101,13 +102,18 @@ function resetForm() {
 
     <!-- Permission Guard Warning -->
     <div v-if="!canEnroll" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-      You do not have permission (<code class="font-semibold">face.enroll</code>) to perform face enrollment.
+      You do not have permission (<code class="font-semibold">face.enroll</code>) to perform face
+      enrollment.
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Input Panel -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">1. Target Person & Sample</h2>
+      <div
+        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
+      >
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          1. Target Person & Sample
+        </h2>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -122,7 +128,9 @@ function resetForm() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Pose</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Pose</label
+          >
           <select
             v-model="pose"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
@@ -134,7 +142,9 @@ function resetForm() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Capture Image</label>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >Capture Image</label
+          >
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -145,7 +155,11 @@ function resetForm() {
 
         <div v-if="previewUrl" class="mt-4">
           <p class="text-xs font-medium text-gray-500 mb-2">Image Preview</p>
-          <img :src="previewUrl" alt="Face Preview" class="w-full h-56 object-cover rounded-lg border" />
+          <img
+            :src="previewUrl"
+            alt="Face Preview"
+            class="w-full h-56 object-cover rounded-lg border"
+          />
         </div>
 
         <button
@@ -157,22 +171,32 @@ function resetForm() {
           <span v-else>Submit Biometric Enrollment</span>
         </button>
 
-        <div v-if="errorMessage" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+        <div
+          v-if="errorMessage"
+          class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+        >
           {{ errorMessage }}
         </div>
       </div>
 
       <!-- Result Panel -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4">
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">2. Verification & Quality Feedback</h2>
+      <div
+        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
+      >
+        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
+          2. Verification & Quality Feedback
+        </h2>
 
         <div v-if="!successData && !loading" class="text-center py-12 text-gray-400 text-sm">
-          Enrollment results, quality evaluation metrics, and model provenance will appear here upon submission.
+          Enrollment results, quality evaluation metrics, and model provenance will appear here upon
+          submission.
         </div>
 
         <div v-if="loading" class="flex flex-col items-center justify-center py-12 space-y-3">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          <p class="text-sm text-gray-500">Evaluating quality, generating embedding vector, and persisting profile...</p>
+          <p class="text-sm text-gray-500">
+            Evaluating quality, generating embedding vector, and persisting profile...
+          </p>
         </div>
 
         <div v-if="successData" class="space-y-4">
@@ -195,11 +219,15 @@ function resetForm() {
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">Model Provenance:</span>
-              <span class="font-medium">{{ successData.model?.code }} v{{ successData.model?.version }}</span>
+              <span class="font-medium"
+                >{{ successData.model?.code }} v{{ successData.model?.version }}</span
+              >
             </div>
             <div class="flex justify-between">
               <span class="text-gray-500">Quality Score:</span>
-              <span class="font-bold text-blue-600">{{ (successData.quality_score * 100).toFixed(1) }}%</span>
+              <span class="font-bold text-blue-600"
+                >{{ (successData.quality_score * 100).toFixed(1) }}%</span
+              >
             </div>
           </div>
 
@@ -207,11 +235,15 @@ function resetForm() {
           <div v-if="successData.sample" class="grid grid-cols-3 gap-2 text-center text-xs">
             <div class="p-2 bg-gray-100 rounded">
               <div class="text-gray-500">Blur Score</div>
-              <div class="font-bold text-gray-800">{{ (successData.sample.blur_score * 100).toFixed(0) }}%</div>
+              <div class="font-bold text-gray-800">
+                {{ (successData.sample.blur_score * 100).toFixed(0) }}%
+              </div>
             </div>
             <div class="p-2 bg-gray-100 rounded">
               <div class="text-gray-500">Brightness</div>
-              <div class="font-bold text-gray-800">{{ (successData.sample.brightness_score * 100).toFixed(0) }}%</div>
+              <div class="font-bold text-gray-800">
+                {{ (successData.sample.brightness_score * 100).toFixed(0) }}%
+              </div>
             </div>
             <div class="p-2 bg-gray-100 rounded">
               <div class="text-gray-500">Pose</div>
@@ -220,12 +252,15 @@ function resetForm() {
           </div>
 
           <!-- Duplicate Warning Banner -->
-          <div v-if="duplicateReviewData" class="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg">
+          <div
+            v-if="duplicateReviewData"
+            class="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg"
+          >
             <p class="font-bold text-sm">⚠️ Possible Duplicate Face Detected</p>
             <p class="text-xs mt-1">
               Top candidate match found with similarity
-              {{ (duplicateReviewData.top_candidate?.similarity * 100).toFixed(1) }}%.
-              Review record created for administrative resolution.
+              {{ (duplicateReviewData.top_candidate?.similarity * 100).toFixed(1) }}%. Review record
+              created for administrative resolution.
             </p>
           </div>
 

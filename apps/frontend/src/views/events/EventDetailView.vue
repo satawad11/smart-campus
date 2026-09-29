@@ -66,7 +66,8 @@ async function submitReview() {
     await fetchEvent()
   } catch (err) {
     if (err.code === 'EVENT_REVIEW_CONFLICT') {
-      reviewError.value = 'เหตุการณ์นี้ถูกตรวจสอบโดยผู้อื่นไปแล้วนับตั้งแต่คุณเปิดหน้านี้ กำลังโหลดข้อมูลล่าสุด...'
+      reviewError.value =
+        'เหตุการณ์นี้ถูกตรวจสอบโดยผู้อื่นไปแล้วนับตั้งแต่คุณเปิดหน้านี้ กำลังโหลดข้อมูลล่าสุด...'
       await fetchEvent()
     } else {
       reviewError.value = err.message || 'บันทึกผลการตรวจสอบไม่สำเร็จ'
@@ -105,12 +106,18 @@ onMounted(() => {
       &larr; กลับไปยังประวัติเหตุการณ์
     </button>
 
-    <div v-if="!canView" class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+    <div
+      v-if="!canView"
+      class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm"
+    >
       คุณไม่มีสิทธิ์เข้าถึงรายละเอียดเหตุการณ์นี้ (ต้องมีสิทธิ์ event.view)
     </div>
 
     <template v-else>
-      <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+      <div
+        v-if="errorMessage"
+        class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+      >
         {{ errorMessage }}
       </div>
 
@@ -135,7 +142,9 @@ onMounted(() => {
         </div>
 
         <!-- Event fields -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
+        >
           <h2 class="font-semibold text-gray-900 dark:text-white mb-3">ข้อมูลเหตุการณ์</h2>
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div><span class="text-gray-500">สถานที่:</span> {{ event.site?.name || '-' }}</div>
@@ -143,12 +152,16 @@ onMounted(() => {
             <div><span class="text-gray-500">กล้อง:</span> {{ event.camera?.name || '-' }}</div>
             <div><span class="text-gray-500">AI Node:</span> {{ event.ai_node_uuid || '-' }}</div>
             <div><span class="text-gray-500">คะแนนใบหน้า:</span> {{ event.face_score ?? '-' }}</div>
-            <div><span class="text-gray-500">คะแนน Liveness:</span> {{ event.liveness_score ?? '-' }}</div>
+            <div>
+              <span class="text-gray-500">คะแนน Liveness:</span> {{ event.liveness_score ?? '-' }}
+            </div>
           </div>
         </div>
 
         <!-- Decision timeline (Event Drawer) -->
-        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div
+          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
+        >
           <h2 class="font-semibold text-gray-900 dark:text-white mb-3">
             ประวัติการตัดสินใจ ({{ event.decisions?.length || 0 }})
           </h2>
@@ -168,7 +181,9 @@ onMounted(() => {
                 >
                   {{ decision.decision }}
                 </span>
-                <span class="text-xs text-gray-400">{{ new Date(decision.created_at).toLocaleString() }}</span>
+                <span class="text-xs text-gray-400">{{
+                  new Date(decision.created_at).toLocaleString()
+                }}</span>
               </div>
               <div class="mt-1 text-gray-600 dark:text-gray-300">
                 เหตุผล: {{ decision.reason_code || '-' }}

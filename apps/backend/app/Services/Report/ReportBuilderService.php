@@ -8,7 +8,6 @@ use App\Models\Department;
 use App\Models\EventDailySummary;
 use App\Models\EventHourlySummary;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Collection;
 
 /**
  * Shared report-section builder for RPT-007..RPT-011 (daily/weekly/monthly/
@@ -33,30 +32,78 @@ class ReportBuilderService
     public function buildRangeSections(Carbon $from, Carbon $to, ?int $siteId = null): array
     {
         $query = EventDailySummary::query()
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
-        $rows = $query->get();
+        $rows = $query->select([
+            'camera_id',
+            'department_id',
+            'event_type',
+            'decision',
+            'event_count',
+            'unique_person_count',
+        ])->toBase()->get();
+
+        $detected = 0;
+        $recognized = 0;
+        $review = 0;
+        $unknown = 0;
+        $allow = 0;
+        $deny = 0;
+        $uniquePersons = 0;
+        $byDecisionCounts = [];
+        $byCameraCounts = [];
+        $byDepartmentCounts = [];
+
+        foreach ($rows as $row) {
+            $count = (int) $row->event_count;
+            $detected += $count;
+            $dec = (string) $row->decision;
+            $byDecisionCounts[$dec] = ($byDecisionCounts[$dec] ?? 0) + $count;
+
+            if ($row->event_type === 'FACE_RECOGNIZED') {
+                $recognized += $count;
+                $uniquePersons += (int) $row->unique_person_count;
+            }
+            if ($dec === 'REVIEW') {
+                $review += $count;
+            } elseif ($dec === 'UNKNOWN') {
+                $unknown += $count;
+            } elseif ($dec === 'ALLOW') {
+                $allow += $count;
+            } elseif ($dec === 'DENY') {
+                $deny += $count;
+            }
+
+            $camId = $row->camera_id !== null ? (int) $row->camera_id : '';
+            $byCameraCounts[$camId] = ($byCameraCounts[$camId] ?? 0) + $count;
+
+            $deptId = $row->department_id !== null ? (int) $row->department_id : '';
+            $byDepartmentCounts[$deptId] = ($byDepartmentCounts[$deptId] ?? 0) + $count;
+        }
+
+        $byDecisionList = [];
+        foreach ($byDecisionCounts as $decision => $count) {
+            $byDecisionList[] = ['decision' => $decision, 'count' => $count];
+        }
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'totals' => [
-                'detected' => (int) $rows->sum('event_count'),
-                'recognized' => (int) $rows->where('event_type', 'FACE_RECOGNIZED')->sum('event_count'),
-                'review' => (int) $rows->where('decision', 'REVIEW')->sum('event_count'),
-                'unknown' => (int) $rows->where('decision', 'UNKNOWN')->sum('event_count'),
-                'allow' => (int) $rows->where('decision', 'ALLOW')->sum('event_count'),
-                'deny' => (int) $rows->where('decision', 'DENY')->sum('event_count'),
-                'unique_persons_recognized' => (int) $rows->where('event_type', 'FACE_RECOGNIZED')->sum('unique_person_count'),
+                'detected' => $detected,
+                'recognized' => $recognized,
+                'review' => $review,
+                'unknown' => $unknown,
+                'allow' => $allow,
+                'deny' => $deny,
+                'unique_persons_recognized' => $uniquePersons,
             ],
-            'by_decision' => $rows->groupBy(fn ($row) => $row->decision->value)
-                ->map(fn ($group, $decision) => ['decision' => $decision, 'count' => (int) $group->sum('event_count')])
-                ->values()->all(),
-            'by_camera' => $this->namedBreakdown($rows->groupBy('camera_id'), Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
-            'by_department' => $this->namedBreakdown($rows->groupBy('department_id'), Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
+            'by_decision' => $byDecisionList,
+            'by_camera' => $this->formatDimensionBreakdown($byCameraCounts, Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
+            'by_department' => $this->formatDimensionBreakdown($byDepartmentCounts, Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
         ];
     }
 
@@ -65,13 +112,20 @@ class ReportBuilderService
      */
     public function buildHourlyBreakdown(Carbon $date, ?int $siteId = null): array
     {
-        $query = EventHourlySummary::query()->whereDate('hour_bucket', $date->toDateString());
+        $dateStr = $date->toDateString();
+        $query = EventHourlySummary::query()
+            ->where('hour_bucket', '>=', "{$dateStr} 00:00:00")
+            ->where('hour_bucket', '<=', "{$dateStr} 23:59:59");
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
 
-        $totals = $query->get()->groupBy(fn ($row) => $row->hour_bucket->format('H:00'))
-            ->map(fn ($rows) => (int) $rows->sum('event_count'));
+        $rows = $query->select(['hour_bucket', 'event_count'])->toBase()->get();
+        $totals = [];
+        foreach ($rows as $row) {
+            $hour = substr((string) $row->hour_bucket, 11, 2).':00';
+            $totals[$hour] = ($totals[$hour] ?? 0) + (int) $row->event_count;
+        }
 
         return collect(range(0, 23))->map(function (int $hour) use ($totals) {
             $label = sprintf('%02d:00', $hour);
@@ -86,14 +140,18 @@ class ReportBuilderService
     public function buildDailyBreakdown(Carbon $from, Carbon $to, ?int $siteId = null): array
     {
         $query = EventDailySummary::query()
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
 
-        $totals = $query->get()->groupBy(fn ($row) => $row->summary_date->toDateString())
-            ->map(fn ($rows) => (int) $rows->sum('event_count'));
+        $rows = $query->select(['summary_date', 'event_count'])->toBase()->get();
+        $totals = [];
+        foreach ($rows as $row) {
+            $dateStr = substr((string) $row->summary_date, 0, 10);
+            $totals[$dateStr] = ($totals[$dateStr] ?? 0) + (int) $row->event_count;
+        }
 
         $breakdown = [];
         $cursor = $from->copy()->startOfDay();
@@ -118,14 +176,18 @@ class ReportBuilderService
     public function buildMonthlyBreakdown(Carbon $from, Carbon $to, ?int $siteId = null): array
     {
         $query = EventDailySummary::query()
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
 
-        $totals = $query->get()->groupBy(fn ($row) => $row->summary_date->format('Y-m'))
-            ->map(fn ($rows) => (int) $rows->sum('event_count'));
+        $rows = $query->select(['summary_date', 'event_count'])->toBase()->get();
+        $totals = [];
+        foreach ($rows as $row) {
+            $monthKey = substr((string) $row->summary_date, 0, 7);
+            $totals[$monthKey] = ($totals[$monthKey] ?? 0) + (int) $row->event_count;
+        }
 
         $breakdown = [];
         $cursor = $from->copy()->startOfMonth();
@@ -151,20 +213,34 @@ class ReportBuilderService
     {
         $query = EventDailySummary::query()
             ->where('decision', 'REVIEW')
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
-        $rows = $query->get();
+        $rows = $query->select(['camera_id', 'department_id', 'event_count'])->toBase()->get();
+
+        $totalReviews = 0;
+        $byCameraCounts = [];
+        $byDepartmentCounts = [];
+        foreach ($rows as $row) {
+            $count = (int) $row->event_count;
+            $totalReviews += $count;
+
+            $camId = $row->camera_id !== null ? (int) $row->camera_id : '';
+            $byCameraCounts[$camId] = ($byCameraCounts[$camId] ?? 0) + $count;
+
+            $deptId = $row->department_id !== null ? (int) $row->department_id : '';
+            $byDepartmentCounts[$deptId] = ($byDepartmentCounts[$deptId] ?? 0) + $count;
+        }
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'total_reviews' => (int) $rows->sum('event_count'),
+            'total_reviews' => $totalReviews,
             'by_day' => $this->buildDailyBreakdown($from, $to, $siteId),
-            'by_camera' => $this->namedBreakdown($rows->groupBy('camera_id'), Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
-            'by_department' => $this->namedBreakdown($rows->groupBy('department_id'), Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
+            'by_camera' => $this->formatDimensionBreakdown($byCameraCounts, Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
+            'by_department' => $this->formatDimensionBreakdown($byDepartmentCounts, Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
         ];
     }
 
@@ -175,20 +251,30 @@ class ReportBuilderService
     {
         $query = EventDailySummary::query()
             ->where('decision', 'UNKNOWN')
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $query->where('site_id', $siteId);
         }
-        $rows = $query->get();
+        $rows = $query->select(['camera_id', 'event_count'])->toBase()->get();
+
+        $totalUnknowns = 0;
+        $byCameraCounts = [];
+        foreach ($rows as $row) {
+            $count = (int) $row->event_count;
+            $totalUnknowns += $count;
+
+            $camId = $row->camera_id !== null ? (int) $row->camera_id : '';
+            $byCameraCounts[$camId] = ($byCameraCounts[$camId] ?? 0) + $count;
+        }
 
         return [
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
-            'total_unknowns' => (int) $rows->sum('event_count'),
+            'total_unknowns' => $totalUnknowns,
             'note' => 'Unknown events represent unrecognized faces and do not necessarily correspond to unique individuals.',
             'by_day' => $this->buildDailyBreakdown($from, $to, $siteId),
-            'by_camera' => $this->namedBreakdown($rows->groupBy('camera_id'), Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
+            'by_camera' => $this->formatDimensionBreakdown($byCameraCounts, Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
         ];
     }
 
@@ -204,15 +290,61 @@ class ReportBuilderService
         $cameras = $cameraQuery->get();
 
         $summaryQuery = EventDailySummary::query()
-            ->whereDate('summary_date', '>=', $from->toDateString())
-            ->whereDate('summary_date', '<=', $to->toDateString());
+            ->where('summary_date', '>=', $from->toDateString())
+            ->where('summary_date', '<=', $to->toDateString().' 23:59:59');
         if ($siteId !== null) {
             $summaryQuery->where('site_id', $siteId);
         }
-        $summariesByCamera = $summaryQuery->get()->groupBy('camera_id');
+        $summaryRows = $summaryQuery->select([
+            'camera_id',
+            'event_type',
+            'decision',
+            'event_count',
+            'unique_person_count',
+        ])->toBase()->get();
 
-        $cameraReports = $cameras->map(function (Camera $cam) use ($summariesByCamera) {
-            $rows = $summariesByCamera->get($cam->id, collect());
+        $byCamera = [];
+        foreach ($summaryRows as $row) {
+            $camId = (int) $row->camera_id;
+            if (! isset($byCamera[$camId])) {
+                $byCamera[$camId] = [
+                    'detected' => 0,
+                    'recognized' => 0,
+                    'review' => 0,
+                    'unknown' => 0,
+                    'allow' => 0,
+                    'deny' => 0,
+                    'unique_persons_recognized' => 0,
+                ];
+            }
+            $count = (int) $row->event_count;
+            $byCamera[$camId]['detected'] += $count;
+            if ($row->event_type === 'FACE_RECOGNIZED') {
+                $byCamera[$camId]['recognized'] += $count;
+                $byCamera[$camId]['unique_persons_recognized'] += (int) $row->unique_person_count;
+            }
+            $dec = (string) $row->decision;
+            if ($dec === 'REVIEW') {
+                $byCamera[$camId]['review'] += $count;
+            } elseif ($dec === 'UNKNOWN') {
+                $byCamera[$camId]['unknown'] += $count;
+            } elseif ($dec === 'ALLOW') {
+                $byCamera[$camId]['allow'] += $count;
+            } elseif ($dec === 'DENY') {
+                $byCamera[$camId]['deny'] += $count;
+            }
+        }
+
+        $cameraReports = $cameras->map(function (Camera $cam) use ($byCamera) {
+            $totals = $byCamera[$cam->id] ?? [
+                'detected' => 0,
+                'recognized' => 0,
+                'review' => 0,
+                'unknown' => 0,
+                'allow' => 0,
+                'deny' => 0,
+                'unique_persons_recognized' => 0,
+            ];
 
             return [
                 'camera_uuid' => $cam->uuid,
@@ -221,15 +353,7 @@ class ReportBuilderService
                 'site_name' => $cam->site?->name ?? 'ไม่ระบุไซต์',
                 'zone_name' => $cam->zone?->name ?? 'ไม่ระบุโซน',
                 'status' => $cam->status?->value ?? 'OFFLINE',
-                'totals' => [
-                    'detected' => (int) $rows->sum('event_count'),
-                    'recognized' => (int) $rows->where('event_type', 'FACE_RECOGNIZED')->sum('event_count'),
-                    'review' => (int) $rows->where('decision', 'REVIEW')->sum('event_count'),
-                    'unknown' => (int) $rows->where('decision', 'UNKNOWN')->sum('event_count'),
-                    'allow' => (int) $rows->where('decision', 'ALLOW')->sum('event_count'),
-                    'deny' => (int) $rows->where('decision', 'DENY')->sum('event_count'),
-                    'unique_persons_recognized' => (int) $rows->where('event_type', 'FACE_RECOGNIZED')->sum('unique_person_count'),
-                ],
+                'totals' => $totals,
             ];
         })->values()->all();
 
@@ -276,23 +400,25 @@ class ReportBuilderService
     }
 
     /**
-     * @param  Collection<int|string, Collection<int, EventDailySummary>>  $groups
+     * @param  array<int|string, int>  $countsById
      * @param  class-string<Camera|Department>  $modelClass
      * @return list<array<string, mixed>>
      */
-    private function namedBreakdown($groups, string $modelClass, string $uuidKey, string $nameKey, string $unassignedLabel): array
+    private function formatDimensionBreakdown(array $countsById, string $modelClass, string $uuidKey, string $nameKey, string $unassignedLabel): array
     {
-        $ids = $groups->keys()->filter()->map(fn ($id) => (int) $id);
-        $models = $modelClass::whereIn('id', $ids)->get()->keyBy('id');
+        $ids = array_values(array_filter(array_keys($countsById), fn ($id) => $id !== null && $id !== ''));
+        $models = ! empty($ids) ? $modelClass::whereIn('id', $ids)->get()->keyBy('id') : collect();
 
-        return $groups->map(function ($group, $id) use ($models, $uuidKey, $nameKey, $unassignedLabel) {
-            $model = $id !== '' ? $models->get((int) $id) : null;
-
-            return [
+        $result = [];
+        foreach ($countsById as $id => $count) {
+            $model = ($id !== null && $id !== '') ? $models->get((int) $id) : null;
+            $result[] = [
                 $uuidKey => $model?->uuid,
                 $nameKey => $model?->name ?? $unassignedLabel,
-                'count' => (int) $group->sum('event_count'),
+                'count' => $count,
             ];
-        })->values()->all();
+        }
+
+        return $result;
     }
 }

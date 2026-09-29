@@ -161,8 +161,8 @@ Only mark `[x]` when the relevant tests pass.
 [x] RPT-019 Build dashboard UI
 [x] RPT-020 Build historical search UI
 [x] RPT-021 Build report UI/export history
-[ ] RPT-022 Add reporting correctness/timezone/scope tests
-[ ] RPT-023 Performance test million-event dataset
+[x] RPT-022 Add reporting correctness/timezone/scope tests
+[x] RPT-023 Performance test million-event dataset
 
 # MODULE 07 — SECURITY + PILOT READINESS
 

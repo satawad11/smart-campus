@@ -105,12 +105,17 @@ onMounted(() => {
       </p>
     </div>
 
-    <div v-if="!canView" class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+    <div
+      v-if="!canView"
+      class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm"
+    >
       คุณไม่มีสิทธิ์เข้าถึงหน้านี้ (ต้องมีสิทธิ์ event.view)
     </div>
 
     <template v-else>
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+      <div
+        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
+      >
         <input
           v-model="filters.from"
           @change="applyFilters"
@@ -130,15 +135,21 @@ onMounted(() => {
           ล้างตัวกรอง
         </button>
         <span class="ml-auto text-sm text-gray-500">
-          ยังไม่ได้ตรวจสอบในหน้านี้: <span class="font-semibold text-amber-600">{{ unresolvedCount }}</span>
+          ยังไม่ได้ตรวจสอบในหน้านี้:
+          <span class="font-semibold text-amber-600">{{ unresolvedCount }}</span>
         </span>
       </div>
 
-      <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+      <div
+        v-if="errorMessage"
+        class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+      >
         {{ errorMessage }}
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
         <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลด...</div>
         <div v-else-if="events.length === 0" class="text-center py-12 text-gray-400">
           ไม่พบเหตุการณ์บุคคลไม่ทราบตัวตนในช่วงเวลานี้
@@ -148,7 +159,9 @@ onMounted(() => {
             <tr>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สถานที่</th>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">กล้อง</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สถานะการตรวจสอบ</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">
+                สถานะการตรวจสอบ
+              </th>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">เวลา</th>
               <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การจัดการ</th>
             </tr>
@@ -160,8 +173,12 @@ onMounted(() => {
               class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
               @click="router.push({ name: 'events.show', params: { uuid: event.uuid } })"
             >
-              <td class="px-6 py-4 text-gray-800 dark:text-gray-200">{{ event.site?.name || '-' }}</td>
-              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">{{ event.camera?.name || '-' }}</td>
+              <td class="px-6 py-4 text-gray-800 dark:text-gray-200">
+                {{ event.site?.name || '-' }}
+              </td>
+              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+                {{ event.camera?.name || '-' }}
+              </td>
               <td class="px-6 py-4">
                 <span
                   class="px-2.5 py-1 rounded-full text-xs font-semibold"

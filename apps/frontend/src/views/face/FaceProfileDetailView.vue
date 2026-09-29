@@ -44,7 +44,9 @@ onMounted(() => {
         </button>
         <div>
           <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Profile Details</h1>
-          <p class="text-xs font-mono text-gray-500">{{ profile?.face_profile_uuid || route.params.uuid }}</p>
+          <p class="text-xs font-mono text-gray-500">
+            {{ profile?.face_profile_uuid || route.params.uuid }}
+          </p>
         </div>
       </div>
     </div>
@@ -57,7 +59,9 @@ onMounted(() => {
 
     <div v-else-if="profile" class="space-y-6">
       <!-- Status & Identity Card -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div
+        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
         <div>
           <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">Identity Root</h2>
           <div class="space-y-2 text-sm">
@@ -71,7 +75,9 @@ onMounted(() => {
             </div>
             <div>
               <span class="text-gray-500">Status:</span>
-              <span class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800">
+              <span
+                class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800"
+              >
                 {{ profile.status }}
               </span>
             </div>
@@ -83,7 +89,11 @@ onMounted(() => {
           <div class="space-y-2 text-sm">
             <div>
               <span class="text-gray-500">Model:</span>
-              <span class="font-medium ml-2">{{ profile.model?.code || 'Default' }} (v{{ profile.model?.version || '1.0' }})</span>
+              <span class="font-medium ml-2"
+                >{{ profile.model?.code || 'Default' }} (v{{
+                  profile.model?.version || '1.0'
+                }})</span
+              >
             </div>
             <div>
               <span class="text-gray-500">Quality Score:</span>
@@ -93,26 +103,38 @@ onMounted(() => {
             </div>
             <div>
               <span class="text-gray-500">Enrolled At:</span>
-              <span class="ml-2">{{ profile.enrolled_at ? new Date(profile.enrolled_at).toLocaleString() : '-' }}</span>
+              <span class="ml-2">{{
+                profile.enrolled_at ? new Date(profile.enrolled_at).toLocaleString() : '-'
+              }}</span>
             </div>
           </div>
         </div>
 
         <!-- Revocation Info if revoked -->
-        <div v-if="profile.status === 'REVOKED'" class="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm">
+        <div
+          v-if="profile.status === 'REVOKED'"
+          class="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"
+        >
           <p class="font-bold">Profile Revoked</p>
-          <p class="text-xs mt-1">Revoked at: {{ new Date(profile.revoked_at).toLocaleString() }}</p>
+          <p class="text-xs mt-1">
+            Revoked at: {{ new Date(profile.revoked_at).toLocaleString() }}
+          </p>
           <p class="text-xs mt-1">Reason: {{ profile.revocation_reason }}</p>
         </div>
       </div>
 
       <!-- Sample History -->
-      <div class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700">
+      <div
+        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
+      >
         <h2 class="text-base font-bold text-gray-900 dark:text-white mb-4">
           Biometric Sample History ({{ profile.samples_count || 1 }})
         </h2>
 
-        <div v-if="profile.sample" class="p-4 border rounded-lg bg-gray-50 dark:bg-gray-700/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs">
+        <div
+          v-if="profile.sample"
+          class="p-4 border rounded-lg bg-gray-50 dark:bg-gray-700/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
+        >
           <div>
             <div class="text-gray-400">Sample UUID</div>
             <div class="font-mono font-medium">{{ profile.sample.uuid }}</div>
@@ -123,11 +145,20 @@ onMounted(() => {
           </div>
           <div>
             <div class="text-gray-400">Quality / Blur</div>
-            <div class="font-semibold">{{ (profile.sample.quality_score * 100).toFixed(0) }}% / {{ (profile.sample.blur_score * 100).toFixed(0) }}%</div>
+            <div class="font-semibold">
+              {{ (profile.sample.quality_score * 100).toFixed(0) }}% /
+              {{ (profile.sample.blur_score * 100).toFixed(0) }}%
+            </div>
           </div>
           <div>
             <div class="text-gray-400">Captured At</div>
-            <div>{{ profile.sample.captured_at ? new Date(profile.sample.captured_at).toLocaleDateString() : '-' }}</div>
+            <div>
+              {{
+                profile.sample.captured_at
+                  ? new Date(profile.sample.captured_at).toLocaleDateString()
+                  : '-'
+              }}
+            </div>
           </div>
         </div>
       </div>

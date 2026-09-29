@@ -103,7 +103,9 @@ defineExpose({
   <div v-if="canView" class="rounded-lg bg-white p-6 shadow">
     <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
       <div>
-        <h3 class="text-base font-semibold text-gray-900">ประวัติการรับรู้ใบหน้า (Event Timeline)</h3>
+        <h3 class="text-base font-semibold text-gray-900">
+          ประวัติการรับรู้ใบหน้า (Event Timeline)
+        </h3>
         <p class="text-xs text-gray-500 mt-0.5">
           เหตุการณ์การรับรู้ใบหน้าและผลการตัดสินใจของบุคคลนี้ (EVT-019)
         </p>
@@ -154,7 +156,12 @@ defineExpose({
     </div>
 
     <div v-else-if="events.length === 0" class="py-8 text-center">
-      <svg class="mx-auto h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <svg
+        class="mx-auto h-8 w-8 text-gray-400"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -204,7 +211,9 @@ defineExpose({
                     </span>
                   </div>
 
-                  <div class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500">
+                  <div
+                    class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500"
+                  >
                     <div>
                       สถานที่:
                       <span class="text-gray-700">
@@ -212,7 +221,8 @@ defineExpose({
                       </span>
                     </div>
                     <div v-if="item.current_decision?.reason_code">
-                      เหตุผล: <span class="text-gray-700">{{ item.current_decision.reason_code }}</span>
+                      เหตุผล:
+                      <span class="text-gray-700">{{ item.current_decision.reason_code }}</span>
                     </div>
                   </div>
                 </div>

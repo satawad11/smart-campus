@@ -106,7 +106,9 @@ onMounted(() => {
 
 <template>
   <div class="event-list-view max-w-7xl mx-auto p-6 space-y-6">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
+    <div
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
+    >
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
           {{ isReviewQueue ? 'คิวรอตรวจสอบ' : 'ประวัติเหตุการณ์' }}
@@ -135,12 +137,17 @@ onMounted(() => {
       </button>
     </div>
 
-    <div v-if="!canView" class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm">
+    <div
+      v-if="!canView"
+      class="p-4 bg-amber-50 border border-amber-200 text-amber-800 rounded-lg text-sm"
+    >
       คุณไม่มีสิทธิ์เข้าถึงประวัติเหตุการณ์นี้ (ต้องมีสิทธิ์ event.view)
     </div>
 
     <template v-else>
-      <div class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center">
+      <div
+        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
+      >
         <select
           v-model="filters.decision"
           @change="applyFilters"
@@ -182,11 +189,16 @@ onMounted(() => {
         </button>
       </div>
 
-      <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+      <div
+        v-if="errorMessage"
+        class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+      >
         {{ errorMessage }}
       </div>
 
-      <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div
+        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+      >
         <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลด...</div>
         <div v-else-if="events.length === 0" class="text-center py-12 text-gray-400">
           ไม่พบเหตุการณ์
@@ -214,7 +226,9 @@ onMounted(() => {
                   {{ event.person?.display_name || 'ไม่ทราบตัวตน' }}
                 </div>
               </td>
-              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">{{ event.event_type }}</td>
+              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+                {{ event.event_type }}
+              </td>
               <td class="px-6 py-4 text-xs">
                 <div class="text-gray-800 dark:text-gray-200">{{ event.site?.name || '-' }}</div>
                 <div class="text-gray-400">{{ event.camera?.name || '-' }}</div>
