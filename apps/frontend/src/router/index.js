@@ -214,6 +214,18 @@ const routes = [
         component: () => import('@/views/monitor/LiveMonitorView.vue'),
         meta: { requiresAuth: true, permission: 'monitor.view' },
       },
+      {
+        path: 'events',
+        name: 'events.index',
+        component: () => import('@/views/events/EventListView.vue'),
+        meta: { requiresAuth: true, permission: 'event.view' },
+      },
+      {
+        path: 'events/:uuid',
+        name: 'events.show',
+        component: () => import('@/views/events/EventDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'event.view' },
+      },
     ],
   },
   {

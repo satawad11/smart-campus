@@ -289,7 +289,12 @@ function personLabel(event) {
             ยังไม่มีเหตุการณ์
           </div>
           <ul v-else class="divide-y divide-gray-200 dark:divide-gray-700 max-h-[600px] overflow-y-auto">
-            <li v-for="event in liveEvents" :key="event.uuid" class="py-3 flex items-start justify-between gap-3">
+            <li
+              v-for="event in liveEvents"
+              :key="event.uuid"
+              class="py-3 flex items-start justify-between gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 -mx-4 px-4"
+              @click="router.push({ name: 'events.show', params: { uuid: event.uuid } })"
+            >
               <div>
                 <div class="font-medium text-gray-900 dark:text-white text-sm">
                   {{ personLabel(event) }}

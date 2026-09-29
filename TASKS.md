@@ -132,7 +132,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-014 Implement channel authorization/scope
 [x] EVT-015 Implement missed-event recovery
 [x] EVT-016 Build Live Monitor UI
-[ ] EVT-017 Build event detail/review UI
+[x] EVT-017 Build event detail/review UI
 [ ] EVT-018 Build unknown-person page
 [ ] EVT-019 Build person event timeline integration
 [ ] EVT-020 Add event/policy/realtime acceptance tests
