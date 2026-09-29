@@ -304,8 +304,16 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 });
 
 /*
-| Reports (RPT-007, docs/02-api-contract.md §16).
+| Reports (RPT-007..RPT-012, docs/02-api-contract.md §16).
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/reports/daily', [ReportController::class, 'daily'])->middleware('permission:report.view');
+    Route::get('/reports/weekly', [ReportController::class, 'weekly'])->middleware('permission:report.view');
+    Route::get('/reports/monthly', [ReportController::class, 'monthly'])->middleware('permission:report.view');
+    Route::get('/reports/yearly', [ReportController::class, 'yearly'])->middleware('permission:report.view');
+    Route::get('/reports/custom', [ReportController::class, 'custom'])->middleware('permission:report.view');
+    Route::get('/reports/review', [ReportController::class, 'review'])->middleware('permission:report.view');
+    Route::get('/reports/unknown', [ReportController::class, 'unknown'])->middleware('permission:report.view');
+    Route::get('/reports/camera', [ReportController::class, 'camera'])->middleware('permission:report.view');
+    Route::get('/reports/ai-node', [ReportController::class, 'aiNode'])->middleware('permission:report.view');
 });

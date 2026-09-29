@@ -42,6 +42,205 @@ class ReportController extends Controller
         ]);
     }
 
+    public function weekly(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'date' => ['sometimes', 'date'],
+            'start_date' => ['sometimes', 'date'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $baseDate = Carbon::parse($validated['date'] ?? $validated['start_date'] ?? now()->toDateString());
+        $from = $baseDate->copy()->startOfWeek();
+        $to = $baseDate->copy()->endOfWeek();
+        $siteId = $this->resolveSiteId($validated);
+
+        $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
+        $sections['by_day'] = $this->reportBuilder->buildDailyBreakdown($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $sections,
+            'meta' => null,
+        ]);
+    }
+
+    public function monthly(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'month' => ['sometimes', 'string', 'regex:/^\d{4}-\d{2}$/'],
+            'date' => ['sometimes', 'date'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        if (! empty($validated['month'])) {
+            $baseDate = Carbon::parse($validated['month'].'-01');
+        } elseif (! empty($validated['date'])) {
+            $baseDate = Carbon::parse($validated['date']);
+        } else {
+            $baseDate = now();
+        }
+
+        $from = $baseDate->copy()->startOfMonth();
+        $to = $baseDate->copy()->endOfMonth();
+        $siteId = $this->resolveSiteId($validated);
+
+        $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
+        $sections['by_day'] = $this->reportBuilder->buildDailyBreakdown($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $sections,
+            'meta' => null,
+        ]);
+    }
+
+    public function yearly(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'year' => ['sometimes', 'integer', 'min:2000', 'max:2100'],
+            'type' => ['sometimes', 'string', 'in:calendar,academic'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $year = (int) ($validated['year'] ?? now()->year);
+        $type = $validated['type'] ?? 'calendar';
+        $siteId = $this->resolveSiteId($validated);
+
+        if ($type === 'academic') {
+            // Thai academic year: May 1 to April 30 of following year
+            $from = Carbon::create($year, 5, 1)->startOfDay();
+            $to = Carbon::create($year + 1, 4, 30)->endOfDay();
+        } else {
+            $from = Carbon::create($year, 1, 1)->startOfDay();
+            $to = Carbon::create($year, 12, 31)->endOfDay();
+        }
+
+        $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
+        $sections['calendar_type'] = $type;
+        $sections['academic_year'] = $type === 'academic' ? $year : null;
+        $sections['by_month'] = $this->reportBuilder->buildMonthlyBreakdown($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $sections,
+            'meta' => null,
+        ]);
+    }
+
+    public function custom(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from' => ['required', 'date'],
+            'to' => ['required', 'date', 'after_or_equal:from'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $from = Carbon::parse($validated['from'])->startOfDay();
+        $to = Carbon::parse($validated['to'])->endOfDay();
+        $siteId = $this->resolveSiteId($validated);
+
+        $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
+        if ($from->diffInDays($to) <= 31) {
+            $sections['by_day'] = $this->reportBuilder->buildDailyBreakdown($from, $to, $siteId);
+        } else {
+            $sections['by_month'] = $this->reportBuilder->buildMonthlyBreakdown($from, $to, $siteId);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $sections,
+            'meta' => null,
+        ]);
+    }
+
+    public function review(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from' => ['sometimes', 'date'],
+            'to' => ['sometimes', 'date', 'after_or_equal:from'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $siteId = $this->resolveSiteId($validated);
+
+        $data = $this->reportBuilder->buildReviewReport($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $data,
+            'meta' => null,
+        ]);
+    }
+
+    public function unknown(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from' => ['sometimes', 'date'],
+            'to' => ['sometimes', 'date', 'after_or_equal:from'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $siteId = $this->resolveSiteId($validated);
+
+        $data = $this->reportBuilder->buildUnknownReport($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $data,
+            'meta' => null,
+        ]);
+    }
+
+    public function camera(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from' => ['sometimes', 'date'],
+            'to' => ['sometimes', 'date', 'after_or_equal:from'],
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
+        $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
+        $siteId = $this->resolveSiteId($validated);
+
+        $data = $this->reportBuilder->buildCameraReport($from, $to, $siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $data,
+            'meta' => null,
+        ]);
+    }
+
+    public function aiNode(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+        ]);
+
+        $siteId = $this->resolveSiteId($validated);
+        $data = $this->reportBuilder->buildAiNodeReport($siteId);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => $data,
+            'meta' => null,
+        ]);
+    }
+
     /**
      * @param  array<string, mixed>  $validated
      */

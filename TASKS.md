@@ -147,11 +147,11 @@ Only mark `[x]` when the relevant tests pass.
 [x] RPT-005 Implement dashboard summary
 [x] RPT-006 Implement dashboard charts
 [x] RPT-007 Implement daily report
-[ ] RPT-008 Implement weekly report
-[ ] RPT-009 Implement monthly report
-[ ] RPT-010 Implement yearly/academic-year report
-[ ] RPT-011 Implement custom report
-[ ] RPT-012 Implement review/unknown/camera/AI-node reports
+[x] RPT-008 Implement weekly report
+[x] RPT-009 Implement monthly report
+[x] RPT-010 Implement yearly/academic-year report
+[x] RPT-011 Implement custom report
+[x] RPT-012 Implement review/unknown/camera/AI-node reports
 [ ] RPT-013 Create report export job schema
 [ ] RPT-014 Implement queued XLSX export
 [ ] RPT-015 Implement queued CSV export
