@@ -142,7 +142,7 @@ Only mark `[x]` when the relevant tests pass.
 
 [x] RPT-001 Implement historical search API
 [x] RPT-002 Implement person timeline API
-[ ] RPT-003 Create hourly/daily summary structures
+[x] RPT-003 Create hourly/daily summary structures
 [ ] RPT-004 Implement summary refresh/backfill jobs
 [ ] RPT-005 Implement dashboard summary
 [ ] RPT-006 Implement dashboard charts
