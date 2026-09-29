@@ -27,6 +27,7 @@ use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Report\ReportController;
+use App\Http\Controllers\Report\ReportExportController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use Illuminate\Support\Facades\Route;
@@ -316,4 +317,10 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/reports/unknown', [ReportController::class, 'unknown'])->middleware('permission:report.view');
     Route::get('/reports/camera', [ReportController::class, 'camera'])->middleware('permission:report.view');
     Route::get('/reports/ai-node', [ReportController::class, 'aiNode'])->middleware('permission:report.view');
+
+    // Report exports (RPT-013..RPT-017, docs/02-api-contract.md §16).
+    Route::get('/reports/exports', [ReportExportController::class, 'index'])->middleware('permission:report.export');
+    Route::post('/reports/exports', [ReportExportController::class, 'store'])->middleware('permission:report.export');
+    Route::get('/reports/exports/{reportExport}', [ReportExportController::class, 'show'])->middleware('permission:report.export');
+    Route::get('/reports/exports/{reportExport}/download', [ReportExportController::class, 'download'])->middleware('permission:report.export');
 });

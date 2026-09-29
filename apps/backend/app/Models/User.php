@@ -113,4 +113,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Notification::class);
     }
+
+    /**
+     * @return HasMany<ReportExport, $this>
+     */
+    public function reportExports(): HasMany
+    {
+        return $this->hasMany(ReportExport::class);
+    }
 }

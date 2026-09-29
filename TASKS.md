@@ -152,12 +152,12 @@ Only mark `[x]` when the relevant tests pass.
 [x] RPT-010 Implement yearly/academic-year report
 [x] RPT-011 Implement custom report
 [x] RPT-012 Implement review/unknown/camera/AI-node reports
-[ ] RPT-013 Create report export job schema
-[ ] RPT-014 Implement queued XLSX export
-[ ] RPT-015 Implement queued CSV export
-[ ] RPT-016 Implement queued PDF export
-[ ] RPT-017 Implement export notification/expiration
-[ ] RPT-018 Implement scheduled reports
+[x] RPT-013 Create report export job schema
+[x] RPT-014 Implement queued XLSX export
+[x] RPT-015 Implement queued CSV export
+[x] RPT-016 Implement queued PDF export
+[x] RPT-017 Implement export notification/expiration
+[x] RPT-018 Implement scheduled reports
 [ ] RPT-019 Build dashboard UI
 [ ] RPT-020 Build historical search UI
 [ ] RPT-021 Build report UI/export history
