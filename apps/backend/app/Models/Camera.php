@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -97,5 +98,15 @@ class Camera extends Model
     public function healthLogs(): HasMany
     {
         return $this->hasMany(CameraHealthLog::class);
+    }
+
+    /**
+     * The most recently recorded health status (RPT-005 dashboard
+     * online/total counts) — same latestOfMany pattern as
+     * AccessEvent::latestDecision().
+     */
+    public function latestHealth(): HasOne
+    {
+        return $this->hasOne(CameraHealthLog::class)->latestOfMany('recorded_at');
     }
 }

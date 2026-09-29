@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Perception-processing node (CAM-001, database blueprint §6). May serve one
@@ -70,6 +71,16 @@ class AiNode extends Model
     public function healthLogs(): HasMany
     {
         return $this->hasMany(AiNodeHealthLog::class);
+    }
+
+    /**
+     * The most recently recorded health status (RPT-005 dashboard
+     * online/total counts) — same latestOfMany pattern as
+     * AccessEvent::latestDecision().
+     */
+    public function latestHealth(): HasOne
+    {
+        return $this->hasOne(AiNodeHealthLog::class)->latestOfMany('recorded_at');
     }
 
     public function credentials(): HasMany

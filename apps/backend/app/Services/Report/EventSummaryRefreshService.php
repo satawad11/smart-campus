@@ -115,7 +115,20 @@ class EventSummaryRefreshService
     {
         $query = $modelClass::query();
         foreach ($dimensions as $column => $value) {
-            $value === null ? $query->whereNull($column) : $query->where($column, $value);
+            if ($value === null) {
+                $query->whereNull($column);
+            } elseif ($column === 'summary_date') {
+                // whereDate(), not where(): a `date`-cast column serializes
+                // through Eloquent as a full 'Y-m-d 00:00:00' string, and
+                // SQLite (unlike PostgreSQL's native DATE type, which
+                // discards the time part on write) stores exactly that as
+                // TEXT — a plain where() against a bare 'Y-m-d' value then
+                // never matches on SQLite, silently re-inserting a
+                // duplicate row every refresh instead of updating.
+                $query->whereDate($column, $value);
+            } else {
+                $query->where($column, $value);
+            }
         }
 
         $existing = $query->first();

@@ -182,6 +182,25 @@ class EventSummaryRefreshTest extends TestCase
         $this->assertTrue($summary->refreshed_at->gte($firstRefreshedAt));
     }
 
+    public function test_re_running_refresh_day_is_idempotent_and_updates_rather_than_duplicates(): void
+    {
+        $day = now()->startOfDay();
+        $site = Site::factory()->create();
+        $event = AccessEvent::factory()->create(['site_id' => $site->id, 'occurred_at' => $day->copy()->addHours(5)]);
+        AccessDecision::factory()->for($event, 'event')->create();
+
+        $this->service->refreshDay($day->copy());
+        $this->assertSame(1, EventDailySummary::count());
+
+        $secondEvent = AccessEvent::factory()->create(['site_id' => $site->id, 'occurred_at' => $day->copy()->addHours(10)]);
+        AccessDecision::factory()->for($secondEvent, 'event')->create();
+
+        $this->service->refreshDay($day->copy());
+
+        $this->assertSame(1, EventDailySummary::count()); // still one row, updated not duplicated
+        $this->assertSame(2, EventDailySummary::first()->event_count);
+    }
+
     public function test_refresh_day_aggregates_across_the_whole_calendar_day(): void
     {
         $day = now()->startOfDay();

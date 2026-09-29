@@ -24,6 +24,7 @@ use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use Illuminate\Support\Facades\Route;
@@ -287,4 +288,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/history/search', [HistorySearchController::class, 'search'])->middleware('permission:report.view');
     Route::get('/persons/{person}/timeline', [PersonTimelineController::class, 'show'])->middleware('permission:report.view');
+});
+
+/*
+| Dashboard (RPT-005, docs/02-api-contract.md §14).
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/dashboard/summary', [DashboardController::class, 'summary'])->middleware('permission:report.view');
 });
