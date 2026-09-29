@@ -17,3 +17,7 @@ Schedule::command('ai-nodes:detect-stale')->everyMinute();
 // still-filling current hour/day on every run rather than needing a
 // separate "close out the previous hour" pass.
 Schedule::command('events:refresh-summaries')->everyFifteenMinutes();
+
+// SEC-010: prune old telemetry, snapshots, and exports according to retention settings
+Schedule::command('retention:cleanup')->dailyAt('02:00');
+
