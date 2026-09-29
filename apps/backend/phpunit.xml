@@ -47,5 +47,14 @@
         <env name="FACE_DUPLICATE_REVIEW_SIMILARITY_THRESHOLD" value="0.65"/>
         <env name="FACE_LIVENESS_THRESHOLD_REAL" value="0.70"/>
         <env name="FACE_LIVENESS_THRESHOLD_SPOOF" value="0.40"/>
+        <!-- Locked-feature kill switches unset so SEC-002 settings behaviour stays testable;
+             FeatureKillSwitchTest sets them explicitly (config/features.php). -->
+        <env name="FEATURE_DOOR_ENABLED" value="(null)"/>
+        <env name="FEATURE_VISITOR_ENABLED" value="(null)"/>
+        <env name="FEATURE_VEHICLE_ENABLED" value="(null)"/>
+        <env name="FEATURE_ALPR_ENABLED" value="(null)"/>
+        <env name="FEATURE_AI_ASSISTANT_ENABLED" value="(null)"/>
+        <!-- Tests do not reach MinIO; BackupIntegrityTest fakes object-storage disks explicitly. -->
+        <env name="BACKUP_OBJECT_STORAGE_DISKS" value=""/>
     </php>
 </phpunit>

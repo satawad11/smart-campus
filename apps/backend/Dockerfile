@@ -5,9 +5,10 @@
 # wiring (migrations, Reverb, etc.) is handled by later tasks/modules.
 FROM php:8.2-fpm-alpine
 
-# Build/runtime system dependencies.
+# Build/runtime system dependencies. postgresql16-client provides pg_dump/psql
+# matching the PostgreSQL 16 server, required by backup:run (PILOT-003).
 RUN apk add --no-cache \
-        git curl libpq-dev oniguruma-dev libzip-dev \
+        git curl libpq-dev oniguruma-dev libzip-dev postgresql16-client \
     && docker-php-ext-install pdo pdo_pgsql mbstring bcmath opcache pcntl zip \
     && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS \
     && pecl install redis \

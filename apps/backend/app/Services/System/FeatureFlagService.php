@@ -36,6 +36,11 @@ class FeatureFlagService
     {
         $normalized = strtolower(str_replace('-', '_', trim($feature)));
 
+        // Environment kill switch (SEC-024): an explicit false ceiling wins over settings
+        if ($this->isKillSwitchEngaged($normalized)) {
+            return false;
+        }
+
         // Read from cached system settings
         $key = 'feature.'.$normalized;
         $val = $this->settingService->get($key, null);
@@ -67,7 +72,7 @@ class FeatureFlagService
      */
     public function getAll(): array
     {
-        return Cache::remember('feature_flags:all', 3600, function () {
+        $flags = Cache::remember('feature_flags:all', 3600, function () {
             $settings = $this->settingService->getByGroup('FEATURE');
             $flags = [];
 
@@ -85,5 +90,32 @@ class FeatureFlagService
 
             return $flags;
         });
+
+        // Apply environment kill switches after the cache so config changes take effect
+        foreach (array_keys($flags) as $name) {
+            if ($this->isKillSwitchEngaged($name)) {
+                $flags[$name] = false;
+            }
+        }
+
+        return $flags;
+    }
+
+    /**
+     * Whether a locked V1 feature is hard-disabled by its FEATURE_*_ENABLED variable.
+     * Only an explicitly false value engages the switch; an unset variable is null.
+     */
+    public function isKillSwitchEngaged(string $feature): bool
+    {
+        if (! in_array($feature, self::LOCKED_V1_FEATURES, true)) {
+            return false;
+        }
+
+        $value = config('features.locked_kill_switches.'.$feature);
+        if ($value === null) {
+            return false;
+        }
+
+        return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== true;
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
 use ZipArchive;
 
@@ -58,21 +59,7 @@ class BackupService
                     File::copy($dbPath, $targetPath);
                 }
             } else {
-                // PostgreSQL dump
-                $host = config('database.connections.pgsql.host', '127.0.0.1');
-                $port = config('database.connections.pgsql.port', '5432');
-                $database = config('database.connections.pgsql.database', 'smart_campus');
-                $username = config('database.connections.pgsql.username', 'smart_campus');
-                $password = config('database.connections.pgsql.password', '');
-
-                $envCmd = "PGPASSWORD={$password} pg_dump -h {$host} -p {$port} -U {$username} -F p {$database} > \"{$targetPath}\"";
-
-                // If running in environment without pg_dump, handle gracefully
-                @exec($envCmd, $output, $returnCode);
-                if ($returnCode !== 0 && ! File::exists($targetPath)) {
-                    // Fallback to table export for simulation/testing
-                    File::put($targetPath, "-- PostgreSQL backup simulated export for {$database} at {$timestamp}\n");
-                }
+                $this->dumpPostgresql($targetPath);
             }
 
             $size = File::size($targetPath);
@@ -117,6 +104,33 @@ class BackupService
     }
 
     /**
+     * Dump the PostgreSQL database to a plain-format SQL file with pg_dump.
+     *
+     * PILOT-003: a failed or missing pg_dump must fail the job — an empty or
+     * simulated file is never recorded as a completed backup. The password is
+     * passed via the process environment, not the command line.
+     *
+     * @throws Exception
+     */
+    public function dumpPostgresql(string $targetPath): void
+    {
+        $host = config('database.connections.pgsql.host', '127.0.0.1');
+        $port = config('database.connections.pgsql.port', '5432');
+        $database = config('database.connections.pgsql.database', 'smart_campus');
+        $username = config('database.connections.pgsql.username', 'smart_campus');
+        $password = config('database.connections.pgsql.password', '');
+
+        $result = Process::env(['PGPASSWORD' => (string) $password])
+            ->timeout(3600)
+            ->run(['pg_dump', '-h', (string) $host, '-p', (string) $port, '-U', (string) $username, '-F', 'p', '-f', $targetPath, (string) $database]);
+
+        if (! $result->successful() || ! File::exists($targetPath) || File::size($targetPath) === 0) {
+            File::delete($targetPath);
+            throw new Exception('pg_dump failed (exit '.$result->exitCode().'): '.trim($result->errorOutput()));
+        }
+    }
+
+    /**
      * Run storage directory / objects backup procedure.
      */
     public function runStorageBackup(?string $customPath = null): BackupJob
@@ -143,18 +157,37 @@ class BackupService
             }
 
             $zip = new ZipArchive;
-            if ($zip->open($targetPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
-                $files = File::allFiles($sourcePath);
-                foreach ($files as $file) {
-                    $relativePath = substr($file->getPathname(), strlen($sourcePath) + 1);
-                    $zip->addFile($file->getPathname(), $relativePath);
-                }
-                $zip->addFromString('manifest.json', json_encode([
-                    'created_at' => Carbon::now()->toIso8601String(),
-                    'file_count' => count($files),
-                ]));
-                $zip->close();
+            if ($zip->open($targetPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                throw new Exception("Unable to create storage archive: {$targetPath}");
             }
+
+            $files = File::allFiles($sourcePath);
+            foreach ($files as $file) {
+                $relativePath = substr($file->getPathname(), strlen($sourcePath) + 1);
+                $zip->addFile($file->getPathname(), $relativePath);
+            }
+
+            // PILOT-003: include object-storage buckets (face samples, person photos,
+            // event snapshots); an unreadable disk fails the job instead of being skipped.
+            $objectCounts = [];
+            foreach (config('backup.object_storage_disks', []) as $disk) {
+                $objectCounts[$disk] = 0;
+                foreach (Storage::disk($disk)->allFiles() as $objectPath) {
+                    $contents = Storage::disk($disk)->get($objectPath);
+                    if ($contents === null) {
+                        throw new Exception("Unable to read object {$disk}/{$objectPath}");
+                    }
+                    $zip->addFromString($disk.'/'.$objectPath, $contents);
+                    $objectCounts[$disk]++;
+                }
+            }
+
+            $zip->addFromString('manifest.json', json_encode([
+                'created_at' => Carbon::now()->toIso8601String(),
+                'file_count' => count($files),
+                'object_storage' => $objectCounts,
+            ]));
+            $zip->close();
 
             $size = File::size($targetPath);
             $checksum = hash_file('sha256', $targetPath);
@@ -169,6 +202,7 @@ class BackupService
                 'metadata' => [
                     'source' => $sourcePath,
                     'file' => basename($targetPath),
+                    'object_storage' => $objectCounts,
                 ],
             ]);
 
@@ -232,9 +266,13 @@ class BackupService
                 }
                 $zip->close();
             } elseif ($sourceJob->type === BackupJob::TYPE_POSTGRESQL) {
-                $head = File::get($sourceJob->target, false, null, 0, 200);
-                if (empty($head)) {
+                $head = (string) file_get_contents($sourceJob->target, false, null, 0, 512);
+                if ($head === '') {
                     throw new Exception('Database backup file is empty');
+                }
+                if (($sourceJob->metadata['connection'] ?? null) === 'pgsql'
+                    && ! str_contains($head, 'PostgreSQL database dump')) {
+                    throw new Exception('Database backup file is not a pg_dump plain-format dump');
                 }
             }
 

@@ -6,6 +6,8 @@ use App\Enums\DeviceStatus;
 use App\Enums\HealthStatus;
 use App\Models\AiNode;
 use App\Models\AiNodeHealthLog;
+use App\Models\SystemAlert;
+use App\Services\System\AlertLifecycleService;
 use Illuminate\Console\Command;
 
 /**
@@ -24,7 +26,7 @@ class DetectStaleAiNodes extends Command
 
     protected $description = 'Flag AI nodes with no recent heartbeat as OFFLINE';
 
-    public function handle(): int
+    public function handle(AlertLifecycleService $alerts): int
     {
         $staleAfter = (int) config('ai_node.health.stale_after_seconds');
         $cutoff = now()->subSeconds($staleAfter);
@@ -52,6 +54,17 @@ class DetectStaleAiNodes extends Command
                 'status' => HealthStatus::OFFLINE->value,
                 'recorded_at' => now(),
             ]);
+
+            // PILOT-008: surface the outage on the alert dashboard (SEC-012/013),
+            // once per stale period like the health log above.
+            $alerts->triggerAlert(
+                type: 'AI_NODE_DOWN',
+                severity: SystemAlert::SEVERITY_CRITICAL,
+                title: "AI node {$node->node_code} offline",
+                message: "No heartbeat from AI node {$node->node_code} for more than {$staleAfter} seconds.",
+                source: 'ai_node:'.$node->uuid,
+                metadata: ['ai_node_uuid' => $node->uuid, 'last_seen_at' => $node->last_seen_at?->toIso8601String()],
+            );
             $flagged++;
         }
 

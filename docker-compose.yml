@@ -19,9 +19,18 @@ x-backend: &backend
   build:
     context: ./apps/backend        # Dockerfile added in FND-003
   image: smart-campus/backend:dev
+  # The backend .env is excluded from the image (.dockerignore), so every backend
+  # process — php-fpm, queue, scheduler, websocket — must receive it here.
+  # Without it queue/scheduler fall back to the sqlite default and crash (PILOT-001).
   env_file:
-    - path: .env
+    - path: ./apps/backend/.env
       required: false
+  # Persistent Laravel storage shared by all backend processes. Backups
+  # (storage/app/backups), local-disk files and logs previously lived in the
+  # container's writable layer and were lost on every recreate (PILOT-003).
+  # Production must still copy backups off-host (PILOT-001 H9).
+  volumes:
+    - backend-storage:/var/www/html/storage
   networks: [smartcampus]
   restart: unless-stopped
 
@@ -34,6 +43,7 @@ volumes:
   postgres-data:
   redis-data:
   minio-data:
+  backend-storage:
 
 services:
   nginx:

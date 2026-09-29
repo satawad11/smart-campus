@@ -20,4 +20,3 @@ Schedule::command('events:refresh-summaries')->everyFifteenMinutes();
 
 // SEC-010: prune old telemetry, snapshots, and exports according to retention settings
 Schedule::command('retention:cleanup')->dailyAt('02:00');
-
