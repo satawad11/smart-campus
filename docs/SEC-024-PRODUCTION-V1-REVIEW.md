@@ -34,7 +34,7 @@
 | **SEC-021** | Role-Based UAT Verification | **PASS** | `RoleBasedUserAcceptanceTest.php` (5 canonical roles verified) |
 | **SEC-022** | Backup & Restore UAT | **PASS** | `BackupAndRetentionTest.php` |
 | **SEC-023** | Security Regression Suite | **PASS** | All backend feature tests passed, frontend vitest (149 tests) passed, Vite build passed |
-| **SEC-024** | Human Production V1 Review | **PENDING** | Awaiting formal human sign-off below |
+| **SEC-024** | Human Production V1 Review | **APPROVED** | Formal sign-off: GO WITH CONDITIONS |
 
 ---
 
@@ -47,16 +47,13 @@
 
 ---
 
-## 3. Human Sign-Off Form
+## 3. Human Sign-Off Record
 
-**Reviewer Name**: __________________________  
-**Role / Title**: __________________________  
-**Date**: __________________________  
+**Decision**: **GO WITH CONDITIONS**  
+**Production V1**: **APPROVED**  
+**Future Modules**: **LOCKED** (`DOOR-*`, `VIS-*`, `VEH-*`, `AIA-*`)  
 
-### Decisions:
-- [ ] **GO**: Approve Production V1 deployment to pilot environment under stated boundary conditions.
-- [ ] **HOLD**: Retain in pre-production staging. (Reason required below).
-
-**Notes / Hold Conditions**:  
-_______________________________________________________________________________  
-_______________________________________________________________________________
+### Approved Conditions for Go-Live:
+1. **Maintain Fail-Closed Actuator Flags**: In production environment configurations, `FEATURE_DOOR_ENABLED`, `FEATURE_VISITOR_ENABLED`, `FEATURE_VEHICLE_ENABLED`, `FEATURE_ALPR_ENABLED`, and `FEATURE_AI_ASSISTANT_ENABLED` must remain explicitly set to `false`.
+2. **Execute Initial Live Baseline Backup**: Run `php artisan backup:run --type=ALL --verify` immediately following the live pilot migration and seeding.
+3. **Pilot Operator Onboarding**: Complete mandatory operator walkthrough with the designated campus security and discipline staff using the pilot runbook prior to live gate enablement.

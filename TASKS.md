@@ -189,7 +189,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-021 Execute role-based UAT
 [x] SEC-022 Execute backup/restore UAT
 [x] SEC-023 Execute security test suite
-[ ] SEC-024 [R] Human Production V1 go/hold review
+[x] SEC-024 [R] Human Production V1 go/hold review
 
 # FUTURE — LOCKED UNTIL APPROVAL
 
