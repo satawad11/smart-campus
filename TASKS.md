@@ -136,7 +136,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-018 Build unknown-person page
 [x] EVT-019 Build person event timeline integration
 [x] EVT-020 Add event/policy/realtime acceptance tests
-[ ] EVT-021 Load test event ingestion/realtime
+[x] EVT-021 Load test event ingestion/realtime
 
 # MODULE 06 — HISTORY + REPORTING
 
