@@ -30,6 +30,10 @@ class AuditService
         'session_id',
         'csrf_token',
         '_token',
+        'rtsp_password',
+        'api_key',
+        'embedding',
+        'vector',
     ];
 
     /**

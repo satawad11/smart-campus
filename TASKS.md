@@ -169,8 +169,8 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-001 Implement system settings service/UI
 [x] SEC-002 Implement backend-enforced feature flags
 [x] SEC-003 Configure production security headers/CORS
-[ ] SEC-004 Configure secrets strategy
-[ ] SEC-005 Define least-privilege DB/service users
+[x] SEC-004 Configure secrets strategy
+[x] SEC-005 Define least-privilege DB/service users
 [ ] SEC-006 Implement backup job tracking
 [ ] SEC-007 Implement PostgreSQL backup procedure
 [ ] SEC-008 Implement object-storage backup procedure
