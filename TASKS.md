@@ -146,7 +146,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] RPT-004 Implement summary refresh/backfill jobs
 [x] RPT-005 Implement dashboard summary
 [x] RPT-006 Implement dashboard charts
-[ ] RPT-007 Implement daily report
+[x] RPT-007 Implement daily report
 [ ] RPT-008 Implement weekly report
 [ ] RPT-009 Implement monthly report
 [ ] RPT-010 Implement yearly/academic-year report

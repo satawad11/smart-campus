@@ -26,6 +26,7 @@ use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
+use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use Illuminate\Support\Facades\Route;
@@ -300,4 +301,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/dashboard/events-by-decision', [DashboardChartsController::class, 'byDecision'])->middleware('permission:report.view');
     Route::get('/dashboard/events-by-camera', [DashboardChartsController::class, 'byCamera'])->middleware('permission:report.view');
     Route::get('/dashboard/events-by-department', [DashboardChartsController::class, 'byDepartment'])->middleware('permission:report.view');
+});
+
+/*
+| Reports (RPT-007, docs/02-api-contract.md §16).
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/reports/daily', [ReportController::class, 'daily'])->middleware('permission:report.view');
 });
