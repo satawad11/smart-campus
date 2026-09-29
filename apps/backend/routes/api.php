@@ -22,6 +22,7 @@ use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
 use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\History\HistorySearchController;
+use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
@@ -285,4 +286,5 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/history/search', [HistorySearchController::class, 'search'])->middleware('permission:report.view');
+    Route::get('/persons/{person}/timeline', [PersonTimelineController::class, 'show'])->middleware('permission:report.view');
 });
