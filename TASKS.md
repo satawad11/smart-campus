@@ -180,12 +180,12 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-012 Implement system alert lifecycle
 [x] SEC-013 Configure metrics/logging/monitoring
 [x] SEC-014 Create incident schema/workflow
-[ ] SEC-015 Create deployment runbook
-[ ] SEC-016 Create rollback runbook
-[ ] SEC-017 Create disaster-recovery runbook
-[ ] SEC-018 Create pilot test dataset/process
-[ ] SEC-019 Execute AI calibration workflow
-[ ] SEC-020 Execute camera/environment pilot tests
+[x] SEC-015 Create deployment runbook
+[x] SEC-016 Create rollback runbook
+[x] SEC-017 Create disaster-recovery runbook
+[x] SEC-018 Create pilot test dataset/process
+[x] SEC-019 Execute AI calibration workflow
+[x] SEC-020 Execute camera/environment pilot tests
 [ ] SEC-021 Execute role-based UAT
 [ ] SEC-022 Execute backup/restore UAT
 [ ] SEC-023 Execute security test suite
