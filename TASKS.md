@@ -191,6 +191,24 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-023 Execute security test suite
 [x] SEC-024 [R] Human Production V1 go/hold review
 
+# PHASE 08 — PILOT DEPLOYMENT & STABILIZATION
+
+Pilot scope: 1 Site, 1 Gate, 2 Cameras, 1 AI Node, 80 Students, 5 Operators.
+Evidence: `docs/pilot/PILOT-0xx-*.md`. `[~]` = software/rehearsal part done; the
+human, physical or elapsed-time part is still open (see each document's status).
+
+[~] PILOT-001 Production environment validation (software checks PASS in rehearsal; pilot host/physical PENDING)
+[~] PILOT-002 Deploy approved V1 (rehearsal deploy PASS; pilot host deploy PENDING)
+[~] PILOT-003 Initial live backup (verified rehearsal backup; live backup PENDING)
+[~] PILOT-004 Operator onboarding (package ready; AWAITING HUMAN OPERATOR COMPLETION)
+[~] PILOT-005 Production smoke test (automated rehearsal smoke PASS; live/physical PENDING)
+[~] PILOT-006 Camera/AI-node stability (procedure ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
+[~] PILOT-007 Recognition quality review (procedure ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
+[~] PILOT-008 Incident/alert report (pre-pilot incidents fixed; live log AWAITING REAL DATA)
+[~] PILOT-009 Backup verification (rehearsal full restore PASS; pilot continuity PENDING)
+[~] PILOT-010 7/14-day review (template ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
+[ ] PILOT-011 [R] Human pilot acceptance — AWAITING HUMAN PILOT ACCEPTANCE
+
 # FUTURE — LOCKED UNTIL APPROVAL
 
 [ ] [R] DOOR-* Door Access Control
