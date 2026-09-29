@@ -188,7 +188,7 @@ Only mark `[x]` when the relevant tests pass.
 [x] SEC-020 Execute camera/environment pilot tests
 [x] SEC-021 Execute role-based UAT
 [x] SEC-022 Execute backup/restore UAT
-[ ] SEC-023 Execute security test suite
+[x] SEC-023 Execute security test suite
 [ ] SEC-024 [R] Human Production V1 go/hold review
 
 # FUTURE — LOCKED UNTIL APPROVAL
