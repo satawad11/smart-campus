@@ -64,6 +64,16 @@ Follow `docs/runbooks/DEPLOYMENT.md` §3. Summary: checkout tag → `$DC config`
 `minio-init` → `db-roles` → migrate and seed as `campus_migration_user` → caches → `up -d` →
 **initial verified backup** → `pilot:preflight --require-backup` → `scripts/pilot-host-preflight.sh`.
 
+## 4b. First Administrator, Site/Gate and Operator Roles
+```bash
+$DC exec backend php artisan access:bootstrap-admin <admin-username>          # one-time password printed once
+$DC exec backend php artisan locations:provision <SITE_CODE> "<Site name>" --zone="GATE-1:Main Gate:GATE"
+$DC exec backend php artisan access:assign-role <username> <ROLE_CODE> --site=<SITE_CODE>   # repeat per operator
+```
+Role facts for the pilot roster: only DISCIPLINE_OFFICER (and the wildcard admin roles) hold
+`event.review`. SECURITY_OFFICER can monitor and view events but can't review them, and can't open the
+dashboard API (it requires `report.view`; see V1 audit A-14).
+
 ## 5. Storage Volumes
 
 | Volume | Purpose | Backed up by |

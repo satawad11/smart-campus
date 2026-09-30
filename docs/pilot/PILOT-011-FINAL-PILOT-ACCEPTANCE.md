@@ -188,3 +188,11 @@ P08-13 buckets missing, P08-16 backups lost on redeploy, P08-19 Phase 08 test le
 | Approver name / role / date / signature | |
 
 **AI-generated final status: AWAITING HUMAN PILOT ACCEPTANCE**
+
+## 28. Independent Re-Audit (2026-09-30)
+See `docs/audit/V1-COMPLETENESS-AUDIT.md` and `docs/audit/V1-OPEN-FINDINGS.md`. The audit fixed 2 blockers
+(REST scope enforcement A-05, admin/role bootstrap A-01) and 11 other confirmed defects. It added open decisions
+**A-15** (no MFA enrollment UI, HIGH), **A-14** (SECURITY_OFFICER dashboard permission), **A-18** (node-asserted
+MATCH not re-validated) and **A-21** (camera snapshot is a mock placeholder). Repository gate:
+**READY FOR PILOT WITH CONDITIONS**; live biometric operation stays HOLD on B5.
+

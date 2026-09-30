@@ -214,6 +214,23 @@ PILOT DEPLOYMENT; live biometric operation HOLD, blocker B5: no production face/
 [~] PILOT-010 7/14-day review (template ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
 [ ] PILOT-011 [R] Human pilot acceptance — AWAITING HUMAN PILOT ACCEPTANCE
 
+# V1 INDEPENDENT RE-AUDIT (2026-09-30) — docs/audit/
+
+Gate: READY FOR PILOT WITH CONDITIONS (live biometrics HOLD on B5). Original checkmarks above are
+kept as recorded history; the audit annotates them instead of rewriting them:
+
+[x] AUDIT-A05 AUTH-009 scope was enforced only on Reverb, not REST (BLOCKER) — fixed 5b04fac
+[x] AUDIT-A01 No first-admin / role-assignment path (BLOCKER) — CLI added 87604a6; UI/API still a human decision
+[x] AUDIT-A02..A13 Confirmed defects fixed (forced password change, export IDOR, ingestion race,
+    broadcast-in-transaction, Redis-bound scheduler, health/session coupling, DB timeout, PAD preflight,
+    login throttle, site/zone provisioning, export serialization)
+[!] AUDIT-B5 No production face/PAD model — live biometric operation HOLD (human decision)
+[ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
+[ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
+[ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
+[ ] AUDIT-A20 SEC-020 physical camera results have no raw evidence
+Open register: docs/audit/V1-OPEN-FINDINGS.md
+
 # FUTURE — LOCKED UNTIL APPROVAL
 
 [ ] [R] DOOR-* Door Access Control

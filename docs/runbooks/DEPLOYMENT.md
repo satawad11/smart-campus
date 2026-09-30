@@ -68,8 +68,19 @@ $DC exec -T $M backend php artisan db:seed --class=SystemSettingSeeder --force
 ```
 Approved seed only: `DatabaseSeeder` (DemoDataSeeder skips itself in production) and
 `SystemSettingSeeder`. **Never run** `InitialAdminUserSeeder` (it's a no-op in production and is
-guarded by preflight) or any demo data. Create the first SUPER_ADMIN manually with a unique
-password and a forced change at first login.
+guarded by preflight) or any demo data.
+
+### Step 3.4b: First administrator, pilot site/gate, operator roles (V1 audit A-01/A-02)
+V1 has no UI or API for role assignment or site/zone creation; these audited commands are the supported path:
+```bash
+# First SUPER_ADMIN: prints a one-time password once; forced change at first login
+$DC exec backend php artisan access:bootstrap-admin <admin-username>
+# Pilot site and gate zone (idempotent; prints UUIDs used by the camera form)
+$DC exec backend php artisan locations:provision <SITE_CODE> "<Site name>" --zone="GATE-1:Main Gate:GATE"
+# Operators: create the account in the UI (Users -> New, forced password change), then scope the role
+$DC exec backend php artisan access:assign-role <username> SECURITY_OFFICER --site=<SITE_CODE>
+$DC exec backend php artisan access:assign-role <username> DISCIPLINE_OFFICER --site=<SITE_CODE>
+```
 
 ### Step 3.5: Cache Optimization
 ```bash

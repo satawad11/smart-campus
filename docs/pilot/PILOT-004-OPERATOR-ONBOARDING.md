@@ -46,7 +46,7 @@ Tick each item only after the operator has done it themselves on the pilot syste
 | # | Task | UI location | Done |
 |---|---|---|---|
 | A1 | First login and forced password change | `/login` → `/change-password` | ☐ |
-| A2 | MFA enrollment and MFA login | `/mfa` | ☐ |
+| A2 | MFA login (`/mfa`). **MFA enrollment has no UI in V1** (V1 audit A-15): until one exists, MFA can only be enrolled through the API `POST /api/v1/auth/mfa/setup` + `/confirm` | `/mfa` | ☐ |
 | A3 | Logout; session expiry behaviour | user menu | ☐ |
 | A4 | What to do after a lockout (contact SYSTEM_ADMIN; don't create new accounts) | — | ☐ |
 
@@ -58,7 +58,7 @@ Tick each item only after the operator has done it themselves on the pilot syste
 | B3 | Missed-event recovery after a reconnect (events reload automatically) | `/monitor` | ☐ |
 | B4 | Open the event detail page | `/events/:uuid` | ☐ |
 
-### Module C: Review workflow (SECURITY_OFFICER, DISCIPLINE_OFFICER)
+### Module C: Review workflow (DISCIPLINE_OFFICER; SECURITY_OFFICER has no `event.review` permission, see V1 audit A-14)
 | # | Task | UI location | Done |
 |---|---|---|---|
 | C1 | Work the review queue: submit an append-only manual decision with a reason | `/events/:uuid` | ☐ |
