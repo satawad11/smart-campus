@@ -200,7 +200,7 @@ human, physical or elapsed-time part is still open (see each document's status).
 Production candidate: code at `72ee47b`, tag `v1.0.0-pilot` (PILOT-000 delta review: APPROVED FOR
 PILOT DEPLOYMENT; live biometric operation HOLD, blocker B5: no production face/PAD model).
 
-[x] PILOT-000 Production candidate delta review (APPROVED FOR PILOT DEPLOYMENT; human ack pending in PILOT-011)
+[x] PILOT-000 Production candidate delta review (APPROVED FOR PILOT DEPLOYMENT; B4 human-APPROVED 2026-09-30)
 [x] PILOT-PKG Pilot host deployment package + backup/retention policy (retention AWAITING HUMAN APPROVAL)
 [~] PILOT-001 Production environment validation (overlay rehearsal H3–H14 PASS; PENDING HOST)
 [~] PILOT-002 Deploy approved V1 (Compose overlay rehearsal PASS; PENDING HOST)

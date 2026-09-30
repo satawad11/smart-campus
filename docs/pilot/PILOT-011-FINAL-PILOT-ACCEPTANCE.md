@@ -150,7 +150,7 @@ explicit human approval. The agent doesn't recommend or approve expansion.
 | B1 | **BLOCKER** | Pilot host not provisioned or validated (PILOT-001 H1–H11) | PILOT-001 | Infrastructure |
 | B2 | **BLOCKER** | Live initial verified backup not taken (SEC-024 condition 2) | PILOT-003 | SYSTEM_ADMIN on the pilot host |
 | B3 | **BLOCKER** | Operator walkthrough not completed (SEC-024 condition 3) | PILOT-004 | Pilot lead |
-| B4 | **BLOCKER** | Phase 08 and pre-deployment commits change code after SEC-024 approval; human review and acknowledgement required before deploy (software delta review: PILOT-000, APPROVED FOR PILOT DEPLOYMENT) | PILOT-000 | Human reviewer |
+| B4 | ~~BLOCKER~~ **CLOSED** | Post-SEC-024 corrective changes (a077eb2..v1.0.0-pilot) **APPROVED by the human reviewer, 2026-09-30** (recorded from the chat decision) | PILOT-000 | — |
 | B5 | **BLOCKER** | No production face detection, embedding or PAD model in the repository (ai-service is mock-only). Live biometric recognition can't start. PAD fail-open fixed (808acf9) | PILOT-000 §11.1 | Human decision (model selection, licensing, validation) |
 | H1 | ~~HIGH~~ FIXED | Release tag and Compose runbook (P08-09): tag `v1.0.0-pilot` created; DEPLOYMENT.md and ROLLBACK.md rewritten | PILOT-002 | — |
 | H2 | ~~HIGH~~ FIXED | Production static frontend (`Dockerfile.prod`, pilot overlay) (P08-14) | PILOT-001 | — |
@@ -178,9 +178,9 @@ P08-13 buckets missing, P08-16 backups lost on redeploy, P08-19 Phase 08 test le
 
 | Item | Decision |
 |---|---|
-| Phase 08 fix commit reviewed and acknowledged (B4) | ☐ YES ☐ NO |
+| Phase 08 fix commit reviewed and acknowledged (B4) | ☑ YES — APPROVED 2026-09-30 |
 | Proposed accepted risks AR1–AR5 | ☐ accept ☐ reject (each) |
-| Production model decision (B5) | ☐ decided: ________ ☐ pilot limited to non-biometric operation |
+| Production model decision (B5): embedding model, face detector, liveness/PAD | ☐ decided: ________ ☐ pilot limited to non-biometric operation. **Still open**: the 2026-09-30 decision message left these fields as unfilled placeholders |
 | Pilot go-live authorised once B1–B3 are closed | ☐ YES ☐ NO |
 | After the 14-day review: pilot accepted? | ☐ ACCEPT ☐ EXTEND ☐ REJECT |
 | Scope expansion approved? (requires a separate decision) | ☐ NO ☐ YES (describe) |

@@ -1,7 +1,7 @@
 # PILOT-000 — Production Candidate Delta Review
 
-**Status: APPROVED FOR PILOT DEPLOYMENT** (software delta review; the human SEC-024 approver still
-acknowledges the post-approval changes in PILOT-011, issue B4). **Live biometric operation: HOLD, blocker B5 (§11.1).**
+**Status: APPROVED FOR PILOT DEPLOYMENT** (software delta review). **Human decision 2026-09-30: post-SEC-024
+corrective changes APPROVED (B4 closed).** **Live biometric operation: HOLD, blocker B5 (§11.1).**
 **Reviewed:** 2026-09-30, by the AI coding agent, from `git diff` and test runs. No result below is assumed.
 
 | Item | Value |

@@ -67,4 +67,4 @@ measured during the day-7 full restore test. Status: **PENDING MEASUREMENT**.
 | Encryption approach | ☐ target-side encryption accepted ☐ require archive encryption |
 | Approver / date | |
 
-Until signed: **AWAITING HUMAN RETENTION APPROVAL.**
+Until signed: **AWAITING HUMAN RETENTION APPROVAL.** (2026-09-30: the decision message left the retention policy and the AR4 choice as unfilled placeholders, so both are still open.)
