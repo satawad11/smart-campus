@@ -23,7 +23,7 @@ x-backend: &backend
   # process — php-fpm, queue, scheduler, websocket — must receive it here.
   # Without it queue/scheduler fall back to the sqlite default and crash (PILOT-001).
   env_file:
-    - path: ./apps/backend/.env
+    - path: ${BACKEND_ENV_FILE:-./apps/backend/.env}
       required: false
   # Persistent Laravel storage shared by all backend processes. Backups
   # (storage/app/backups), local-disk files and logs previously lived in the

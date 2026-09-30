@@ -1,0 +1,131 @@
+# AI Smart Campus — PILOT production overlay (pilot pre-deployment).
+#
+# Usage on the pilot host (see docs/runbooks/DEPLOYMENT.md):
+#   docker compose --env-file apps/backend/.env \
+#     -f docker-compose.yml -f docker-compose.pilot.yml up -d
+#
+# apps/backend/.env is created from infrastructure/pilot/pilot.env.example and
+# is used both as the Laravel environment (env_file) and for the ${...}
+# values below. Differences from the development file:
+#   - only the gateway is published (80 -> 443 redirect, 443 TLS);
+#     PostgreSQL, Redis, MinIO and Reverb are reachable only on the internal
+#     network
+#   - frontend is the static production build (apps/frontend/Dockerfile.prod)
+#   - Redis requires a password; datastore/root secrets are mandatory
+#   - verified backups are copied to an off-host mount
+#   - one-shot setup services: minio-init (buckets + least-privilege app user)
+#     and db-roles (docs/security/LEAST-PRIVILEGE-ROLES.sql, profile "setup")
+
+services:
+  nginx:
+    ports: !override
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes: !override
+      - ./infrastructure/pilot/nginx:/etc/nginx/conf.d:ro
+      - ${PILOT_CERTS_DIR:-./infrastructure/pilot/certs}:/etc/nginx/certs:ro
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      dockerfile: Dockerfile.prod
+      args:
+        VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:?REVERB_APP_KEY is required}
+    image: smart-campus/frontend:pilot
+    environment: !reset {}
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5173/ >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    image: smart-campus/backend:pilot
+    volumes:
+      - ${BACKUP_OFFHOST_HOST_PATH:?BACKUP_OFFHOST_HOST_PATH is required}:/var/backups/offhost
+
+  queue:
+    image: smart-campus/backend:pilot
+
+  scheduler:
+    image: smart-campus/backend:pilot
+    volumes:
+      - ${BACKUP_OFFHOST_HOST_PATH:?BACKUP_OFFHOST_HOST_PATH is required}:/var/backups/offhost
+
+  websocket:
+    image: smart-campus/backend:pilot
+    ports: !reset []
+
+  ai-service:
+    environment:
+      # No default: AI_MODE must be chosen explicitly (mock is not real recognition).
+      AI_MODE: ${AI_MODE:?AI_MODE is required}
+
+  postgres:
+    ports: !reset []
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+
+  redis:
+    ports: !reset []
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: ["sh", "-c", "exec redis-server --appendonly yes --requirepass \"$$REDIS_PASSWORD\""]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    ports: !reset []
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+
+  minio-init:
+    image: quay.io/minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "/pilot/init-pilot.sh"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_APP_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:?AWS_ACCESS_KEY_ID is required}
+      MINIO_APP_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY:?AWS_SECRET_ACCESS_KEY is required}
+    volumes:
+      - ./infrastructure/minio:/pilot:ro
+    networks: [smartcampus]
+    restart: "no"
+
+  db-roles:
+    image: pgvector/pgvector:pg16
+    profiles: ["setup"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      MIGRATION_DB_PASSWORD: ${MIGRATION_DB_PASSWORD:?MIGRATION_DB_PASSWORD is required}
+      APP_DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      BACKUP_DB_PASSWORD: ${BACKUP_DB_PASSWORD:?BACKUP_DB_PASSWORD is required}
+      MONITORING_DB_PASSWORD: ${MONITORING_DB_PASSWORD:?MONITORING_DB_PASSWORD is required}
+    entrypoint:
+      - sh
+      - -c
+      - >-
+        psql -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION IF NOT EXISTS vector' -c 'CREATE EXTENSION IF NOT EXISTS pg_trgm' &&
+        psql -v ON_ERROR_STOP=1 -v dbname="$$PGDATABASE"
+        -v migration_password="$$MIGRATION_DB_PASSWORD" -v app_password="$$APP_DB_PASSWORD"
+        -v backup_password="$$BACKUP_DB_PASSWORD" -v monitoring_password="$$MONITORING_DB_PASSWORD"
+        -f /sql/LEAST-PRIVILEGE-ROLES.sql
+    volumes:
+      - ./docs/security:/sql:ro
+    networks: [smartcampus]
+    restart: "no"
