@@ -16,6 +16,10 @@ return [
 
     'lock_minutes' => (int) env('AUTH_LOCK_MINUTES', 15),
 
+    // Login request throttle (V1 audit A-03), per minute
+    'login_throttle_per_account_ip' => (int) env('AUTH_LOGIN_THROTTLE_PER_ACCOUNT_IP', 10),
+    'login_throttle_per_ip' => (int) env('AUTH_LOGIN_THROTTLE_PER_IP', 30),
+
     'password_min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 12),
 
     'password_max_length' => (int) env('AUTH_PASSWORD_MAX_LENGTH', 128),
