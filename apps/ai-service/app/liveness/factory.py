@@ -3,6 +3,7 @@
 from app.core.config import settings
 from app.liveness.base import FaceLivenessDetector
 from app.liveness.mock import MockFaceLivenessDetector
+from app.liveness.unavailable import UnavailableFaceLivenessDetector
 
 _detector_instance: FaceLivenessDetector | None = None
 
@@ -17,7 +18,7 @@ def get_face_liveness_detector() -> FaceLivenessDetector:
     if settings.ai_mode == "mock":
         _detector_instance = MockFaceLivenessDetector()
     else:
-        # Fallback to mock detector if production model weights are pending
-        _detector_instance = MockFaceLivenessDetector()
+        # Fail closed: never fall back to the always-REAL mock outside mock mode
+        _detector_instance = UnavailableFaceLivenessDetector()
 
     return _detector_instance

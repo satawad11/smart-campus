@@ -6,6 +6,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.api.routes.enrollment import decode_image_bytes
 from app.liveness.factory import get_face_liveness_detector
+from app.liveness.unavailable import LivenessModelUnavailableError
 from app.schemas.liveness import (
     FaceLivenessErrorResponse,
     FaceLivenessSuccessResponse,
@@ -21,6 +22,7 @@ router = APIRouter()
     responses={
         422: {"model": FaceLivenessErrorResponse},
         500: {"model": FaceLivenessErrorResponse},
+        503: {"model": FaceLivenessErrorResponse},
     },
 )
 async def check_liveness(
@@ -45,6 +47,16 @@ async def check_liveness(
     detector = get_face_liveness_detector()
     try:
         result = detector.evaluate(image)
+    except LivenessModelUnavailableError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={
+                "success": False,
+                "error_code": "PAD_MODEL_UNAVAILABLE",
+                "message": str(e),
+                "rejection_reasons": ["PAD_UNAVAILABLE"],
+            },
+        ) from e
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
