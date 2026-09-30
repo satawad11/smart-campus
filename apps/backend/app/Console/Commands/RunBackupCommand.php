@@ -57,6 +57,27 @@ class RunBackupCommand extends Command
             }
         }
 
+        // Off-host copy of every verified backup (PILOT-BACKUP-RETENTION-POLICY)
+        if (filled(config('backup.offhost_path'))) {
+            foreach ($jobs as $job) {
+                if ($job->exists) {
+                    $job->refresh(); // the drill marks the source job VERIFIED on its own instance
+                }
+                if ($job->status !== BackupJob::STATUS_VERIFIED) {
+                    $this->warn("  -> Not copied off-host (job {$job->id} is {$job->status}; use --verify)");
+
+                    continue;
+                }
+                try {
+                    $backupService->copyOffHost($job);
+                    $this->info("  -> Off-host copy verified for job {$job->id}");
+                } catch (\Throwable $e) {
+                    $failed = true;
+                    $this->error("  -> Off-host copy failed for job {$job->id}: {$e->getMessage()}");
+                }
+            }
+        }
+
         if ($jobs === []) {
             $this->error("Unknown backup type: {$type}");
 

@@ -16,6 +16,7 @@ use App\Support\HealthChecks;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Throwable;
 
 /**
@@ -56,6 +57,9 @@ class PilotPreflightCommand extends Command
     public const DEFAULT_SECRETS = ['', 'smart_campus', 'postgres', 'password', 'secret', 'minioadmin', 'changeme'];
 
     public const MIN_FREE_BYTES = 10 * 1073741824;
+
+    /** Shared passwords set by development seeders (InitialAdminUserSeeder). Compared by hash only. */
+    public const SHARED_DEV_PASSWORDS = ['Password123!'];
 
     /** Development accounts created by InitialAdminUserSeeder (@campus.local). */
     public const TEST_ACCOUNT_USERNAMES = ['superadmin', 'sysadmin', 'discipline', 'security', 'executive'];
@@ -250,6 +254,17 @@ class PilotPreflightCommand extends Command
             ->count();
         $this->add('config', 'no seeded test accounts active', $testAccounts === 0 ? 'PASS' : 'FAIL',
             $testAccounts === 0 ? 'none found' : $testAccounts.' InitialAdminUserSeeder account(s) active');
+
+        // Catches renamed seeded accounts too: any active account still using a
+        // known shared development password fails the preflight.
+        $sharedPassword = User::query()
+            ->where('status', UserStatus::ACTIVE)
+            ->get(['id', 'password'])
+            ->filter(fn (User $user) => collect(self::SHARED_DEV_PASSWORDS)
+                ->contains(fn (string $known) => is_string($user->password) && Hash::check($known, $user->password)))
+            ->count();
+        $this->add('config', 'no active account uses a shared dev password', $sharedPassword === 0 ? 'PASS' : 'FAIL',
+            $sharedPassword === 0 ? 'none found' : $sharedPassword.' active account(s) with a shared development password');
     }
 
     private function checkBackup(): void
@@ -276,9 +291,29 @@ class PilotPreflightCommand extends Command
                     && hash_file($latest->checksum_algorithm ?: 'sha256', $latest->target) === $latest->checksum;
                 $this->add('backup', 'verified '.$type.' backup in last 24h', $intact ? 'PASS' : $status,
                     'job '.$latest->id.' at '.$latest->completed_at?->toIso8601String().($intact ? '' : ' — backup file missing or checksum mismatch'));
+
+                if (filled(config('backup.offhost_path'))) {
+                    $offhost = $latest->metadata['offhost_file'] ?? null;
+                    $copied = is_string($offhost) && is_file($offhost)
+                        && hash_file($latest->checksum_algorithm ?: 'sha256', $offhost) === $latest->checksum;
+                    $this->add('backup', $type.' backup copied off-host', $copied ? 'PASS' : $status,
+                        $copied ? 'copy verified' : 'no verified off-host copy for the latest backup');
+                }
             }
         } catch (Throwable $e) {
             $this->add('backup', 'verified backups', $status, 'could not query: '.class_basename($e));
         }
+
+        $productionStatus = config('app.env') === 'production' ? 'FAIL' : 'WARN';
+
+        $this->add('backup', 'backup schedule enabled', config('backup.schedule.enabled') ? 'PASS' : $productionStatus,
+            config('backup.schedule.enabled')
+                ? sprintf('db "%s", storage "%s"', config('backup.schedule.database_cron'), config('backup.schedule.storage_cron'))
+                : 'BACKUP_SCHEDULE_ENABLED is not true');
+
+        $offhostPath = config('backup.offhost_path');
+        $offhostOk = filled($offhostPath) && is_dir($offhostPath) && is_writable($offhostPath);
+        $this->add('backup', 'off-host backup target writable', $offhostOk ? 'PASS' : $productionStatus,
+            blank($offhostPath) ? 'BACKUP_OFFHOST_PATH not set' : ($offhostOk ? 'writable' : 'not a writable directory'));
     }
 }

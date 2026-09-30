@@ -53,6 +53,34 @@ class AlertLifecycleService
     }
 
     /**
+     * Trigger an alert unless an unresolved (OPEN or ACKNOWLEDGED) alert with the
+     * same type and source already exists. Used by recurring monitors so a
+     * condition that persists for hours raises one alert, not one per minute.
+     *
+     * @param  array<string, mixed>|null  $metadata
+     */
+    public function triggerOnce(
+        string $type,
+        string $severity,
+        string $title,
+        string $message,
+        string $source,
+        ?array $metadata = null
+    ): ?SystemAlert {
+        $unresolved = SystemAlert::query()
+            ->where('type', $type)
+            ->where('source', $source)
+            ->where('status', '!=', SystemAlert::STATUS_RESOLVED)
+            ->exists();
+
+        if ($unresolved) {
+            return null;
+        }
+
+        return $this->triggerAlert($type, $severity, $title, $message, $source, $metadata);
+    }
+
+    /**
      * Acknowledge an alert.
      */
     public function acknowledgeAlert(string $alertId, User $user): SystemAlert

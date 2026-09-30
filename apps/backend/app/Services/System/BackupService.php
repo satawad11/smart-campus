@@ -120,6 +120,12 @@ class BackupService
         $username = config('database.connections.pgsql.username', 'smart_campus');
         $password = config('database.connections.pgsql.password', '');
 
+        // SEC-005: prefer the read-only backup role when configured
+        if (filled(config('backup.database.username'))) {
+            $username = config('backup.database.username');
+            $password = config('backup.database.password', '');
+        }
+
         $result = Process::env(['PGPASSWORD' => (string) $password])
             ->timeout(3600)
             ->run(['pg_dump', '-h', (string) $host, '-p', (string) $port, '-U', (string) $username, '-F', 'p', '-f', $targetPath, (string) $database]);
@@ -128,6 +134,8 @@ class BackupService
             File::delete($targetPath);
             throw new Exception('pg_dump failed (exit '.$result->exitCode().'): '.trim($result->errorOutput()));
         }
+
+        @chmod($targetPath, 0600);
     }
 
     /**
@@ -140,6 +148,10 @@ class BackupService
             'status' => BackupJob::STATUS_RUNNING,
             'started_at' => Carbon::now(),
         ]);
+
+        $zip = null;
+        $zipOpen = false;
+        $targetPath = null;
 
         try {
             $backupDir = storage_path('app/backups/storage');
@@ -160,6 +172,7 @@ class BackupService
             if ($zip->open($targetPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new Exception("Unable to create storage archive: {$targetPath}");
             }
+            $zipOpen = true;
 
             $files = File::allFiles($sourcePath);
             foreach ($files as $file) {
@@ -188,6 +201,8 @@ class BackupService
                 'object_storage' => $objectCounts,
             ]));
             $zip->close();
+            $zipOpen = false;
+            @chmod($targetPath, 0600);
 
             $size = File::size($targetPath);
             $checksum = hash_file('sha256', $targetPath);
@@ -219,6 +234,16 @@ class BackupService
 
             return $job;
         } catch (Exception $e) {
+            // Discard the half-built archive: an open ZipArchive would otherwise be
+            // written to disk when destroyed, leaving a partial "backup" behind.
+            if ($zipOpen && $zip instanceof ZipArchive) {
+                $zip->unchangeAll();
+                @$zip->close();
+            }
+            if (is_string($targetPath)) {
+                File::delete($targetPath);
+            }
+
             $job->update([
                 'status' => BackupJob::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
@@ -309,5 +334,124 @@ class BackupService
 
             return $drillJob;
         }
+    }
+
+    /**
+     * Copy a verified backup to the off-host directory with a .sha256 sidecar and
+     * re-verify the copy. Returns false when no off-host path is configured.
+     *
+     * @throws Exception when the copy cannot be written or does not match
+     */
+    public function copyOffHost(BackupJob $job): bool
+    {
+        $base = config('backup.offhost_path');
+        if (blank($base)) {
+            return false;
+        }
+
+        if ($job->status !== BackupJob::STATUS_VERIFIED || ! is_string($job->target) || ! File::exists($job->target)) {
+            throw new Exception("Backup job {$job->id} is not a verified backup with a local file");
+        }
+
+        $dir = rtrim((string) $base, '/').DIRECTORY_SEPARATOR.strtolower($job->type);
+        File::ensureDirectoryExists($dir, 0750);
+        $copy = $dir.DIRECTORY_SEPARATOR.basename($job->target);
+
+        if (! @copy($job->target, $copy)) {
+            throw new Exception("Unable to copy backup to off-host path {$dir}");
+        }
+        @chmod($copy, 0600);
+
+        $algorithm = $job->checksum_algorithm ?: 'sha256';
+        if (hash_file($algorithm, $copy) !== $job->checksum) {
+            File::delete($copy);
+            throw new Exception("Off-host copy checksum mismatch for backup job {$job->id}");
+        }
+        File::put($copy.'.'.$algorithm, $job->checksum.'  '.basename($copy).PHP_EOL);
+
+        $job->update(['metadata' => array_merge($job->metadata ?? [], [
+            'offhost_file' => $copy,
+            'offhost_verified_at' => Carbon::now()->toIso8601String(),
+        ])]);
+
+        return true;
+    }
+
+    /**
+     * Apply the backup retention policy to local backup files (config backup.retention).
+     *
+     * Keeps every backup completed within `recent_hours`, the newest verified backup
+     * of each day for `daily_days`, and at least `min_verified` verified backups per
+     * type. Pruned jobs keep their rows (audit history); only the local file is
+     * removed and `metadata.pruned_at` is set. Off-host copies are governed by the
+     * off-host target's own retention.
+     *
+     * @return array<string, int> files pruned per type
+     */
+    public function pruneBackups(bool $dryRun = false): array
+    {
+        $recentCutoff = Carbon::now()->subHours((int) config('backup.retention.recent_hours', 48));
+        $dailyCutoff = Carbon::now()->subDays((int) config('backup.retention.daily_days', 14))->startOfDay();
+        $minVerified = max(1, (int) config('backup.retention.min_verified', 3));
+        $pruned = [];
+
+        foreach ([BackupJob::TYPE_POSTGRESQL, BackupJob::TYPE_STORAGE] as $type) {
+            $jobs = BackupJob::query()
+                ->where('type', $type)
+                ->whereIn('status', [BackupJob::STATUS_COMPLETED, BackupJob::STATUS_VERIFIED])
+                ->whereNotNull('target')
+                ->orderByDesc('completed_at')
+                ->get()
+                ->filter(fn (BackupJob $job) => empty($job->metadata['pruned_at']));
+
+            $keep = [];
+            $verified = $jobs->where('status', BackupJob::STATUS_VERIFIED);
+            foreach ($verified->take($minVerified) as $job) {
+                $keep[$job->id] = true;
+            }
+            foreach ($jobs as $job) {
+                if ($job->completed_at !== null && $job->completed_at->greaterThanOrEqualTo($recentCutoff)) {
+                    $keep[$job->id] = true;
+                }
+            }
+            $seenDays = [];
+            foreach ($verified as $job) {
+                $day = $job->completed_at?->toDateString();
+                if ($day !== null && $job->completed_at->greaterThanOrEqualTo($dailyCutoff) && ! isset($seenDays[$day])) {
+                    $seenDays[$day] = true;
+                    $keep[$job->id] = true;
+                }
+            }
+
+            $pruned[$type] = 0;
+            foreach ($jobs as $job) {
+                if (isset($keep[$job->id])) {
+                    continue;
+                }
+                $pruned[$type]++;
+                if ($dryRun) {
+                    continue;
+                }
+                File::delete($job->target);
+                $job->update(['metadata' => array_merge($job->metadata ?? [], [
+                    'pruned_at' => Carbon::now()->toIso8601String(),
+                ])]);
+            }
+        }
+
+        if (! $dryRun && array_sum($pruned) > 0) {
+            $this->auditService->record(
+                action: 'backup.pruned',
+                actor: null,
+                subjectType: 'backup_job',
+                subjectUuid: null,
+                oldValues: null,
+                newValues: $pruned,
+                metadata: null,
+                module: 'backup'
+            );
+        }
+
+        return $pruned;
     }
 }

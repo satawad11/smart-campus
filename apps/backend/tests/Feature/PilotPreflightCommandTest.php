@@ -50,7 +50,17 @@ class PilotPreflightCommandTest extends TestCase
             'filesystems.disks.s3.secret' => 'pilot-s3-'.bin2hex(random_bytes(8)),
             'reverb.apps.apps.0.secret' => 'pilot-reverb-'.bin2hex(random_bytes(8)),
             'queue.default' => 'redis',
+            'backup.schedule.enabled' => true,
+            'backup.offhost_path' => $this->offhostDir(),
         ]);
+    }
+
+    private function offhostDir(): string
+    {
+        $dir = storage_path('app/backups/test-offhost');
+        File::ensureDirectoryExists($dir);
+
+        return $dir;
     }
 
     /** @return array<string, mixed> */
@@ -168,6 +178,34 @@ class PilotPreflightCommandTest extends TestCase
 
         $this->assertSame('PASS', $this->statusOf($report, 'app/database clock drift <= 5s'));
         $this->assertContains($this->statusOf($report, 'free disk for storage/backups >= 10 GiB'), ['PASS', 'WARN']);
+    }
+
+    public function test_any_active_account_with_a_shared_dev_password_fails(): void
+    {
+        $this->assertSame('PASS', $this->statusOf($this->runPreflight(), 'no active account uses a shared dev password'));
+
+        // A renamed account is still caught: the check compares password hashes
+        User::factory()->create([
+            'username' => 'gate.operator',
+            'email' => 'operator@pilot.example',
+            'password' => 'Password123!',
+            'status' => UserStatus::ACTIVE,
+        ]);
+
+        $report = $this->runPreflight();
+        $this->assertSame('FAIL', $this->statusOf($report, 'no active account uses a shared dev password'));
+        $this->assertStringNotContainsString('Password123!', json_encode($report));
+    }
+
+    public function test_production_requires_backup_schedule_and_offhost_target(): void
+    {
+        $this->compliantConfig();
+        config(['backup.schedule.enabled' => false, 'backup.offhost_path' => null]);
+
+        $report = $this->runPreflight();
+
+        $this->assertSame('FAIL', $this->statusOf($report, 'backup schedule enabled'));
+        $this->assertSame('FAIL', $this->statusOf($report, 'off-host backup target writable'));
     }
 
     public function test_active_seeded_test_account_fails_preflight(): void

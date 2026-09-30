@@ -136,6 +136,23 @@ class BackupIntegrityTest extends TestCase
         $this->assertFileDoesNotExist($target);
     }
 
+    public function test_failed_storage_backup_leaves_no_partial_archive_even_with_local_files(): void
+    {
+        // Local public files are added to the archive before the object-storage
+        // disk fails; the half-built archive must not be written to disk.
+        Storage::disk('public')->put('partial-test/file.txt', 'local-bytes');
+        $localFile = storage_path('app/public/partial-test/file.txt');
+        config(['backup.object_storage_disks' => ['face_samples']]);
+        Storage::shouldReceive('disk')->with('face_samples')->andThrow(new Exception('Unable to list contents'));
+
+        $target = $this->tempPath('partial.zip');
+        $job = app(BackupService::class)->runStorageBackup($target);
+
+        $this->assertSame(BackupJob::STATUS_FAILED, $job->status);
+        $this->assertFileDoesNotExist($target);
+        File::deleteDirectory(dirname($localFile));
+    }
+
     public function test_backup_run_verify_fails_when_restore_drill_fails(): void
     {
         $this->mock(BackupService::class, function ($mock) {

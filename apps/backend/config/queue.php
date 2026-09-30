@@ -126,4 +126,17 @@ return [
         'table' => 'failed_jobs',
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Queue Backlog Monitoring
+    |--------------------------------------------------------------------------
+    |
+    | system:monitor raises a QUEUE_BACKLOG warning above this many jobs.
+    |
+    */
+
+    'monitor' => [
+        'backlog_threshold' => env('QUEUE_BACKLOG_ALERT_THRESHOLD', 1000),
+    ],
+
 ];

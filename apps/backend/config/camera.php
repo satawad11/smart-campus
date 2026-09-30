@@ -22,4 +22,10 @@ return [
         'provider' => env('CAMERA_SNAPSHOT_PROVIDER', 'mock'),
         'timeout_seconds' => env('CAMERA_SNAPSHOT_TIMEOUT', 5),
     ],
+
+    // system:monitor raises CAMERA_DOWN when an ACTIVE camera has sent no
+    // health report for this long (SEC-013 table: "> 2 minutes no frames").
+    'health' => [
+        'stale_after_seconds' => env('CAMERA_STALE_AFTER_SECONDS', 120),
+    ],
 ];

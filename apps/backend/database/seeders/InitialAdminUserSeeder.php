@@ -17,6 +17,15 @@ class InitialAdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // These accounts share one known password: never create them on a
+        // production/pilot host (pilot pre-deployment review; pilot:preflight
+        // also fails if any active account still uses that password).
+        if (app()->environment('production')) {
+            $this->command?->warn('InitialAdminUserSeeder skipped: development-only accounts are never seeded in production.');
+
+            return;
+        }
+
         $accounts = [
             [
                 'username' => 'superadmin',
