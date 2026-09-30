@@ -24,7 +24,8 @@ use Illuminate\Support\Facades\Broadcast;
 Broadcast::channel('site.{siteUuid}', function (User $user, string $siteUuid) {
     $site = Site::where('uuid', $siteUuid)->first();
 
-    if ($site === null) {
+    // V1 audit A-04: no realtime access before a forced password change
+    if ($site === null || $user->must_change_password) {
         return false;
     }
 

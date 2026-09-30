@@ -40,6 +40,21 @@ class RequirePermission
             ], 401);
         }
 
+        // V1 audit A-04: a forced password change (admin reset / bootstrap) must
+        // be completed before any permission-protected action. Previously only
+        // the frontend router enforced it. Self-service routes (me, logout,
+        // change-password, MFA, sessions) carry no permission middleware.
+        if ($user->must_change_password) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Password change required',
+                'error' => [
+                    'code' => 'PASSWORD_CHANGE_REQUIRED',
+                    'fields' => new stdClass,
+                ],
+            ], 403);
+        }
+
         $hasPermission = false;
 
         foreach ($permissions as $permission) {
