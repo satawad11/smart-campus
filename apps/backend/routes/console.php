@@ -4,6 +4,12 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
+// V1 audit A-11: keep the scheduler's withoutOverlapping() mutexes out of
+// Redis. With the default (Redis) cache store a Redis outage stopped every
+// guarded job, including system:monitor (so no REDIS_HEALTH alert) and the
+// scheduled backups. The database cache table exists in every environment.
+Schedule::useCache(env('SCHEDULE_CACHE_STORE', 'database'));
+
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');

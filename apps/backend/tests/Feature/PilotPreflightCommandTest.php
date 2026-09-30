@@ -10,9 +10,11 @@ use App\Services\System\SystemSettingService;
 use App\Support\HealthChecks;
 use Database\Seeders\SystemSettingSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /**
@@ -53,6 +55,7 @@ class PilotPreflightCommandTest extends TestCase
             'backup.schedule.enabled' => true,
             'backup.offhost_path' => $this->offhostDir(),
         ]);
+        Http::fake(['*/version' => Http::response(['ai_mode' => 'onnx'])]);
     }
 
     private function offhostDir(): string
@@ -178,6 +181,21 @@ class PilotPreflightCommandTest extends TestCase
 
         $this->assertSame('PASS', $this->statusOf($report, 'app/database clock drift <= 5s'));
         $this->assertContains($this->statusOf($report, 'free disk for storage/backups >= 10 GiB'), ['PASS', 'WARN']);
+    }
+
+    public function test_disabled_or_mock_biometric_safety_fails(): void
+    {
+        $this->compliantConfig();
+        $this->assertSame('PASS', $this->statusOf($this->runPreflight(), 'AI service not in mock mode'));
+
+        config(['face.liveness.enabled' => false, 'face.liveness.provider' => 'mock']);
+        Http::swap(new HttpFactory);
+        Http::fake(['*/version' => Http::response(['ai_mode' => 'mock'])]);
+        $report = $this->runPreflight();
+
+        $this->assertSame('FAIL', $this->statusOf($report, 'PAD (liveness) enabled'));
+        $this->assertSame('FAIL', $this->statusOf($report, 'PAD provider is not mock'));
+        $this->assertSame('FAIL', $this->statusOf($report, 'AI service not in mock mode'));
     }
 
     public function test_any_active_account_with_a_shared_dev_password_fails(): void

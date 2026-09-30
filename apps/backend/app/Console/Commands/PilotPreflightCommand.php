@@ -17,6 +17,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Throwable;
 
 /**
@@ -207,6 +208,31 @@ class PilotPreflightCommand extends Command
             $ok = is_numeric($actual) && abs((float) $actual - $approved) < 0.00001;
             $this->add('thresholds', $key.' = '.number_format($approved, 2), $ok ? 'PASS' : 'FAIL',
                 'configured '.(is_numeric($actual) ? number_format((float) $actual, 2) : 'unset'));
+        }
+
+        // V1 audit A-12: configuration that silently disables or fakes biometric
+        // safety. FACE_LIVENESS_ENABLED=false makes every PAD check a bypass
+        // REAL; the backend 'mock' liveness provider and the ai-service 'mock'
+        // mode are not real recognition/PAD (PILOT-000 blocker B5).
+        $this->add('biometrics', 'PAD (liveness) enabled', config('face.liveness.enabled') ? 'PASS' : 'FAIL',
+            config('face.liveness.enabled') ? 'enabled' : 'FACE_LIVENESS_ENABLED=false bypasses PAD as REAL');
+        $provider = (string) config('face.liveness.provider');
+        $this->add('biometrics', 'PAD provider is not mock', $provider === 'mock' ? 'FAIL' : 'PASS', 'provider='.$provider);
+        $this->add('biometrics', 'face recognition enabled', config('face.recognition.enabled') ? 'PASS' : 'FAIL');
+
+        $mode = $this->aiServiceMode();
+        $this->add('biometrics', 'AI service not in mock mode', $mode === null ? 'FAIL' : ($mode === 'mock' ? 'FAIL' : 'PASS'),
+            $mode === null ? 'AI service mode unknown (unreachable)' : 'AI_MODE='.$mode.($mode === 'mock' ? ': no real recognition/PAD (blocker B5)' : ''));
+    }
+
+    private function aiServiceMode(): ?string
+    {
+        try {
+            $response = Http::timeout(3)->get(rtrim((string) config('services.ai.url'), '/').'/version');
+
+            return $response->successful() ? (string) $response->json('ai_mode') : null;
+        } catch (Throwable) {
+            return null;
         }
     }
 
