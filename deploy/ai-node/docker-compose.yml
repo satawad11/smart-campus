@@ -1,0 +1,48 @@
+# AI Smart Campus — AI Node Pilot Deployment Compose (Module 04)
+#
+# Edge perception runtime for campus RTSP cameras.
+# Runs face detection, tracking, local quality/liveness evaluation,
+# backend recognition candidate matching, and durable offline event buffering.
+
+name: smart-campus-ai-node
+
+services:
+  ai-node:
+    build:
+      context: ../../apps/ai-service
+      dockerfile: Dockerfile
+    image: smart-campus/ai-node:pilot
+    container_name: smart-campus-ai-node
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+
+    environment:
+      AI_MODE: ${AI_MODE:-mock}
+      BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://localhost:8000}
+      AI_NODE_UUID: ${AI_NODE_UUID:-}
+      AI_NODE_TOKEN: ${AI_NODE_TOKEN:-}
+      EVENT_BUFFER_PATH: ${EVENT_BUFFER_PATH:-/data/offline_events.db}
+      AI_NODE_AUTORUN: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      TARGET_FPS: ${TARGET_FPS:-5.0}
+
+    volumes:
+      # Persistent storage: durable SQLite offline event buffer survives container recreation
+      - ai-node-data:/data
+      # Local models directory mounted read-only for ONNX weights
+      - ${MODELS_DIR:-./models}:/models:ro
+    ports:
+      # Local-only health inspection port; no inbound public port is opened
+      - "127.0.0.1:${AI_NODE_PORT:-8001}:8001"
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.health_check"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  ai-node-data:
+    name: smart-campus-ai-node-data

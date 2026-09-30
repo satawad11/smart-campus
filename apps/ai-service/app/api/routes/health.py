@@ -3,7 +3,7 @@
 Provides /health, /health/live (liveness) and /ready, /health/ready (readiness).
 """
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 
 from app.core.config import settings
 from app.core.health import readiness_checker
@@ -39,3 +39,18 @@ def readiness(response: Response) -> dict:
         "version": settings.version,
         "checks": checks,
     }
+
+
+@router.get("/health/node")
+def node_status(request: Request) -> dict:
+    """Returns AI Node orchestrator operational status if active."""
+    orchestrator = getattr(request.app.state, "orchestrator", None)
+    if orchestrator is not None:
+        return orchestrator.get_status_summary()
+    return {
+        "status": "STANDBY",
+        "ai_mode": settings.ai_mode,
+        "node_uuid": settings.ai_node_uuid,
+        "message": "AI Node orchestrator not active in this process",
+    }
+
