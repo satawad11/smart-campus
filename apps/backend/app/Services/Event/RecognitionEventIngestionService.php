@@ -9,7 +9,10 @@ use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
 use App\Models\Person;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Recognition-event ingestion (EVT-003) with event_uuid idempotency
@@ -49,77 +52,119 @@ class RecognitionEventIngestionService
 
     public function ingest(AiNode $resolvedNode, array $data): AccessEvent
     {
-        return DB::transaction(function () use ($resolvedNode, $data) {
-            if ($data['ai_node_uuid'] !== $resolvedNode->uuid) {
-                throw ApiException::unprocessable(
-                    'AI_NODE_IDENTITY_MISMATCH',
-                    'The reported ai_node_uuid does not match the authenticated node.',
-                );
-            }
+        $created = null;
 
-            $camera = Camera::where('uuid', $data['camera_uuid'])->first()
-                ?? throw ApiException::unprocessable('CAMERA_NOT_FOUND', 'The specified camera does not exist.');
-
-            if ($camera->ai_node_id !== $resolvedNode->id) {
-                throw ApiException::unprocessable(
-                    'CAMERA_NOT_ASSIGNED_TO_NODE',
-                    'This AI node is not assigned to the specified camera.',
-                );
-            }
-
-            $eventType = $this->resolveEventType($data);
-
-            $existing = AccessEvent::where('uuid', $data['event_uuid'])->first();
-            if ($existing !== null) {
-                if ($this->isConsistentRetry($existing, $camera, $eventType, $data)) {
-                    return $existing;
+        try {
+            $event = DB::transaction(function () use ($resolvedNode, $data, &$created) {
+                if ($data['ai_node_uuid'] !== $resolvedNode->uuid) {
+                    throw ApiException::unprocessable(
+                        'AI_NODE_IDENTITY_MISMATCH',
+                        'The reported ai_node_uuid does not match the authenticated node.',
+                    );
                 }
 
-                throw ApiException::conflict(
-                    'EVENT_ALREADY_EXISTS',
-                    'An event with this event_uuid already exists with different content.',
-                );
+                $camera = Camera::where('uuid', $data['camera_uuid'])->first()
+                    ?? throw ApiException::unprocessable('CAMERA_NOT_FOUND', 'The specified camera does not exist.');
+
+                if ($camera->ai_node_id !== $resolvedNode->id) {
+                    throw ApiException::unprocessable(
+                        'CAMERA_NOT_ASSIGNED_TO_NODE',
+                        'This AI node is not assigned to the specified camera.',
+                    );
+                }
+
+                $eventType = $this->resolveEventType($data);
+
+                $existing = AccessEvent::where('uuid', $data['event_uuid'])->first();
+                if ($existing !== null) {
+                    if ($this->isConsistentRetry($existing, $camera, $eventType, $data)) {
+                        return $existing;
+                    }
+
+                    throw ApiException::conflict(
+                        'EVENT_ALREADY_EXISTS',
+                        'An event with this event_uuid already exists with different content.',
+                    );
+                }
+
+                $personId = null;
+                if ($data['classification'] === 'MATCH' && ! empty($data['candidate_person_uuid'])) {
+                    $personId = Person::where('uuid', $data['candidate_person_uuid'])->value('id');
+                }
+
+                $suppressedBy = $this->findWithinSemanticCooldown($camera, $eventType, $personId, $data['track_id']);
+                if ($suppressedBy !== null) {
+                    return $suppressedBy;
+                }
+
+                $event = AccessEvent::create([
+                    'uuid' => $data['event_uuid'],
+                    'person_id' => $personId,
+                    'site_id' => $camera->site_id,
+                    'zone_id' => $camera->zone_id,
+                    'camera_id' => $camera->id,
+                    'ai_node_id' => $resolvedNode->id,
+                    'event_type' => $eventType,
+                    'occurred_at' => $data['occurred_at'],
+                    'received_at' => now(),
+                    'face_score' => $data['similarity'] ?? null,
+                    'liveness_score' => null,
+                    'quality_score' => $data['quality_score'] ?? null,
+                    'track_id' => $data['track_id'],
+                    'snapshot_path' => null,
+                    'metadata' => [
+                        'model_code' => $data['model_code'],
+                        'model_version' => $data['model_version'],
+                        'classification' => $data['classification'],
+                        'distance' => $data['distance'] ?? null,
+                        'rejected_locally' => $data['rejected_locally'],
+                        'reasons' => $data['reasons'] ?? [],
+                    ],
+                ]);
+
+                $created = [$event, $this->persistDecision($event)];
+
+                return $event;
+            });
+        } catch (UniqueConstraintViolationException) {
+            // V1 audit A-07: two concurrent deliveries of the same event_uuid both
+            // passed the existence check; the unique index let one win. Treat the
+            // loser exactly like a sequential retry instead of answering 500.
+            $existing = AccessEvent::where('uuid', $data['event_uuid'])->first();
+            $camera = Camera::where('uuid', $data['camera_uuid'])->first();
+            if ($existing !== null && $camera !== null
+                && $this->isConsistentRetry($existing, $camera, $this->resolveEventType($data), $data)) {
+                return $existing;
             }
 
-            $personId = null;
-            if ($data['classification'] === 'MATCH' && ! empty($data['candidate_person_uuid'])) {
-                $personId = Person::where('uuid', $data['candidate_person_uuid'])->value('id');
+            throw ApiException::conflict(
+                'EVENT_ALREADY_EXISTS',
+                'An event with this event_uuid already exists with different content.',
+            );
+        }
+
+        // V1 audit A-08: broadcast and notify only after commit (docs/09 pipeline
+        // "... -> commit -> broadcast -> notify"). A Reverb or notification
+        // failure must not roll back or lose an already-decided event; clients
+        // recover missed events through the events API (EVT-015).
+        if ($created !== null) {
+            [$newEvent, $decision] = $created;
+            try {
+                broadcast(new AccessEventBroadcast($newEvent, $decision));
+            } catch (Throwable $e) {
+                Log::warning('Access event broadcast failed; clients recover via missed-event sync', [
+                    'event_uuid' => $newEvent->uuid,
+                    'error' => $e->getMessage(),
+                ]);
             }
-
-            $suppressedBy = $this->findWithinSemanticCooldown($camera, $eventType, $personId, $data['track_id']);
-            if ($suppressedBy !== null) {
-                return $suppressedBy;
+            try {
+                $this->notifier->notifyIfActionable($newEvent, $decision);
+            } catch (Throwable $e) {
+                Log::error('Access event notification failed', ['event_uuid' => $newEvent->uuid, 'error' => $e->getMessage()]);
             }
+        }
 
-            $event = AccessEvent::create([
-                'uuid' => $data['event_uuid'],
-                'person_id' => $personId,
-                'site_id' => $camera->site_id,
-                'zone_id' => $camera->zone_id,
-                'camera_id' => $camera->id,
-                'ai_node_id' => $resolvedNode->id,
-                'event_type' => $eventType,
-                'occurred_at' => $data['occurred_at'],
-                'received_at' => now(),
-                'face_score' => $data['similarity'] ?? null,
-                'liveness_score' => null,
-                'quality_score' => $data['quality_score'] ?? null,
-                'track_id' => $data['track_id'],
-                'snapshot_path' => null,
-                'metadata' => [
-                    'model_code' => $data['model_code'],
-                    'model_version' => $data['model_version'],
-                    'classification' => $data['classification'],
-                    'distance' => $data['distance'] ?? null,
-                    'rejected_locally' => $data['rejected_locally'],
-                    'reasons' => $data['reasons'] ?? [],
-                ],
-            ]);
-
-            $this->persistDecision($event);
-
-            return $event;
-        });
+        return $event;
     }
 
     /**
@@ -133,7 +178,7 @@ class RecognitionEventIngestionService
      * monitor.view users if the decision needs attention — same order as
      * docs/09's pipeline ("... -> commit -> broadcast -> notify").
      */
-    private function persistDecision(AccessEvent $event): void
+    private function persistDecision(AccessEvent $event): AccessDecision
     {
         $context = $this->contextResolver->resolve($event);
         $result = $this->matcher->match($context);
@@ -149,8 +194,7 @@ class RecognitionEventIngestionService
             'reason_text' => null,
         ]);
 
-        broadcast(new AccessEventBroadcast($event, $decision));
-        $this->notifier->notifyIfActionable($event, $decision);
+        return $decision;
     }
 
     /**
