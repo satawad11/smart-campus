@@ -81,3 +81,13 @@ live pilot database.
 | Object count archived vs restored per bucket | |
 | Result | |
 | Executed by | |
+
+## Pre-Deployment Update (2026-09-30)
+
+Production candidate: code at `72ee47b`, release tag `v1.0.0-pilot`. Full package and rehearsal: `PILOT-HOST-DEPLOYMENT-CHECKLIST.md`; delta review: `PILOT-000`.
+
+**Status: PENDING PILOT CONTINUITY.** The gaps in the table above are closed in software: scheduled backups
+(DB every 10 min, storage hourly), retention (`backup:prune`), verified off-host copies. On the overlay rehearsal a
+**scheduled** PostgreSQL backup fired by itself at 2026-09-30T02:20:12Z (VERIFIED, off-host copy verified), and a restore
+from the off-host copy succeeded. RPO: PostgreSQL meets < 15 min; object storage (hourly) does **not**. Flagged in
+`PILOT-BACKUP-RETENTION-POLICY.md` §2.

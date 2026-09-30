@@ -197,15 +197,20 @@ Pilot scope: 1 Site, 1 Gate, 2 Cameras, 1 AI Node, 80 Students, 5 Operators.
 Evidence: `docs/pilot/PILOT-0xx-*.md`. `[~]` = software/rehearsal part done; the
 human, physical or elapsed-time part is still open (see each document's status).
 
-[~] PILOT-001 Production environment validation (software checks PASS in rehearsal; pilot host/physical PENDING)
-[~] PILOT-002 Deploy approved V1 (rehearsal deploy PASS; pilot host deploy PENDING)
-[~] PILOT-003 Initial live backup (verified rehearsal backup; live backup PENDING)
+Production candidate: code at `72ee47b`, tag `v1.0.0-pilot` (PILOT-000 delta review: APPROVED FOR
+PILOT DEPLOYMENT; live biometric operation HOLD, blocker B5: no production face/PAD model).
+
+[x] PILOT-000 Production candidate delta review (APPROVED FOR PILOT DEPLOYMENT; human ack pending in PILOT-011)
+[x] PILOT-PKG Pilot host deployment package + backup/retention policy (retention AWAITING HUMAN APPROVAL)
+[~] PILOT-001 Production environment validation (overlay rehearsal H3–H14 PASS; PENDING HOST)
+[~] PILOT-002 Deploy approved V1 (Compose overlay rehearsal PASS; PENDING HOST)
+[~] PILOT-003 Initial live backup (verified + off-host rehearsal backup; PENDING LIVE BACKUP)
 [~] PILOT-004 Operator onboarding (package ready; AWAITING HUMAN OPERATOR COMPLETION)
-[~] PILOT-005 Production smoke test (automated rehearsal smoke PASS; live/physical PENDING)
+[~] PILOT-005 Production smoke test (HTTPS rehearsal smoke 26/26; PENDING PHYSICAL WALKTHROUGH)
 [~] PILOT-006 Camera/AI-node stability (procedure ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
-[~] PILOT-007 Recognition quality review (procedure ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
-[~] PILOT-008 Incident/alert report (pre-pilot incidents fixed; live log AWAITING REAL DATA)
-[~] PILOT-009 Backup verification (rehearsal full restore PASS; pilot continuity PENDING)
+[~] PILOT-007 Recognition quality review (procedure ready; AWAITING PILOT ELAPSED TIME / REAL DATA; blocked by B5)
+[~] PILOT-008 Incident/alert report (pre-pilot incidents fixed, alert producers added; live log AWAITING REAL DATA)
+[~] PILOT-009 Backup verification (scheduled + off-host rehearsal backups and restores PASS; PENDING PILOT CONTINUITY)
 [~] PILOT-010 7/14-day review (template ready; AWAITING PILOT ELAPSED TIME / REAL DATA)
 [ ] PILOT-011 [R] Human pilot acceptance — AWAITING HUMAN PILOT ACCEPTANCE
 

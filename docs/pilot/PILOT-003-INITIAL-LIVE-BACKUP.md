@@ -92,3 +92,12 @@ biometric source images: store it encrypted and with restricted access.
 | Executed by / witnessed by | |
 
 **PILOT-003 = PASS only when every field above is filled in and both jobs are VERIFIED.**
+
+## Pre-Deployment Update (2026-09-30)
+
+Production candidate: code at `72ee47b`, release tag `v1.0.0-pilot`. Full package and rehearsal: `PILOT-HOST-DEPLOYMENT-CHECKLIST.md`; delta review: `PILOT-000`.
+
+**Status: PENDING LIVE BACKUP** (no pilot host). On the overlay rehearsal, `backup:run --type=ALL --verify`
+ran as the read-only `campus_backup_user` with both jobs VERIFIED and **both copies verified off-host** (`.sha256`
+sidecar re-hashed). A restore from the off-host copy into an empty database gave 50 tables, 44 permissions, 38 settings and 49 migrations.
+Retention metadata gap closed: `backup:prune` + policy (AWAITING HUMAN RETENTION APPROVAL). Files are 0600.

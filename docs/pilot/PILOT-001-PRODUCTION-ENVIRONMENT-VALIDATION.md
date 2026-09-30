@@ -100,3 +100,17 @@ Full details are in PILOT-008 §3. Summary:
 | H11 | Physical gate procedure stays manual (door control disabled) | PENDING confirmation | pilot lead |
 
 **Do not enable the live gate until H1–H11 are resolved and PILOT-004 is signed.**
+
+## Pre-Deployment Update (2026-09-30)
+
+Production candidate: code at `72ee47b`, release tag `v1.0.0-pilot`. Full package and rehearsal: `PILOT-HOST-DEPLOYMENT-CHECKLIST.md`; delta review: `PILOT-000`.
+
+**Status: PENDING HOST.** The pilot overlay (`docker-compose.pilot.yml`) was rehearsed as a separate compose
+project on the workstation. Host checks H1–H14 are automated in `scripts/pilot-host-preflight.sh`. Rehearsal
+result: H3–H10 and H12–H14 PASS; H1 (self-signed certificate) and H2 (no DNS name) FAIL, as they should on a workstation;
+H10 external probe and H11 NTP are MANUAL. `pilot:preflight --require-backup` on the rehearsal fails only on
+the local CORS origin `https://localhost:8443` (correct: local origins are refused).
+
+Items from §4 now addressed in software: H2/H5 TLS gateway and wss (overlay), H3 secrets (template + preflight), H9 off-host
+backups (implemented), H10 dependency/camera alerts (`system:monitor`); paging remains external (MANUAL).
+**New blocker B5:** no production face or PAD model in the repository (PILOT-000 §11.1).

@@ -66,3 +66,13 @@ PILOT-002 §7 for the gateway re-check.
 
 Use consenting pilot volunteers for L6–L7. Record outcomes as pass/fail and event
 UUIDs only. No face images or names in this document.
+
+## Pre-Deployment Update (2026-09-30)
+
+Production candidate: code at `72ee47b`, release tag `v1.0.0-pilot`. Full package and rehearsal: `PILOT-HOST-DEPLOYMENT-CHECKLIST.md`; delta review: `PILOT-000`.
+
+**Status: PENDING PHYSICAL WALKTHROUGH.** HTTPS smoke through the pilot TLS gateway (overlay rehearsal, final
+images): **26/26 PASS**. Covered: 6 health probes JSON, HTTP→HTTPS 301, 5 locked features false, 7 protected or locked
+routes 401, CSRF 419, HSTS, session cookie Secure + HttpOnly, static SPA (no Vite client), deep-link fallback, WSS
+handshake 101. Live checks L1–L11 need the pilot host, cameras, AI node and volunteers. Biometric checks (L6/L7) are
+also blocked by B5 (no production model).

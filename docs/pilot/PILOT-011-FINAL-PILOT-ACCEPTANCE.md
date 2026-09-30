@@ -150,21 +150,24 @@ explicit human approval. The agent doesn't recommend or approve expansion.
 | B1 | **BLOCKER** | Pilot host not provisioned or validated (PILOT-001 H1–H11) | PILOT-001 | Infrastructure |
 | B2 | **BLOCKER** | Live initial verified backup not taken (SEC-024 condition 2) | PILOT-003 | SYSTEM_ADMIN on the pilot host |
 | B3 | **BLOCKER** | Operator walkthrough not completed (SEC-024 condition 3) | PILOT-004 | Pilot lead |
-| B4 | **BLOCKER** | Phase 08 fix commit changes code after SEC-024 approval; human review and acknowledgement required before deploy | PILOT-002 §6 | Human reviewer |
-| H1 | HIGH | Release tag `v1.0.0-pilot` missing; DEPLOYMENT.md assumes systemd, the repository ships compose (P08-09) | PILOT-002 | Human |
-| H2 | HIGH | No production serving path for the built frontend; compose runs the Vite dev server (P08-14) | PILOT-001 | Infrastructure |
-| H3 | HIGH | Backups not scheduled, no retention, no off-host copy (P08-18, H9) | PILOT-009 | SYSTEM_ADMIN |
+| B4 | **BLOCKER** | Phase 08 and pre-deployment commits change code after SEC-024 approval; human review and acknowledgement required before deploy (software delta review: PILOT-000, APPROVED FOR PILOT DEPLOYMENT) | PILOT-000 | Human reviewer |
+| B5 | **BLOCKER** | No production face detection, embedding or PAD model in the repository (ai-service is mock-only). Live biometric recognition can't start. PAD fail-open fixed (808acf9) | PILOT-000 §11.1 | Human decision (model selection, licensing, validation) |
+| H1 | ~~HIGH~~ FIXED | Release tag and Compose runbook (P08-09): tag `v1.0.0-pilot` created; DEPLOYMENT.md and ROLLBACK.md rewritten | PILOT-002 | — |
+| H2 | ~~HIGH~~ FIXED | Production static frontend (`Dockerfile.prod`, pilot overlay) (P08-14) | PILOT-001 | — |
+| H3 | HIGH → mechanism FIXED | Backup schedule, retention and verified off-host copy implemented (P08-18). Values AWAITING HUMAN RETENTION APPROVAL; object-storage RPO is 60 min (> 15 min target) | PILOT-BACKUP-RETENTION-POLICY | Human approval |
 | H4 | HIGH | SEC-020 physical results unverified (P08-07) | PILOT-006 | Site team |
-| H5 | HIGH | No external paging; DB, Redis and camera-offline conditions produce no alert rows (PILOT-008 §2.3) | PILOT-008 | Human decision (fix or accept) |
-| M1 | MEDIUM | `InitialAdminUserSeeder` (shared known password) in the repository and image (P08-08); preflight guards against it | PILOT-002 | Human |
-| M2 | MEDIUM | `LEAST-PRIVILEGE-ROLES.sql` statement error and hardcoded DB name (P08-11) | PILOT-001 | Human |
+| H5 | HIGH (reduced) | Redis/storage/AI-service/camera/queue alerts now automatic (`system:monitor`). Still no external paging, and a PostgreSQL outage can only be caught by an external probe | PILOT-008 | Infrastructure (external probe) / human |
+| M1 | MEDIUM (mitigated) | `InitialAdminUserSeeder` stays in the repository, but is a no-op in production; preflight fails on any active account using its shared password (P08-08) | PILOT-002 | Human (remove or keep) |
+| M2 | ~~MEDIUM~~ FIXED | `LEAST-PRIVILEGE-ROLES.sql` fixed and validated by execution (P08-11) | PILOT-001 | — |
 | M3 | MEDIUM | Pilot evidence retention: snapshots 30 days, events 90 days; export aggregates before expiry | §21 | Pilot lead |
 | L1 | LOW | No incident UI (API only) (P08-10) | PILOT-004 | — |
-| L2 | LOW | Backup file mode 0644 (P08-17) | PILOT-003 | — |
-| L3 | LOW | Pre-existing pint style issue in `routes/api.php` (P08-15) | PILOT-002 | — |
+| L2 | ~~LOW~~ FIXED | Backup files 0600 (P08-17) | PILOT-003 | — |
+| L3 | ~~LOW~~ FIXED | pint and eslint green (P08-15, P08-23); 71 Prettier files remain (P08-24, not a CI gate) | PILOT-002 | — |
 | AR1 | ACCEPTED RISK (proposed) | Redis without password, provided it's reachable only on the private container network | PILOT-001 | Human to accept or reject |
 | AR2 | ACCEPTED RISK (proposed) | Manual dashboard checks instead of external paging for the 14-day pilot | PILOT-008 | Human to accept or reject |
 | AR3 | ACCEPTED RISK (proposed) | Incidents managed through the API only during the pilot | PILOT-004 | Human to accept or reject |
+| AR4 | ACCEPTED RISK (proposed) | Object-storage backups hourly (RPO ≈ 60 min for images and snapshots) instead of < 15 min, unless incremental replication is added | PILOT-BACKUP-RETENTION-POLICY §2 | Human to accept or reject |
+| AR5 | ACCEPTED RISK (proposed) | Backup archives encrypted only by the off-host target and host disk, not by the application | PILOT-BACKUP-RETENTION-POLICY §3 | Human to accept or reject |
 
 Fixed in Phase 08 (tested, see PILOT-008 §3): P08-01 locked features enable-able via settings,
 P08-02 queue/scheduler unconfigured, P08-03 stale images and DB, P08-04 fake/empty backups,
@@ -176,7 +179,8 @@ P08-13 buckets missing, P08-16 backups lost on redeploy, P08-19 Phase 08 test le
 | Item | Decision |
 |---|---|
 | Phase 08 fix commit reviewed and acknowledged (B4) | ☐ YES ☐ NO |
-| Proposed accepted risks AR1 / AR2 / AR3 | ☐ accept ☐ reject (each) |
+| Proposed accepted risks AR1–AR5 | ☐ accept ☐ reject (each) |
+| Production model decision (B5) | ☐ decided: ________ ☐ pilot limited to non-biometric operation |
 | Pilot go-live authorised once B1–B3 are closed | ☐ YES ☐ NO |
 | After the 14-day review: pilot accepted? | ☐ ACCEPT ☐ EXTEND ☐ REJECT |
 | Scope expansion approved? (requires a separate decision) | ☐ NO ☐ YES (describe) |

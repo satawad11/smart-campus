@@ -137,3 +137,13 @@ Executed 2026-09-29T19:45Z on the development stack (**not** a pilot environment
 | Gateway `/api/v1/features` | door, visitor, vehicle, alpr, ai_assistant all `false` |
 
 The dev stack keeps `APP_ENV=local` and dev secrets by design. It isn't a pilot target.
+
+## Pre-Deployment Update (2026-09-30)
+
+Production candidate: code at `72ee47b`, release tag `v1.0.0-pilot`. Full package and rehearsal: `PILOT-HOST-DEPLOYMENT-CHECKLIST.md`; delta review: `PILOT-000`.
+
+**Status: PENDING HOST.** The Compose procedure is now the official runbook (`docs/runbooks/DEPLOYMENT.md`,
+rewritten; tag `v1.0.0-pilot` created on the candidate). Overlay rehearsal (TEST DATA, project `smart-campus-pilot`):
+`$DC config` OK; datastores → `minio-init` (4 buckets, least-privilege app user) → `db-roles` (SEC-005 roles) →
+migrate and seed as `campus_migration_user` (49/49, DemoDataSeeder skipped) → all services healthy; only nginx publishes
+ports (8088/8443 in rehearsal). HTTPS smoke 26/26 on the final images.

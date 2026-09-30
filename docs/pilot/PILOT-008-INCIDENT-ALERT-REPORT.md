@@ -5,6 +5,7 @@
 - Alert producers for AI-node outage and backup failure: **implemented and tested** (§2)
 - Live pilot incident log: **AWAITING PILOT ELAPSED TIME / REAL DATA** (§4)
 - External paging (email, PagerDuty): **PENDING**. Not implemented in V1 (§2.3)
+- Pre-deployment review (2026-09-30): dependency, camera and queue alert producers added (§2.2); findings P08-20 to P08-24 added (§3)
 
 **Prepared:** 2026-09-30 (Phase 08)
 
@@ -36,14 +37,17 @@ alert table in `docs/security/MONITORING-OBSERVABILITY.md` (SEC-013). Issue P08-
 | Condition | Producer | Alert type / severity | Deduplication | Test |
 |---|---|---|---|---|
 | AI node heartbeat stale | `ai-nodes:detect-stale` (every minute) | `AI_NODE_DOWN` / CRITICAL | one per stale period (same rule as the OFFLINE health log) | `PilotAlertProducersTest` |
-| Backup job or restore drill failed | `backup:run` | `BACKUP_FAILED` / CRITICAL | one per failed run | `PilotAlertProducersTest`, `BackupIntegrityTest` |
+| Backup job, restore drill or off-host copy failed | `backup:run` | `BACKUP_FAILED` / CRITICAL | one per failed run | `PilotAlertProducersTest`, `BackupIntegrityTest`, `PilotBackupPolicyTest` |
+| Redis, object storage or AI service unreachable | `system:monitor` (every minute) | `REDIS_HEALTH` / `STORAGE_HEALTH` / `AI_SERVICE_HEALTH`, CRITICAL | one unresolved alert per dependency | `MonitorSystemHealthTest`; rehearsal: stopping ai-service raised 1 alert over 2 runs |
+| ACTIVE camera with no health report > 120 s | `system:monitor` | `CAMERA_DOWN` / WARNING | one unresolved alert per camera | `MonitorSystemHealthTest` |
+| Default queue > 1000 jobs | `system:monitor` | `QUEUE_BACKLOG` / WARNING | one unresolved alert | — |
 
 ### 2.3 Not covered (PENDING, human decision)
 
 | Condition in SEC-013 table | Current state | Pilot mitigation |
 |---|---|---|
-| PostgreSQL or Redis unavailable | Visible on `/system/health` and `/health/full` (503); no alert row | External uptime probe on `/health/full` (host monitoring). PENDING |
-| Camera stream offline > 2 min | Camera health logs only; no alert row | Operators watch camera health on `/cameras`; daily PILOT-006 log |
+| PostgreSQL unavailable | Can't be stored as an alert (the alert store is PostgreSQL); `system:monitor` logs CRITICAL and exits 1; `/health/full` returns 503 | External uptime probe on `/health/full`. PENDING (host) |
+| Camera stream offline > 2 min | **Covered** by `CAMERA_DOWN` (§2.2) | — |
 | Login failure surge | Account lockout (AUTH-006) and login history; no alert row | SYSTEM_ADMIN reviews login history daily |
 | Email / PagerDuty dispatch | Not implemented | SYSTEM_ADMIN checks `/system/health` at shift start and mid-shift. External paging is a candidate post-pilot change, not a pilot blocker, if the human accepts the risk |
 
@@ -65,17 +69,23 @@ affected pilot users, because the pilot hasn't started.
 | P08-06 | PILOT-008 | HIGH | No automatic alert producers (§2.1) | AI-node-down and backup-failed producers | FIXED (partial, see §2.3) |
 | P08-07 | PILOT-006 | MEDIUM | SEC-020 physical test results have no raw evidence in the repository | Re-execute on pilot hardware (PILOT-006 §5) | OPEN, human action |
 | P08-08 | PILOT-002 | MEDIUM (security) | Commit 75f98bb added `InitialAdminUserSeeder` (5 accounts, one shared known password, MFA off, no forced change) | Not called by `DatabaseSeeder`. `pilot:preflight` fails if any of those accounts are active. Removal or restriction is a human decision | MITIGATED, human decision |
-| P08-09 | PILOT-002 | MEDIUM | `DEPLOYMENT.md` checks out tag `v1.0.0-pilot`, which doesn't exist, and assumes systemd/supervisor, while the repository ships Docker Compose | Compose procedure documented in PILOT-002. Human creates the release tag on the approved commit | OPEN, human action |
+| P08-09 | PILOT-002 | MEDIUM | `DEPLOYMENT.md` checks out tag `v1.0.0-pilot`, which doesn't exist, and assumes systemd/supervisor, while the repository ships Docker Compose | DEPLOYMENT.md and ROLLBACK.md rewritten for Docker Compose; tag `v1.0.0-pilot` created on the production candidate | FIXED (pre-deployment review) |
 | P08-10 | PILOT-004 | LOW | No incident UI; incidents are managed through the API only | Documented in PILOT-004 E3 | ACCEPTED FOR PILOT (proposed) |
-| P08-11 | PILOT-001 | MEDIUM | `docs/security/LEAST-PRIVILEGE-ROLES.sql` (SEC-005) fails at `REVOKE CREATE, DROP, TRUNCATE ON SCHEMA public` (`unrecognized privilege type "drop"`) and hardcodes database `smart_campus`. Effective privileges were still correct in rehearsal (app user: no superuser, no DDL) | Documented. The pilot operator applies the script with the database name substituted and drops `DROP, TRUNCATE` from that statement. SEC-005 file not modified | OPEN, human action |
+| P08-11 | PILOT-001 | MEDIUM | `docs/security/LEAST-PRIVILEGE-ROLES.sql` (SEC-005) fails at `REVOKE CREATE, DROP, TRUNCATE ON SCHEMA public` (`unrecognized privilege type "drop"`) and hardcodes database `smart_campus`. Effective privileges were still correct in rehearsal (app user: no superuser, no DDL) | Script fixed (valid REVOKEs, psql variables, idempotent) and validated by execution: app role DML only, backup role read-only, monitoring role no table data | FIXED (pre-deployment review) |
 | P08-12 | PILOT-005 | HIGH | nginx didn't route `/health/*` to the backend: the SPA answered 200 HTML, so the runbook health probes couldn't detect an outage | `location ~ ^/health(...)$` added to `infrastructure/nginx/default.conf` | FIXED |
 | P08-13 | PILOT-001 | HIGH | Dev MinIO had none of the approved buckets. The default `s3` disk bucket (`AWS_BUCKET=smart-campus`), which `/health/storage` probes, isn't an approved bucket, so storage health could never pass | Buckets provisioned from `infrastructure/minio/buckets.txt`; `.env.example` `AWS_BUCKET=face-samples`. FND-010 probe and its test unchanged | FIXED |
-| P08-14 | PILOT-001 | MEDIUM | Compose `frontend` service runs the Vite **dev server**; no production static-serving path exists in the repository | Production build verified (`npm run build`). Serving the built `dist/` from the gateway is a pilot-host deployment step (PILOT-002 §4) | OPEN, human action |
+| P08-14 | PILOT-001 | MEDIUM | Compose `frontend` service runs the Vite **dev server**; no production static-serving path exists in the repository | `apps/frontend/Dockerfile.prod` (static nginx image) used by `docker-compose.pilot.yml`; verified through the TLS gateway | FIXED (pre-deployment review) |
 | P08-16 | PILOT-003 | HIGH (data integrity) | Backups were written to `storage/app/backups` in the backend container's writable layer, with no volume. Recreating the container (every deploy) destroyed them, while their `backup_jobs` rows still said VERIFIED. Reproduced in rehearsal: after a recreate, both earlier VERIFIED backups were gone | Compose `backend-storage` volume shared by all backend processes; `pilot:preflight` now requires the backup file to exist with a matching checksum. Off-host copy still required (PILOT-001 H9) | FIXED, VERIFIED IN REHEARSAL |
-| P08-17 | PILOT-003 | LOW | Backup files are created with mode 0644 inside a root-only 0750 directory | Candidate hardening: create backup files 0600 | OPEN (proposed LOW) |
-| P08-18 | PILOT-009 | MEDIUM | `backup:run` isn't scheduled anywhere, although SEC-007 says "daily"; backup files have no retention | Daily manual run or host timer during the pilot (PILOT-009 §2.1); scheduling and retention are an operator decision | OPEN, human action |
+| P08-17 | PILOT-003 | LOW | Backup files are created with mode 0644 inside a root-only 0750 directory | Backup files and off-host copies created 0600 | FIXED (pre-deployment review) |
+| P08-18 | PILOT-009 | MEDIUM | `backup:run` isn't scheduled anywhere, although SEC-007 says "daily"; backup files have no retention | Scheduled backups (DB 10 min, storage hourly), `backup:prune` retention, verified off-host copy; values AWAITING HUMAN RETENTION APPROVAL | FIXED (mechanism); values awaiting approval |
 | P08-19 | PILOT-002 | LOW (test) | Phase 08's own new `PilotPreflightCommandTest` switched `database.default` mid-test. Under the PostgreSQL gate this left the RefreshDatabase transaction open and hung the suite (two consecutive gate runs stalled until stopped). Found before commit | The test no longer switches the connection; it expects the driver-dependent result | FIXED BEFORE COMMIT |
-| P08-15 | PILOT-002 | LOW | `pint --test` reports a pre-existing style issue in `routes/api.php` (fully qualified controller names) | Not changed, to avoid churn in the route contract file | ACCEPTED (proposed) |
+| P08-15 | PILOT-002 | LOW | `pint --test` reports a pre-existing style issue in `routes/api.php` (fully qualified controller names) | Fixed with pint (imports only); route table verified identical apart from closure line numbers | FIXED (pre-deployment review) |
+| P08-20 | PRE-DEPLOY | HIGH (security) | Outside `AI_MODE=mock`, the PAD factory fell back to the mock detector, which scores every image 0.95 (REAL): **PAD failed open** | `UnavailableFaceLivenessDetector`; `/internal/v1/face/liveness` → 503 `PAD_MODEL_UNAVAILABLE` (commit 808acf9) | FIXED |
+| P08-21 | PRE-DEPLOY | **BLOCKER** | No production biometric pipeline: ai-service implements only mock; no onnxruntime dependency, model paths or weights | Human decision on models (PILOT-000 B5). Pilot overlay requires an explicit `AI_MODE` | OPEN, human decision |
+| P08-22 | PRE-DEPLOY | MEDIUM | `minio-init` used `grep`, which the `minio/mc` image lacks: no buckets were created, yet it reported success (found in rehearsal) | Shell builtins only; fails when no buckets are read; re-run idempotently | FIXED |
+| P08-23 | PRE-DEPLOY | LOW | `npm run lint` (a CI gate) failed with 5 unused-variable errors at the approved baseline | Unused declarations removed | FIXED |
+| P08-24 | PRE-DEPLOY | LOW | `prettier --check` reports 71 files (not a CI gate) | Not reformatted, to avoid churn | ACCEPTED (proposed) |
+| P08-25 | PRE-DEPLOY | LOW | `scripts/verify-realtime-load.js` (EVT-021) hardcodes the development stack's Reverb app key. It's a public, browser-visible key, not a secret; pilot keys are generated per host and aren't in the repository | Read the key from the environment when the script is next touched | OPEN (LOW) |
 
 ---
 
