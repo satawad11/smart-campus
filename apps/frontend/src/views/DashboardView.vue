@@ -23,7 +23,6 @@ const cameraData = ref([])
 const departmentData = ref([])
 
 const selectedSiteUuid = ref('')
-const sites = ref([])
 
 const maxHourlyCount = computed(() => {
   if (!hourlyData.value.length) return 1

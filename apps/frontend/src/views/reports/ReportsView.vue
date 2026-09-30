@@ -17,7 +17,6 @@ const reportError = ref(null)
 const reportData = ref(null)
 
 // Export State
-const exportFormat = ref('CSV')
 const exporting = ref(false)
 const exportSuccess = ref(null)
 
@@ -76,7 +75,7 @@ async function triggerExport(format) {
     if (fromDate.value) filters.from = fromDate.value
     if (toDate.value) filters.to = toDate.value
 
-    const res = await api.post('/reports/exports', {
+    await api.post('/reports/exports', {
       report_type: reportType.value,
       format,
       filters,

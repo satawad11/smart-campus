@@ -4,7 +4,6 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 
 import api from '@/services/api'
-import { useAuthStore } from '@/stores/auth'
 import DashboardView from '@/views/DashboardView.vue'
 import HistorySearchView from '@/views/history/HistorySearchView.vue'
 import ReportsView from '@/views/reports/ReportsView.vue'

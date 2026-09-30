@@ -6,7 +6,6 @@ import facesService from '@/services/faces'
 import api from '@/services/api'
 import FaceEnrollmentView from '@/views/face/FaceEnrollmentView.vue'
 import FaceProfileListView from '@/views/face/FaceProfileListView.vue'
-import FaceProfileDetailView from '@/views/face/FaceProfileDetailView.vue'
 import RecognitionTestView from '@/views/face/RecognitionTestView.vue'
 import { useAuthStore } from '@/stores/auth'
 
