@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Report;
 
 use App\Enums\HealthStatus;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Models\AiNode;
 use App\Models\Camera;
@@ -25,6 +26,8 @@ use Illuminate\Http\Request;
  */
 class DashboardController extends Controller
 {
+    use EnforcesScope;
+
     public function summary(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -33,6 +36,7 @@ class DashboardController extends Controller
         ]);
 
         $date = ! empty($validated['date']) ? $validated['date'] : now()->toDateString();
+        $validated['site_uuid'] = $this->scopedSiteUuid($request, 'report.view', $validated['site_uuid'] ?? null);
 
         // whereDate(), not where(): a `date` column casts through Eloquent
         // as a full 'Y-m-d 00:00:00' string, and SQLite (unlike

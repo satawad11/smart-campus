@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Report;
 use App\Enums\AuditAction;
 use App\Enums\ReportExportFormat;
 use App\Enums\ReportExportStatus;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Jobs\ExportReportJob;
 use App\Models\ReportExport;
@@ -14,12 +15,15 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Report exports controller (RPT-013..RPT-017, docs/02-api-contract.md §16).
  */
 class ReportExportController extends Controller
 {
+    use EnforcesScope;
+
     public function __construct(
         private readonly AuditService $auditService,
     ) {}
@@ -53,12 +57,16 @@ class ReportExportController extends Controller
         ]);
 
         $format = ReportExportFormat::from(strtoupper($validated['format']));
+        // V1 audit A-05: the export job runs later without a user, so resolve the
+        // caller's site scope now and persist it into the filters.
+        $filters = $validated['filters'] ?? [];
+        $filters['site_uuid'] = $this->scopedSiteUuid($request, 'report.export', $filters['site_uuid'] ?? null);
 
         $export = ReportExport::create([
             'user_id' => $request->user()->id,
             'report_type' => $validated['report_type'],
             'format' => $format,
-            'filters' => $validated['filters'] ?? [],
+            'filters' => $filters,
             'status' => ReportExportStatus::PENDING,
             'expires_at' => now()->addDays(7),
         ]);
@@ -93,8 +101,12 @@ class ReportExportController extends Controller
         ], 202);
     }
 
-    public function show(ReportExport $reportExport): JsonResponse
+    public function show(Request $request, ReportExport $reportExport): JsonResponse
     {
+        // V1 audit A-06: exports belong to their creator (index already filters by user)
+        if ($reportExport->user_id !== $request->user()->id) {
+            throw new NotFoundHttpException;
+        }
         $downloadUrl = null;
         if ($reportExport->status === ReportExportStatus::COMPLETED && ! $reportExport->isExpired()) {
             $downloadUrl = "/api/v1/reports/exports/{$reportExport->uuid}/download";
@@ -121,8 +133,12 @@ class ReportExportController extends Controller
         ]);
     }
 
-    public function download(ReportExport $reportExport): StreamedResponse|JsonResponse
+    public function download(Request $request, ReportExport $reportExport): StreamedResponse|JsonResponse
     {
+        // V1 audit A-06: exports belong to their creator (index already filters by user)
+        if ($reportExport->user_id !== $request->user()->id) {
+            throw new NotFoundHttpException;
+        }
         if ($reportExport->status !== ReportExportStatus::COMPLETED || $reportExport->isExpired()) {
             return response()->json([
                 'success' => false,

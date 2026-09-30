@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Camera;
 
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AiNodeCredentialResource;
 use App\Models\AiNode;
@@ -20,12 +21,15 @@ use Illuminate\Http\Request;
  */
 class AiNodeCredentialController extends Controller
 {
+    use EnforcesScope;
+
     public function __construct(
         private readonly AiNodeCredentialService $service,
     ) {}
 
-    public function index(AiNode $aiNode): JsonResponse
+    public function index(Request $request, AiNode $aiNode): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $aiNode->site_id);
         $credentials = $aiNode->credentials()->orderByDesc('created_at')->get();
 
         return response()->json([
@@ -38,6 +42,7 @@ class AiNodeCredentialController extends Controller
 
     public function store(Request $request, AiNode $aiNode): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $aiNode->site_id);
         [$credential, $plaintext] = $this->service->issueCredential(
             $aiNode,
             $request->user(),
@@ -57,6 +62,7 @@ class AiNodeCredentialController extends Controller
 
     public function revoke(Request $request, AiNode $aiNode, AiNodeCredential $credential): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $aiNode->site_id);
         if ($credential->ai_node_id !== $aiNode->id) {
             throw ApiException::unprocessable('AI_NODE_CREDENTIAL_MISMATCH', 'This credential does not belong to the specified node.');
         }

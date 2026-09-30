@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\History;
 
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AccessEventResource;
 use App\Models\Person;
@@ -23,6 +24,8 @@ use Illuminate\Http\Request;
  */
 class HistorySearchController extends Controller
 {
+    use EnforcesScope;
+
     private const SORTABLE = ['occurred_at', 'received_at', 'created_at'];
 
     public function __construct(
@@ -49,7 +52,7 @@ class HistorySearchController extends Controller
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);
 
-        $query = $this->searchQuery->build($validated);
+        $query = $this->scopeQuery($this->searchQuery->build($validated), $request, 'report.view');
 
         if (! empty($validated['keyword'])) {
             $keyword = $validated['keyword'];

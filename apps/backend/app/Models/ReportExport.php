@@ -19,6 +19,14 @@ class ReportExport extends Model
     protected $table = 'report_exports';
 
     /** @var list<string> */
+    /**
+     * Never serialized (V1 audit A-13): the export list returned raw models,
+     * exposing the numeric id, owner id and internal storage key.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['id', 'user_id', 'file_path'];
+
     protected $fillable = [
         'user_id',
         'report_type',

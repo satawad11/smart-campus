@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Camera;
 
 use App\Enums\DeviceStatus;
 use App\Exceptions\ApiException;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Camera\StoreCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraRequest;
@@ -30,6 +31,8 @@ use Illuminate\Http\Request;
  */
 class CameraController extends Controller
 {
+    use EnforcesScope;
+
     private const SORTABLE = ['camera_code', 'name', 'status', 'created_at', 'updated_at'];
 
     public function __construct(
@@ -54,7 +57,7 @@ class CameraController extends Controller
         $sort = $validated['sort'] ?? 'created_at';
         $order = $validated['order'] ?? 'desc';
 
-        $query = Camera::query()->with(['site', 'zone', 'aiNode']);
+        $query = $this->scopeQuery(Camera::query(), $request, 'camera.view')->with(['site', 'zone', 'aiNode']);
 
         if (! empty($validated['keyword'])) {
             $keyword = '%'.mb_strtolower($validated['keyword']).'%';
@@ -98,6 +101,12 @@ class CameraController extends Controller
 
     public function store(StoreCameraRequest $request): JsonResponse
     {
+        $this->assertInScope(
+            $request,
+            'camera.create',
+            Site::where('uuid', $request->validated('site_uuid'))->value('id'),
+            Zone::where('uuid', $request->validated('zone_uuid'))->value('id'),
+        );
         $camera = $this->service->createCamera(
             $request->validated(),
             $request->user(),
@@ -112,8 +121,10 @@ class CameraController extends Controller
         ], 201);
     }
 
-    public function show(Camera $camera): JsonResponse
+    public function show(Request $request, Camera $camera): JsonResponse
     {
+        $this->assertInScope($request, 'camera.view', $camera->site_id, $camera->zone_id);
+
         return response()->json([
             'success' => true,
             'message' => 'Success',
@@ -124,6 +135,15 @@ class CameraController extends Controller
 
     public function update(UpdateCameraRequest $request, Camera $camera): JsonResponse
     {
+        $this->assertInScope($request, 'camera.update', $camera->site_id, $camera->zone_id);
+        if ($request->has('site_uuid') || $request->has('zone_uuid')) {
+            $this->assertInScope(
+                $request,
+                'camera.update',
+                $request->has('site_uuid') ? Site::where('uuid', $request->input('site_uuid'))->value('id') : $camera->site_id,
+                $request->has('zone_uuid') ? Zone::where('uuid', $request->input('zone_uuid'))->value('id') : $camera->zone_id,
+            );
+        }
         $updated = $this->service->updateCamera(
             $camera,
             $request->validated(),
@@ -141,6 +161,7 @@ class CameraController extends Controller
 
     public function updateStatus(UpdateCameraStatusRequest $request, Camera $camera): JsonResponse
     {
+        $this->assertInScope($request, 'camera.enable', $camera->site_id, $camera->zone_id);
         $updated = $this->service->changeStatus(
             $camera,
             DeviceStatus::from($request->validated('status')),
@@ -158,6 +179,7 @@ class CameraController extends Controller
 
     public function test(Camera $camera, Request $request): JsonResponse
     {
+        $this->assertInScope($request, 'camera.test', $camera->site_id, $camera->zone_id);
         $result = $this->service->testConnection($camera, $request->user(), AuditRequestContext::fromRequest($request));
 
         return response()->json([
@@ -170,6 +192,7 @@ class CameraController extends Controller
 
     public function snapshot(Camera $camera, Request $request): JsonResponse
     {
+        $this->assertInScope($request, 'camera.live', $camera->site_id, $camera->zone_id);
         $result = $this->service->captureSnapshot($camera, $request->user(), AuditRequestContext::fromRequest($request));
 
         if (! $result->success) {
@@ -190,6 +213,7 @@ class CameraController extends Controller
 
     public function updateRoi(UpdateCameraRoiRequest $request, Camera $camera): JsonResponse
     {
+        $this->assertInScope($request, 'camera.update', $camera->site_id, $camera->zone_id);
         $updated = $this->service->updateRoi(
             $camera,
             $request->validated('points'),
@@ -207,6 +231,7 @@ class CameraController extends Controller
 
     public function health(Camera $camera, Request $request): JsonResponse
     {
+        $this->assertInScope($request, 'camera.view', $camera->site_id, $camera->zone_id);
         $validated = $request->validate([
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],

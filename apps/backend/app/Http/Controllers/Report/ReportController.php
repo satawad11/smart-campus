@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
-use App\Models\Site;
 use App\Services\Report\ReportBuilderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,6 +17,8 @@ use Illuminate\Support\Carbon;
  */
 class ReportController extends Controller
 {
+    use EnforcesScope;
+
     public function __construct(
         private readonly ReportBuilderService $reportBuilder,
     ) {}
@@ -29,7 +31,7 @@ class ReportController extends Controller
         ]);
 
         $date = Carbon::parse($validated['date'] ?? now()->toDateString());
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $sections = $this->reportBuilder->buildRangeSections($date, $date, $siteId);
         $sections['by_hour'] = $this->reportBuilder->buildHourlyBreakdown($date, $siteId);
@@ -53,7 +55,7 @@ class ReportController extends Controller
         $baseDate = Carbon::parse($validated['date'] ?? $validated['start_date'] ?? now()->toDateString());
         $from = $baseDate->copy()->startOfWeek();
         $to = $baseDate->copy()->endOfWeek();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
         $sections['by_day'] = $this->reportBuilder->buildDailyBreakdown($from, $to, $siteId);
@@ -84,7 +86,7 @@ class ReportController extends Controller
 
         $from = $baseDate->copy()->startOfMonth();
         $to = $baseDate->copy()->endOfMonth();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
         $sections['by_day'] = $this->reportBuilder->buildDailyBreakdown($from, $to, $siteId);
@@ -107,7 +109,7 @@ class ReportController extends Controller
 
         $year = (int) ($validated['year'] ?? now()->year);
         $type = $validated['type'] ?? 'calendar';
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         if ($type === 'academic') {
             // Thai academic year: May 1 to April 30 of following year
@@ -141,7 +143,7 @@ class ReportController extends Controller
 
         $from = Carbon::parse($validated['from'])->startOfDay();
         $to = Carbon::parse($validated['to'])->endOfDay();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $sections = $this->reportBuilder->buildRangeSections($from, $to, $siteId);
         if ($from->diffInDays($to) <= 31) {
@@ -168,7 +170,7 @@ class ReportController extends Controller
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
         $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $data = $this->reportBuilder->buildReviewReport($from, $to, $siteId);
 
@@ -190,7 +192,7 @@ class ReportController extends Controller
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
         $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $data = $this->reportBuilder->buildUnknownReport($from, $to, $siteId);
 
@@ -212,7 +214,7 @@ class ReportController extends Controller
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
         $to = Carbon::parse($validated['to'] ?? now()->toDateString())->endOfDay();
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
 
         $data = $this->reportBuilder->buildCameraReport($from, $to, $siteId);
 
@@ -230,7 +232,7 @@ class ReportController extends Controller
             'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
         ]);
 
-        $siteId = $this->resolveSiteId($validated);
+        $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);
         $data = $this->reportBuilder->buildAiNodeReport($siteId);
 
         return response()->json([
@@ -244,12 +246,4 @@ class ReportController extends Controller
     /**
      * @param  array<string, mixed>  $validated
      */
-    private function resolveSiteId(array $validated): ?int
-    {
-        if (empty($validated['site_uuid'])) {
-            return null;
-        }
-
-        return Site::where('uuid', $validated['site_uuid'])->value('id');
-    }
 }

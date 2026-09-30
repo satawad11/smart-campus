@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\History;
 
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AccessEventResource;
 use App\Models\AccessEvent;
@@ -28,6 +29,8 @@ use Illuminate\Support\Carbon;
  */
 class PersonTimelineController extends Controller
 {
+    use EnforcesScope;
+
     public function show(Request $request, Person $person): JsonResponse
     {
         $validated = $request->validate([
@@ -46,7 +49,7 @@ class PersonTimelineController extends Controller
         $from = ! empty($validated['from']) ? Carbon::parse($validated['from']) : null;
         $to = ! empty($validated['to']) ? Carbon::parse($validated['to']) : null;
 
-        $events = AccessEvent::query()
+        $events = $this->scopeQuery(AccessEvent::query(), $request, 'report.view')
             ->with(['site', 'zone', 'camera', 'aiNode', 'latestDecision'])
             ->where('person_id', $person->id)
             ->when($from !== null, fn ($q) => $q->where('occurred_at', '>=', $from))

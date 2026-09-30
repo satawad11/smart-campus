@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Event;
 
 use App\Enums\AccessDecisionOutcome;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Event\ReviewEventRequest;
 use App\Http\Resources\AccessDecisionResource;
@@ -38,6 +39,8 @@ use Illuminate\Http\Request;
  */
 class EventController extends Controller
 {
+    use EnforcesScope;
+
     private const SORTABLE = ['occurred_at', 'received_at', 'created_at'];
 
     public function __construct(
@@ -71,7 +74,7 @@ class EventController extends Controller
         $defaultOrder = ($validated['decision'] ?? null) === 'REVIEW' ? 'asc' : 'desc';
         $order = $validated['order'] ?? $defaultOrder;
 
-        $query = $this->searchQuery->build($validated);
+        $query = $this->scopeQuery($this->searchQuery->build($validated), $request, 'event.view');
 
         $paginator = $query->orderBy($sort, $order)->paginate($perPage);
 
@@ -90,8 +93,9 @@ class EventController extends Controller
         ]);
     }
 
-    public function show(AccessEvent $accessEvent): JsonResponse
+    public function show(Request $request, AccessEvent $accessEvent): JsonResponse
     {
+        $this->assertInScope($request, 'event.view', $accessEvent->site_id, $accessEvent->zone_id);
         $accessEvent->load(['person', 'site', 'zone', 'camera', 'aiNode', 'latestDecision', 'decisions.decidedBy']);
 
         return response()->json([
@@ -104,6 +108,7 @@ class EventController extends Controller
 
     public function review(ReviewEventRequest $request, AccessEvent $accessEvent): JsonResponse
     {
+        $this->assertInScope($request, 'event.review', $accessEvent->site_id, $accessEvent->zone_id);
         $validated = $request->validated();
 
         $created = $this->reviewService->review(

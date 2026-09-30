@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Camera;
 
 use App\Enums\DeviceStatus;
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\AiNode\StoreAiNodeRequest;
 use App\Http\Requests\AiNode\UpdateAiNodeRequest;
@@ -24,6 +25,8 @@ use Illuminate\Http\Request;
  */
 class AiNodeController extends Controller
 {
+    use EnforcesScope;
+
     private const SORTABLE = ['node_code', 'name', 'status', 'last_seen_at', 'created_at', 'updated_at'];
 
     public function __construct(
@@ -46,7 +49,7 @@ class AiNodeController extends Controller
         $sort = $validated['sort'] ?? 'created_at';
         $order = $validated['order'] ?? 'desc';
 
-        $query = AiNode::query()->with('site');
+        $query = $this->scopeQuery(AiNode::query(), $request, 'ai_node.view', 'site_id', null)->with('site');
 
         if (! empty($validated['keyword'])) {
             $keyword = '%'.mb_strtolower($validated['keyword']).'%';
@@ -84,6 +87,7 @@ class AiNodeController extends Controller
 
     public function store(StoreAiNodeRequest $request): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $request->validated('site_uuid') ? Site::where('uuid', $request->validated('site_uuid'))->value('id') : null);
         $node = $this->service->registerNode(
             $request->validated(),
             $request->user(),
@@ -98,8 +102,10 @@ class AiNodeController extends Controller
         ], 201);
     }
 
-    public function show(AiNode $aiNode): JsonResponse
+    public function show(Request $request, AiNode $aiNode): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.view', $aiNode->site_id);
+
         return response()->json([
             'success' => true,
             'message' => 'Success',
@@ -110,6 +116,10 @@ class AiNodeController extends Controller
 
     public function update(UpdateAiNodeRequest $request, AiNode $aiNode): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $aiNode->site_id);
+        if ($request->filled('site_uuid')) {
+            $this->assertInScope($request, 'ai_node.manage', Site::where('uuid', $request->input('site_uuid'))->value('id'));
+        }
         $updated = $this->service->updateNode(
             $aiNode,
             $request->validated(),
@@ -127,6 +137,7 @@ class AiNodeController extends Controller
 
     public function updateStatus(UpdateAiNodeStatusRequest $request, AiNode $aiNode): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.manage', $aiNode->site_id);
         $updated = $this->service->changeStatus(
             $aiNode,
             DeviceStatus::from($request->validated('status')),
@@ -144,6 +155,7 @@ class AiNodeController extends Controller
 
     public function health(AiNode $aiNode, Request $request): JsonResponse
     {
+        $this->assertInScope($request, 'ai_node.view', $aiNode->site_id);
         $validated = $request->validate([
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],

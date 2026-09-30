@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Report;
 
+use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
 use App\Models\Camera;
 use App\Models\Department;
@@ -20,6 +21,8 @@ use Illuminate\Http\Request;
  */
 class DashboardChartsController extends Controller
 {
+    use EnforcesScope;
+
     public function byHour(Request $request): JsonResponse
     {
         $validated = $this->validateRequest($request, dateOnly: true);
@@ -111,6 +114,7 @@ class DashboardChartsController extends Controller
             ];
 
         $validated = $request->validate($rules);
+        $validated['site_uuid'] = $this->scopedSiteUuid($request, 'report.view', $validated['site_uuid'] ?? null);
 
         if (! $dateOnly) {
             $validated['from'] = $validated['from'] ?? now()->toDateString();
