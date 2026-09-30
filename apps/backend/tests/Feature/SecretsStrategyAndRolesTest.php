@@ -32,8 +32,16 @@ class SecretsStrategyAndRolesTest extends TestCase
         // No superuser grants
         $this->assertStringNotContainsString('SUPERUSER', $sql, 'No service account may have SUPERUSER status');
 
-        // app_user has DDL revoked
-        $this->assertStringContainsString('REVOKE CREATE, DROP, TRUNCATE ON SCHEMA public FROM campus_app_user', $sql);
+        // app_user has DDL revoked. The original assertion required
+        // "REVOKE CREATE, DROP, TRUNCATE ON SCHEMA public FROM campus_app_user",
+        // which PostgreSQL rejects (DROP/TRUNCATE are not schema privileges), so
+        // the script failed at that line (pilot finding P08-11). The corrected
+        // script revokes the schema DDL privilege and table-level TRUNCATE.
+        $this->assertStringContainsString('REVOKE CREATE ON SCHEMA public FROM campus_app_user', $sql);
+        $this->assertStringContainsString('REVOKE TRUNCATE, REFERENCES, TRIGGER ON ALL TABLES IN SCHEMA public FROM campus_app_user', $sql);
+        $this->assertStringNotContainsString('DROP, TRUNCATE ON SCHEMA', $sql);
+        $this->assertDoesNotMatchRegularExpression('/GRANT[^;]*(CREATE|TRUNCATE|ALL PRIVILEGES)[^;]*TO campus_app_user/', $sql);
+        $this->assertStringNotContainsString('CHANGE_IN_PRODUCTION', $sql, 'Passwords are psql variables, not literals');
 
         // monitoring user has table data access revoked
         $this->assertStringContainsString('REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM campus_monitoring_user', $sql);
