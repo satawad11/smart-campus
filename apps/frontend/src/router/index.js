@@ -262,6 +262,13 @@ const routes = [
         component: () => import('@/views/system/SystemHealthView.vue'),
         meta: { requiresAuth: true, permission: 'system.view' },
       },
+      {
+        // Own account only (V1 audit A-15); no permission beyond being signed in.
+        path: 'account/security',
+        name: 'account.security',
+        component: () => import('@/views/account/AccountSecurityView.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {

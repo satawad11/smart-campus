@@ -68,6 +68,37 @@ export const authService = {
   },
 
   /**
+   * Start MFA enrollment for the signed-in user (V1 audit A-15).
+   * The secret is shown once for the authenticator app and kept only in
+   * component memory; it is never stored client-side.
+   * @returns {Promise<{ secret: string, qr_code_url: string, issuer: string, account_name: string, expires_in_seconds: number }>}
+   */
+  async setupMfa() {
+    const response = await api.post('/auth/mfa/setup')
+    return response.data.data
+  },
+
+  /**
+   * Confirm MFA enrollment with the first code from the authenticator app.
+   * @param {string} code
+   * @returns {Promise<{ mfa_enabled: boolean }>}
+   */
+  async confirmMfa(code) {
+    const response = await api.post('/auth/mfa/confirm', { code })
+    return response.data.data
+  },
+
+  /**
+   * Disable MFA; requires the current password and a valid code.
+   * @param {{ password: string, code: string }} payload
+   * @returns {Promise<object>}
+   */
+  async disableMfa({ password, code }) {
+    const response = await api.post('/auth/mfa/disable', { password, code })
+    return response.data.data
+  },
+
+  /**
    * Terminate current authenticated session.
    * @returns {Promise<void>}
    */

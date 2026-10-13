@@ -121,6 +121,15 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   /**
+   * Re-read the signed-in user's profile (e.g. after MFA enrollment changes
+   * `mfa_enabled`). Leaves the current state untouched on failure.
+   */
+  async function refreshUser() {
+    const data = await authService.getMe()
+    user.value = data.user || null
+  }
+
+  /**
    * Log out the current user and invalidate the session.
    */
   async function logout() {
@@ -176,6 +185,7 @@ export const useAuthStore = defineStore('auth', () => {
     login,
     verifyMfa,
     changePassword,
+    refreshUser,
     logout,
     clearAuth,
     handleSessionExpired,

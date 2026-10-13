@@ -402,6 +402,13 @@ async function handleLogout() {
           <span class="text-sm text-gray-700">
             {{ authStore.user?.username }}
           </span>
+          <router-link
+            to="/account/security"
+            class="text-xs font-medium text-blue-600 hover:text-blue-800"
+            :class="{ 'text-amber-600 hover:text-amber-800': !authStore.user?.mfa_enabled }"
+          >
+            {{ authStore.user?.mfa_enabled ? 'ความปลอดภัยบัญชี' : 'ตั้งค่า MFA' }}
+          </router-link>
           <button
             @click="handleLogout"
             class="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
