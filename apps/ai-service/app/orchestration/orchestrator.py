@@ -87,7 +87,6 @@ class CameraPipelineRunner:
     """Manages frame capture, detection, tracking, recognition, and health for one camera."""
 
     def __init__(
-
         self,
         camera_config: dict[str, Any],
         ai_node_uuid: str,
@@ -311,7 +310,6 @@ class NodeOrchestrator:
         self.buffer = OfflineEventBuffer(
             db_path=buffer_path, initial_backoff_seconds=buffer_initial_backoff_seconds
         )
-
 
         # Clients (injectable for testing, HTTP for production)
         self.node_client = node_client or HttpAiNodeClient(self.base_url, self.node_token)
@@ -595,9 +593,7 @@ class NodeOrchestrator:
 
             for runner in runners:
                 try:
-                    sample = runner.collector.collect(
-                        source_reconnect_count=runner.reconnect_count
-                    )
+                    sample = runner.collector.collect(source_reconnect_count=runner.reconnect_count)
                     self.health_client.report(sample)
                 except Exception as exc:
                     logger.debug("Camera health report blip for %s: %s", runner.camera_code, exc)

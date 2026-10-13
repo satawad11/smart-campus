@@ -53,4 +53,3 @@ def node_status(request: Request) -> dict:
         "node_uuid": settings.ai_node_uuid,
         "message": "AI Node orchestrator not active in this process",
     }
-

@@ -65,7 +65,6 @@ def check_backend_connectivity() -> CheckResult:
     if not base_url:
         return CheckResult("backend_connectivity", "FAIL", "BACKEND_BASE_URL is not set")
 
-
     try:
         parsed = urllib.parse.urlparse(base_url)
         host = parsed.hostname
@@ -182,9 +181,7 @@ def check_camera_reachability_and_rtsp(
         except Exception:
             unreachable += 1
 
-    reach_status = (
-        "PASS" if unreachable == 0 else ("WARNING" if reachable > 0 else "FAIL")
-    )
+    reach_status = "PASS" if unreachable == 0 else ("WARNING" if reachable > 0 else "FAIL")
     reach_msg = f"{reachable}/{len(cameras)} camera hosts reachable via network"
 
     rtsp_status = "PASS" if rtsp_open_fail == 0 else "WARNING"
@@ -239,9 +236,7 @@ def check_model_readiness() -> CheckResult:
 def check_event_buffer() -> CheckResult:
     buf_path = settings.event_buffer_path
     if buf_path == ":memory:":
-        return CheckResult(
-            "event_buffer", "WARNING", "Buffer is in :memory: mode (non-persistent)"
-        )
+        return CheckResult("event_buffer", "WARNING", "Buffer is in :memory: mode (non-persistent)")
 
     try:
         parent = os.path.dirname(os.path.abspath(buf_path))

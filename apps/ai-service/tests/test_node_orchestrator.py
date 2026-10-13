@@ -173,9 +173,7 @@ class TestHttpAiNodeClient:
 
 class TestRtspUrlAssembly:
     def test_injects_credentials_when_not_in_url(self):
-        url = _build_authenticated_rtsp_url(
-            "rtsp://192.168.1.100:554/stream", "admin", "secret123"
-        )
+        url = _build_authenticated_rtsp_url("rtsp://192.168.1.100:554/stream", "admin", "secret123")
         assert url == "rtsp://admin:secret123@192.168.1.100:554/stream"
 
     def test_preserves_url_when_already_has_credentials(self):
@@ -323,7 +321,6 @@ class TestNodeOrchestrator:
             retry_interval=0.05,
             buffer_initial_backoff_seconds=0.01,
         )
-
 
         try:
             orchestrator.start()
