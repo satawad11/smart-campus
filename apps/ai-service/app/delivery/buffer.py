@@ -12,6 +12,7 @@ never re-stamps them with retry time.
 import json
 import random
 import sqlite3
+import threading
 import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
@@ -56,6 +57,11 @@ class OfflineEventBuffer:
     backend, so it is never dropped for capacity — only ever removed once
     delivered. Callers wanting a hard cap can still enforce one externally
     via `size`.
+
+    Thread-safe: camera worker threads enqueue, the retry thread reads and
+    updates, and status endpoints read `size`, all on one SQLite connection.
+    Every use of the connection holds `_lock`; unsynchronised sharing
+    returned corrupt reads and could make `enqueue` raise, losing the event.
     """
 
     def __init__(
@@ -75,13 +81,16 @@ class OfflineEventBuffer:
         self._clock_fn = clock_fn or time.time
         self._random_fn = random_fn or random.random
 
+        self._lock = threading.RLock()
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
-        self._conn.execute(_SCHEMA)
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(_SCHEMA)
+            self._conn.commit()
 
     @property
     def size(self) -> int:
-        row = self._conn.execute("SELECT COUNT(*) FROM pending_events").fetchone()
+        with self._lock:
+            row = self._conn.execute("SELECT COUNT(*) FROM pending_events").fetchone()
         return row[0]
 
     def enqueue(self, payload: RecognitionEventPayload) -> None:
@@ -89,38 +98,45 @@ class OfflineEventBuffer:
         (e.g. the caller retried before the buffer confirmed the insert)
         does not create a duplicate or reset its retry backoff."""
         now = self._clock_fn()
-        self._conn.execute(
-            """
-            INSERT INTO pending_events
-                (event_uuid, payload_json, attempts, next_retry_at, enqueued_at)
-            VALUES (?, ?, 0, ?, ?)
-            ON CONFLICT(event_uuid) DO NOTHING
-            """,
-            (payload.event_uuid, _serialize(payload), now, now),
-        )
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT INTO pending_events
+                    (event_uuid, payload_json, attempts, next_retry_at, enqueued_at)
+                VALUES (?, ?, 0, ?, ?)
+                ON CONFLICT(event_uuid) DO NOTHING
+                """,
+                (payload.event_uuid, _serialize(payload), now, now),
+            )
+            self._conn.commit()
 
     def due(self, limit: int = 50) -> list[BufferedEvent]:
         """Events whose next retry time has arrived, oldest-enqueued first."""
         now = self._clock_fn()
-        rows = self._conn.execute(
-            """
-            SELECT payload_json, attempts FROM pending_events
-            WHERE next_retry_at <= ?
-            ORDER BY enqueued_at ASC
-            LIMIT ?
-            """,
-            (now, limit),
-        ).fetchall()
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT payload_json, attempts FROM pending_events
+                WHERE next_retry_at <= ?
+                ORDER BY enqueued_at ASC
+                LIMIT ?
+                """,
+                (now, limit),
+            ).fetchall()
         return [
             BufferedEvent(payload=_deserialize(raw), attempts=attempts) for raw, attempts in rows
         ]
 
     def mark_delivered(self, event_uuid: str) -> None:
-        self._conn.execute("DELETE FROM pending_events WHERE event_uuid = ?", (event_uuid,))
-        self._conn.commit()
+        with self._lock:
+            self._conn.execute("DELETE FROM pending_events WHERE event_uuid = ?", (event_uuid,))
+            self._conn.commit()
 
     def mark_failed(self, event_uuid: str) -> None:
+        with self._lock:
+            self._mark_failed_locked(event_uuid)
+
+    def _mark_failed_locked(self, event_uuid: str) -> None:
         row = self._conn.execute(
             "SELECT attempts FROM pending_events WHERE event_uuid = ?", (event_uuid,)
         ).fetchone()
@@ -142,4 +158,5 @@ class OfflineEventBuffer:
         self._conn.commit()
 
     def close(self) -> None:
-        self._conn.close()
+        with self._lock:
+            self._conn.close()

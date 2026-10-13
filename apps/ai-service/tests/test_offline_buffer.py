@@ -240,3 +240,54 @@ class TestBufferedEventDeliveryService:
         [due] = buffer.due()
         assert due.payload.event_uuid == original.event_uuid
         assert due.payload.occurred_at == original.observed_at
+
+
+class TestOfflineEventBufferConcurrency:
+    """Regression: one SQLite connection is shared by camera worker threads
+    (enqueue), the retry thread (due / mark_*) and status reads (size).
+    Unsynchronised, size() intermittently read no row (TypeError) and calls
+    could raise, which in enqueue would lose the event."""
+
+    def test_concurrent_enqueue_retry_and_size_are_safe_and_lose_nothing(self) -> None:
+        import threading
+
+        buffer = OfflineEventBuffer(initial_backoff_seconds=0.0)
+        errors: list[BaseException] = []
+        writers, per_writer = 8, 50
+        stop = threading.Event()
+
+        def guard(fn):
+            def run():
+                try:
+                    fn()
+                except BaseException as exc:  # noqa: BLE001 - collected for the assertion
+                    errors.append(exc)
+
+            return run
+
+        def writer(n: int):
+            for i in range(per_writer):
+                buffer.enqueue(make_payload(f"w{n}-e{i}"))
+
+        def reader():
+            while not stop.is_set():
+                assert isinstance(buffer.size, int)
+
+        def retrier():
+            while not stop.is_set():
+                for event in buffer.due(limit=10):
+                    buffer.mark_failed(event.payload.event_uuid)
+
+        background = [threading.Thread(target=guard(reader)) for _ in range(3)]
+        background.append(threading.Thread(target=guard(retrier)))
+        workers = [threading.Thread(target=guard(lambda n=n: writer(n))) for n in range(writers)]
+        for t in background + workers:
+            t.start()
+        for t in workers:
+            t.join()
+        stop.set()
+        for t in background:
+            t.join()
+
+        assert errors == []
+        assert buffer.size == writers * per_writer
