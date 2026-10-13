@@ -41,6 +41,7 @@ from app.health.collector import CameraHealthCollector
 from app.liveness.factory import get_face_liveness_detector
 from app.orchestration.backend_client import HttpRecognitionBackendClient, RecognitionBackendClient
 from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
+from app.orchestration.telemetry import SystemTelemetry
 from app.orchestration.worker import RecognitionWorker, RecognitionWorkerPool
 from app.quality.factory import get_face_quality_evaluator
 from app.roi.filter import is_detection_in_roi
@@ -69,18 +70,6 @@ def _build_authenticated_rtsp_url(raw_url: str, username: str | None, password: 
         return urlunsplit((parts.scheme, netloc, parts.path, parts.query, parts.fragment))
     except Exception:
         return raw_url
-
-
-def _get_system_telemetry() -> tuple[float | None, float | None]:
-    """Returns safe (cpu_usage, ram_usage) without crashing if psutil is absent."""
-    try:
-        import psutil
-
-        cpu = float(psutil.cpu_percent(interval=None))
-        ram = float(psutil.virtual_memory().percent)
-        return cpu, ram
-    except Exception:
-        return None, None
 
 
 class CameraPipelineRunner:
@@ -349,6 +338,7 @@ class NodeOrchestrator:
         self._start_time: float | None = None
         self._last_heartbeat_at: float | None = None
         self._last_sync_at: float | None = None
+        self._telemetry = SystemTelemetry()
 
     @property
     def is_running(self) -> bool:
@@ -536,20 +526,29 @@ class NodeOrchestrator:
         """Sends periodic operational telemetry heartbeat (CAM-003, CAM-014)."""
         while not self._stop_event.is_set():
             try:
-                cpu, ram = _get_system_telemetry()
+                sample = self._telemetry.sample(settings.event_buffer_path)
                 with self._lock:
                     cam_count = len(self._cameras)
                     q_depth = sum(c.pending_count for c in self._cameras.values())
 
                 self.node_client.heartbeat(
-                    cpu_usage=cpu,
-                    ram_usage=ram,
+                    cpu_usage=sample.cpu_usage,
+                    ram_usage=sample.ram_usage,
+                    temperature=sample.temperature,
+                    disk_usage=sample.disk_usage,
                     active_camera_count=cam_count,
                     queue_depth=q_depth,
+                    software_version=settings.version,
+                    model_code=self.model_code,
+                    model_version=self.model_version,
                 )
                 self._last_heartbeat_at = time.time()
                 logger.debug(
-                    "Heartbeat delivered: CPU=%s%%, RAM=%s%%, Cams=%d", cpu, ram, cam_count
+                    "Heartbeat delivered: CPU=%s%%, RAM=%s%%, disk=%s%%, Cams=%d",
+                    sample.cpu_usage,
+                    sample.ram_usage,
+                    sample.disk_usage,
+                    cam_count,
                 )
 
             except Exception as exc:

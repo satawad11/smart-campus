@@ -38,6 +38,10 @@ class AiNodeClient(ABC):
         temperature: float | None = None,
         active_camera_count: int | None = None,
         queue_depth: int | None = None,
+        disk_usage: float | None = None,
+        software_version: str | None = None,
+        model_code: str | None = None,
+        model_version: str | None = None,
     ) -> dict[str, Any]: ...
 
     @abstractmethod
@@ -111,6 +115,10 @@ class HttpAiNodeClient(AiNodeClient):
         temperature: float | None = None,
         active_camera_count: int | None = None,
         queue_depth: int | None = None,
+        disk_usage: float | None = None,
+        software_version: str | None = None,
+        model_code: str | None = None,
+        model_version: str | None = None,
     ) -> dict[str, Any]:
         try:
             import httpx
@@ -132,6 +140,17 @@ class HttpAiNodeClient(AiNodeClient):
             payload["active_camera_count"] = max(0, int(active_camera_count))
         if queue_depth is not None:
             payload["queue_depth"] = max(0, int(queue_depth))
+        if disk_usage is not None:
+            payload["disk_usage"] = max(0.0, min(100.0, float(disk_usage)))
+        # COM-03: what the node actually runs, for fleet version and model
+        # compatibility checks. Short identifiers only; truncated defensively.
+        for key, value in (
+            ("software_version", software_version),
+            ("model_code", model_code),
+            ("model_version", model_version),
+        ):
+            if value:
+                payload[key] = str(value)[:64]
 
         try:
             response = httpx.post(
