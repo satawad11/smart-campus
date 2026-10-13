@@ -252,6 +252,16 @@ Exports:
 - GET `/audit-logs`
 - GET `/audit-logs/{uuid}`
 
+Commercial licensing (COM-02, additive; see `docs/commercial/LICENSE_MODEL.md`):
+- GET `/system/license` (`system.view`): installation ID + evaluated license state; never returns the signed document
+- POST `/system/license` (`system.manage`): body `{ "license": "<signed envelope>" }`; 201 with the new state
+- POST `/system/license/revocations` (`system.manage`): body `{ "revocation_list": "<signed envelope>" }`
+
+License error codes: `LICENSE_MALFORMED`, `LICENSE_UNTRUSTED_KEY`, `LICENSE_SIGNATURE_INVALID`, `LICENSE_WRONG_TYPE`,
+`LICENSE_INSTALLATION_MISMATCH`, `LICENSE_REVOKED`, `LICENSE_EXPIRED`, `LICENSE_OLDER_THAN_ACTIVE`,
+`LICENSE_CRYPTO_UNAVAILABLE`, `REVOCATION_LIST_STALE` (422); enforcement refusals `LICENSE_REQUIRED`,
+`LICENSE_LIMIT_REACHED`, `LICENSE_FEATURE_NOT_ENTITLED` (409, only when `LICENSE_ENFORCEMENT=enforce`).
+
 ## 19. Pagination
 
 Use:

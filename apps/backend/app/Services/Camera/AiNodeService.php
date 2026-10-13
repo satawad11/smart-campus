@@ -12,6 +12,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Audit\AuditService;
+use App\Services\License\LicenseService;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -42,6 +43,7 @@ class AiNodeService
 {
     public function __construct(
         private readonly AuditService $audit,
+        private readonly LicenseService $license,
     ) {}
 
     // ---- Admin-facing ----
@@ -52,6 +54,12 @@ class AiNodeService
     public function registerNode(array $data, ?User $actor, ?AuditRequestContext $context): AiNode
     {
         $site = isset($data['site_uuid']) ? $this->resolveSite($data['site_uuid']) : null;
+
+        // COM-02: checked before the write transaction so that a refusal's
+        // audit record isn't rolled back with it.
+        if (($data['status'] ?? DeviceStatus::ACTIVE->value) === DeviceStatus::ACTIVE->value) {
+            $this->license->assertCanGrow(LicenseService::RESOURCE_AI_NODE, $actor, $context);
+        }
 
         return DB::transaction(function () use ($data, $site, $actor, $context) {
             $this->assertNodeCodeAvailable($data['node_code']);
@@ -127,6 +135,10 @@ class AiNodeService
 
     public function changeStatus(AiNode $node, DeviceStatus $status, ?User $actor, ?AuditRequestContext $context): AiNode
     {
+        if ($status === DeviceStatus::ACTIVE && $node->status !== DeviceStatus::ACTIVE) {
+            $this->license->assertCanGrow(LicenseService::RESOURCE_AI_NODE, $actor, $context);
+        }
+
         return DB::transaction(function () use ($node, $status, $actor, $context) {
             $old = $node->status;
             if ($old === $status) {

@@ -106,11 +106,11 @@ class DashboardChartsController extends Controller
     private function validateRequest(Request $request, bool $dateOnly = false): array
     {
         $rules = $dateOnly
-            ? ['date' => ['sometimes', 'date'], 'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid']]
+            ? ['date' => ['sometimes', 'date'], 'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid']]
             : [
                 'from' => ['sometimes', 'date'],
                 'to' => ['sometimes', 'date'],
-                'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+                'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
             ];
 
         $validated = $request->validate($rules);

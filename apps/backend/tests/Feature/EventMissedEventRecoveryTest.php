@@ -41,6 +41,13 @@ class EventMissedEventRecoveryTest extends TestCase
         parent::setUp();
         $this->seed(PermissionSeeder::class);
         $this->seed(EventTypeSeeder::class);
+
+        // occurred_at is timestamptz(0): PostgreSQL rounds to the second, so an
+        // event created at now()-9min and a `from` computed a few ms later
+        // (or from the unrounded in-memory model) could fall on either side of
+        // each other; the tests failed intermittently on PostgreSQL only.
+        // Freezing on a whole second makes stored and computed times equal.
+        $this->freezeSecond();
     }
 
     private function userWith(array $codes): User

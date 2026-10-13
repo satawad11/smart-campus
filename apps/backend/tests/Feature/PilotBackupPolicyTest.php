@@ -147,4 +147,28 @@ class PilotBackupPolicyTest extends TestCase
         $this->assertDatabaseMissing('users', ['username' => 'superadmin']);
         $this->assertDatabaseMissing('users', ['username' => 'security']);
     }
+
+    public function test_initial_admin_user_seeder_is_a_no_op_on_any_non_development_environment(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $this->seed(RoleSeeder::class);
+
+        foreach (['staging', 'pilot', 'demo'] as $environment) {
+            $this->app['env'] = $environment;
+            $this->app->make(InitialAdminUserSeeder::class)->run();
+
+            $this->assertDatabaseMissing('users', ['username' => 'superadmin']);
+        }
+    }
+
+    public function test_initial_admin_user_seeder_seeds_on_a_local_workstation(): void
+    {
+        $this->seed(PermissionSeeder::class);
+        $this->seed(RoleSeeder::class);
+        $this->app['env'] = 'local';
+
+        $this->app->make(InitialAdminUserSeeder::class)->run();
+
+        $this->assertDatabaseHas('users', ['username' => 'superadmin']);
+    }
 }

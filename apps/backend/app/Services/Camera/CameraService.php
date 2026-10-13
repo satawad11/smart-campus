@@ -18,6 +18,7 @@ use App\Services\Camera\Connectivity\TcpConnectivityProber;
 use App\Services\Camera\Snapshot\CameraSnapshotProviderInterface;
 use App\Services\Camera\Snapshot\CameraSnapshotResult;
 use App\Services\Camera\Snapshot\MockCameraSnapshotProvider;
+use App\Services\License\LicenseService;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -48,6 +49,7 @@ class CameraService
 
     public function __construct(
         private readonly AuditService $audit,
+        private readonly LicenseService $license,
         ?CameraConnectivityProberInterface $prober = null,
         ?CameraSnapshotProviderInterface $snapshotProvider = null,
     ) {
@@ -82,6 +84,12 @@ class CameraService
         $site = $this->resolveSite($data['site_uuid']);
         $zone = $this->resolveZoneForSite($data['zone_uuid'], $site);
         $aiNode = $this->resolveAiNodeForSite($data['ai_node_uuid'] ?? null, $site);
+
+        // COM-02: checked before the write transaction so that a refusal's
+        // audit record isn't rolled back with it.
+        if (($data['status'] ?? DeviceStatus::ACTIVE->value) === DeviceStatus::ACTIVE->value) {
+            $this->license->assertCanGrow(LicenseService::RESOURCE_CAMERA, $actor, $context);
+        }
 
         return DB::transaction(function () use ($data, $site, $zone, $aiNode, $actor, $context) {
             $this->assertCameraCodeAvailable($data['camera_code']);
@@ -188,6 +196,10 @@ class CameraService
 
     public function changeStatus(Camera $camera, DeviceStatus $status, ?User $actor, ?AuditRequestContext $context): Camera
     {
+        if ($status === DeviceStatus::ACTIVE && $camera->status !== DeviceStatus::ACTIVE) {
+            $this->license->assertCanGrow(LicenseService::RESOURCE_CAMERA, $actor, $context);
+        }
+
         return DB::transaction(function () use ($camera, $status, $actor, $context) {
             $old = $camera->status;
 

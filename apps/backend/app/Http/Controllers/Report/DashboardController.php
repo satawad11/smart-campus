@@ -32,7 +32,7 @@ class DashboardController extends Controller
     {
         $validated = $request->validate([
             'date' => ['sometimes', 'date'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $date = ! empty($validated['date']) ? $validated['date'] : now()->toDateString();

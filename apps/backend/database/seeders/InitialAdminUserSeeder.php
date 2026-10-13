@@ -17,11 +17,13 @@ class InitialAdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        // These accounts share one known password: never create them on a
-        // production/pilot host (pilot pre-deployment review; pilot:preflight
-        // also fails if any active account still uses that password).
-        if (app()->environment('production')) {
-            $this->command?->warn('InitialAdminUserSeeder skipped: development-only accounts are never seeded in production.');
+        // These accounts share one known password: create them only on a
+        // developer workstation or in the test suite, never on a production,
+        // pilot, staging or customer host (pilot pre-deployment review;
+        // pilot:preflight also fails if any active account still uses that
+        // password). An allowlist, so a new environment name is safe by default.
+        if (! app()->environment(['local', 'testing'])) {
+            $this->command?->warn('InitialAdminUserSeeder skipped: development-only accounts are seeded only when APP_ENV is local or testing.');
 
             return;
         }

@@ -23,6 +23,7 @@ use App\Models\Person;
 use App\Models\User;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Audit\AuditService;
+use App\Services\License\LicenseService;
 use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,8 @@ class FaceEnrollmentService
     public function __construct(
         protected FacePipelineClient $pipelineClient,
         protected FaceEmbeddingRepository $embeddingRepository,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected LicenseService $licenseService,
     ) {}
 
     /**
@@ -87,6 +89,9 @@ class FaceEnrollmentService
                 "Person [{$person->uuid}] already has an active biometric face profile."
             );
         }
+
+        // COM-02: a new enrollment is growth the license must cover.
+        $this->licenseService->assertCanGrow(LicenseService::RESOURCE_FACE_ENROLLMENT, $actor, $context);
 
         // 1. Stage image in private object storage (face_samples disk)
         $sampleUuid = (string) Str::uuid();

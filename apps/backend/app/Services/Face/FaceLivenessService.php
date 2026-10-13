@@ -28,7 +28,7 @@ class FaceLivenessService
             if ($providerType === 'mock') {
                 $this->provider = new MockLivenessProvider;
             } else {
-                $baseUrl = config('services.ai.url', env('AI_SERVICE_URL', 'http://127.0.0.1:8001'));
+                $baseUrl = config('services.ai.url');
                 $this->provider = new AiServiceLivenessProvider(baseUrl: (string) $baseUrl);
             }
         }

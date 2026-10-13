@@ -18,6 +18,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Psr\Log\LogLevel;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -79,6 +80,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // V1 audit A-24: ApiException is an expected business outcome (409/422,
+        // e.g. EVENT_ALREADY_EXISTS), not a fault. Logging it at ERROR made it
+        // indistinguishable from real failures for log-based alerting.
+        $exceptions->level(ApiException::class, LogLevel::INFO);
+
         $exceptions->render(function (ValidationException $e, $request) {
             if ($request->is('api/*') || $request->is('internal/*') || $request->expectsJson()) {
                 return response()->json([

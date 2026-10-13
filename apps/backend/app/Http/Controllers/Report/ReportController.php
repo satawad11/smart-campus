@@ -27,7 +27,7 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'date' => ['sometimes', 'date'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $date = Carbon::parse($validated['date'] ?? now()->toDateString());
@@ -49,7 +49,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'date' => ['sometimes', 'date'],
             'start_date' => ['sometimes', 'date'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $baseDate = Carbon::parse($validated['date'] ?? $validated['start_date'] ?? now()->toDateString());
@@ -73,7 +73,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'month' => ['sometimes', 'string', 'regex:/^\d{4}-\d{2}$/'],
             'date' => ['sometimes', 'date'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         if (! empty($validated['month'])) {
@@ -104,7 +104,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'year' => ['sometimes', 'integer', 'min:2000', 'max:2100'],
             'type' => ['sometimes', 'string', 'in:calendar,academic'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $year = (int) ($validated['year'] ?? now()->year);
@@ -138,7 +138,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'from' => ['required', 'date'],
             'to' => ['required', 'date', 'after_or_equal:from'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $from = Carbon::parse($validated['from'])->startOfDay();
@@ -165,7 +165,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
@@ -187,7 +187,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
@@ -209,7 +209,7 @@ class ReportController extends Controller
         $validated = $request->validate([
             'from' => ['sometimes', 'date'],
             'to' => ['sometimes', 'date', 'after_or_equal:from'],
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $from = Carbon::parse($validated['from'] ?? now()->subDays(30)->toDateString())->startOfDay();
@@ -229,7 +229,7 @@ class ReportController extends Controller
     public function aiNode(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'site_uuid' => ['sometimes', 'string', 'exists:sites,uuid'],
+            'site_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:sites,uuid'],
         ]);
 
         $siteId = $this->resolveScopedSiteId($request, 'report.view', $validated['site_uuid'] ?? null);

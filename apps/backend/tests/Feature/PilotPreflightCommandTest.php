@@ -239,6 +239,23 @@ class PilotPreflightCommandTest extends TestCase
         $this->assertSame('FAIL', $this->statusOf($this->runPreflight(), 'no seeded test accounts active'));
     }
 
+    public function test_license_check_only_reports_in_warn_mode(): void
+    {
+        config(['license.enforcement' => 'warn']);
+
+        $this->assertSame('PASS', $this->statusOf($this->runPreflight(), 'license usable for enforcement mode'));
+    }
+
+    public function test_license_check_fails_in_enforce_mode_without_a_license(): void
+    {
+        config(['license.enforcement' => 'enforce']);
+
+        $report = $this->runPreflight();
+
+        $this->assertSame('FAIL', $this->statusOf($report, 'license usable for enforcement mode'));
+        $this->assertSame(1, $report['exit']);
+    }
+
     public function test_preflight_does_not_modify_feature_settings(): void
     {
         $before = app(FeatureFlagService::class)->getAll();

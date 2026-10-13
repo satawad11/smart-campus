@@ -11,6 +11,8 @@ use App\Models\Camera;
 use App\Models\Person;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\License\LicenseService;
+use App\Services\License\LicenseState;
 use App\Services\System\FeatureFlagService;
 use App\Support\HealthChecks;
 use Illuminate\Console\Command;
@@ -81,6 +83,7 @@ class PilotPreflightCommand extends Command
         $this->checkHealth($health);
         $this->checkScope();
         $this->checkBackup();
+        $this->checkLicense(app(LicenseService::class));
 
         $failures = count(array_filter($this->results, fn ($r) => $r['status'] === 'FAIL'));
         $warnings = count(array_filter($this->results, fn ($r) => $r['status'] === 'WARN'));
@@ -291,6 +294,35 @@ class PilotPreflightCommand extends Command
             ->count();
         $this->add('config', 'no active account uses a shared dev password', $sharedPassword === 0 ? 'PASS' : 'FAIL',
             $sharedPassword === 0 ? 'none found' : $sharedPassword.' active account(s) with a shared development password');
+    }
+
+    /**
+     * COM-02. In enforce mode a missing/unusable license or missing ext-sodium
+     * FAILs (growth would be refused). In warn/off mode (the pilot default)
+     * this group only reports, so the approved pilot gate is unchanged.
+     */
+    private function checkLicense(LicenseService $licenses): void
+    {
+        $mode = $licenses->enforcementMode();
+        $enforce = $mode === LicenseService::MODE_ENFORCE;
+        $sodium = function_exists('sodium_crypto_sign_verify_detached');
+
+        $this->add('license', 'ext-sodium available', $sodium ? 'PASS' : ($enforce ? 'FAIL' : 'WARN'),
+            $sodium ? 'license signatures verifiable' : 'licenses cannot be verified');
+
+        $state = $licenses->state();
+        $detail = "mode={$mode}, state={$state->state}".($state->reasonCode ? " ({$state->reasonCode})" : '');
+        $status = match (true) {
+            $state->usable() => 'PASS',
+            $enforce => 'FAIL',
+            in_array($state->state, [LicenseState::INVALID, LicenseState::REVOKED], true) => 'WARN',
+            default => 'PASS',
+        };
+        $this->add('license', 'license usable for enforcement mode', $status, $detail);
+
+        if ($state->clockRollbackDetected) {
+            $this->add('license', 'system clock not behind last validation', 'WARN', 'clock rollback detected: check NTP');
+        }
     }
 
     private function checkBackup(): void

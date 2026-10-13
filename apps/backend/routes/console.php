@@ -31,6 +31,9 @@ Schedule::command('retention:cleanup')->dailyAt('02:00');
 // cameras and queue backlog (SEC-013 alert table).
 Schedule::command('system:monitor')->everyMinute()->withoutOverlapping(5);
 
+// COM-02: advance the license clock high-water mark and raise expiry/limit alerts.
+Schedule::command('license:check')->hourly()->withoutOverlapping(10);
+
 // Pilot backup policy (docs/pilot/PILOT-BACKUP-RETENTION-POLICY.md). Off by
 // default so development stacks do not accumulate backups.
 if (config('backup.schedule.enabled')) {

@@ -12,6 +12,9 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
+# License signing keys (tools/license-issuer) and issued customer licenses
+*.secret
+*.lic
 
 # --- Dependency / build output (reserved for later FND tasks) ----------------
 node_modules/

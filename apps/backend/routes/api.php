@@ -31,6 +31,7 @@ use App\Http\Controllers\Report\ReportExportController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use App\Http\Controllers\System\FeatureFlagController;
+use App\Http\Controllers\System\LicenseController;
 use App\Http\Controllers\System\SystemMonitoringController;
 use App\Http\Controllers\System\SystemSettingController;
 use Illuminate\Support\Facades\Route;
@@ -350,6 +351,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/system/incidents', [SystemMonitoringController::class, 'incidents'])->middleware('permission:system.view');
     Route::post('/system/incidents', [SystemMonitoringController::class, 'storeIncident'])->middleware('permission:system.manage');
     Route::put('/system/incidents/{incident}', [SystemMonitoringController::class, 'updateIncident'])->middleware('permission:system.manage');
+
+    // COM-02 commercial license (docs/commercial/LICENSE_MODEL.md)
+    Route::get('/system/license', [LicenseController::class, 'show'])->middleware('permission:system.view');
+    Route::post('/system/license', [LicenseController::class, 'install'])->middleware('permission:system.manage');
+    Route::post('/system/license/revocations', [LicenseController::class, 'importRevocations'])->middleware('permission:system.manage');
 });
 
 /*
