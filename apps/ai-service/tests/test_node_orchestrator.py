@@ -187,6 +187,13 @@ class TestRtspUrlAssembly:
         assert url == "rtsp://192.168.1.100:554/stream"
 
 
+def _wait_for(predicate, timeout: float = 5.0, interval: float = 0.02) -> None:
+    """Poll until predicate() is true or the timeout passes (the caller asserts)."""
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline and not predicate():
+        time.sleep(interval)
+
+
 class TestNodeOrchestrator:
     @pytest.fixture
     def mock_camera_config(self):
@@ -324,8 +331,9 @@ class TestNodeOrchestrator:
 
         try:
             orchestrator.start()
-            # Allow camera runner to process a few frames
-            time.sleep(0.2)
+            # Wait (bounded) for the camera runner to process frames: a fixed
+            # 0.2 s sleep was flaky on slower machines (~20% failures).
+            _wait_for(lambda: orchestrator.pending_buffer_count >= 1)
 
             # Events failed delivery and were enqueued in the offline buffer
             pending_count = orchestrator.pending_buffer_count
@@ -335,7 +343,7 @@ class TestNodeOrchestrator:
             failing_delivery.fail = False
 
             # Allow retry worker to drain
-            time.sleep(0.2)
+            _wait_for(lambda: len(failing_delivery.delivered_events) >= 1)
             assert len(failing_delivery.delivered_events) >= 1
             assert orchestrator.pending_buffer_count < pending_count
         finally:
