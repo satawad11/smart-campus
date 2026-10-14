@@ -4,8 +4,8 @@
 |---|---|
 | PostgreSQL dump + object-storage archive, SHA-256, verify drill, off-host copy | Implemented (SEC-006..010, PILOT-PKG); rehearsal restore into an empty DB PASS (REPORTED) |
 | Scheduled backups + retention pruning | Implemented, off by default (`BACKUP_SCHEDULE_ENABLED`) |
-| Retention values | **Proposed, AWAITING HUMAN APPROVAL** ([PILOT-BACKUP-RETENTION-POLICY](../pilot/PILOT-BACKUP-RETENTION-POLICY.md)) |
-| RPO | PostgreSQL ≤ 15 min target; object storage ≈ 60 min (**RPO exception AR4 awaiting approval**) |
+| Retention values | Approved by owner delegation 2026-10-14 ([PILOT-BACKUP-RETENTION-POLICY](../pilot/PILOT-BACKUP-RETENTION-POLICY.md)) |
+| RPO | PostgreSQL ≤ 15 min target; object storage ≈ 60 min — exception accepted **for the pilot only** (2026-10-14) |
 | Backup encryption | Implemented, **opt-in**: `BACKUP_ENCRYPTION_KEY` (generate with `php artisan backup:key`); files become `<name>.enc`, checksum covers the ciphertext, the restore drill decrypts to verify, `php artisan backup:decrypt <file.enc> <out>` for manual restores. **Losing the key loses the backups**: store it in a vault, apart from the backups |
 | Production restore test | **BLOCKED** (no production host) |
 | Full DR rehearsal | Not performed end to end |

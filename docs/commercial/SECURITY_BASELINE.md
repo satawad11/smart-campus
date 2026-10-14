@@ -8,7 +8,7 @@
 
 | # | Control | Status | Evidence / gap |
 |---|---|---|---|
-| 1 | Least privilege / RBAC with permission codes | TECH | `RequirePermission`, `contracts/permissions.yaml`; open decisions A-14 (dashboard), A-27 (SYSTEM_ADMIN = `*`) |
+| 1 | Least privilege / RBAC with permission codes | TECH | `RequirePermission`, `contracts/permissions.yaml`; A-14 resolved (`144164d`); open: A-27 (SYSTEM_ADMIN = `*`) |
 | 2 | Data scope GLOBAL / SITE / ZONE on REST and realtime | TECH | `DataScopeEnforcementTest`, `BroadcastChannelScopeTest` (A-05 fixed) |
 | 3 | MFA for administrators | TECH | Enrollment UI (`33eeb92`); SUPER_ADMIN and SYSTEM_ADMIN must enrol before any permission-protected API or realtime channel (`AUTH_MFA_REQUIRED_ROLES`; `MfaEnforcementTest`) |
 | 4 | Password policy, lockout, login throttle | TECH | AUTH-006, `throttle:login` (A-03) |
@@ -27,7 +27,7 @@
 | 17 | Dependency licence audit | PARTIAL | Done for libraries ([DEPENDENCY_LICENSES](DEPENDENCY_LICENSES.md)): all permissive; Redis ≥7.4 and MinIO (AGPL) images need counsel review |
 | 18 | Threat model | TECH | [THREAT_MODEL](THREAT_MODEL.md) (STRIDE, 15 threats); review each release |
 | 19 | Cross-tenant security tests | BLOCKED | depends on ACR-COM-01 |
-| 20 | Biometric data minimisation and erasure | GAP | PDPA G-1 / G-2 |
+| 20 | Biometric data minimisation and erasure | PARTIAL | `face:purge` erasure (G-1 done); retention schedule for revoked profiles is a controller decision (G-2) |
 | 21 | Security headers, CSP, HSTS, CORS | TECH | SEC-003 |
 | 22 | Locked future modules can't be enabled | TECH | kill switches + preflight |
 | 23 | Health endpoints don't leak internals | TECH | A-09; sanitized errors |
