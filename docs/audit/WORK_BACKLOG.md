@@ -39,7 +39,7 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | COM-03c | Allowlisted remote commands (restart service, resync config) with audit, timeout, result; no shell | DONE | `aa75f9a` backend, `8e48806` node |
 | COM-03d | Model compatibility check (node model vs registry) | DONE | `model_compatible` on node API + `AI_NODE_MODEL_MISMATCH` alert; real models BLOCKED by B5 |
 | COM-03e | One-time enrollment code flow | TODO | |
-| COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | TODO | |
+| COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | PARTIAL | `scripts/upgrade-campus.sh` (backup first, rollback tags; dry-run verified); host run BLOCKED (no host); release tagging = human |
 | COM-05a | Alerts: queue backlog, disk threshold, license expiry | TODO | |
 | COM-05b | Redacted support diagnostics bundle | TODO | |
 | COM-06a | Institution data export + offboarding guide | TODO | |

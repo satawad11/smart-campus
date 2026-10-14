@@ -1,9 +1,17 @@
 # Upgrade and Rollback
 
-**Status:** procedure defined; scripted upgrade with automatic pre-upgrade backup is backlog COM-04a. Rehearsed
-only as image retag rollback in the pilot rehearsal (REPORTED).
+**Status:** scripted (`scripts/upgrade-campus.sh`, 2026-10-14): verified with `bash -n` and `--dry-run`;
+**not yet run on a real host**. Image-retag rollback rehearsed in the pilot rehearsal (REPORTED).
 
-## Upgrade
+## Scripted upgrade
+```bash
+MIGRATION_DB_PASSWORD=... scripts/upgrade-campus.sh <approved-tag> --dry-run   # review the plan
+MIGRATION_DB_PASSWORD=... scripts/upgrade-campus.sh <approved-tag>             # asks for confirmation
+```
+The script performs the manual steps below in order, starting with a **verified backup**, tags the running images
+`rollback-<timestamp>`, writes `.upgrade-state`, and on any failure stops and prints the exact rollback commands.
+
+## Manual upgrade (same steps)
 1. Read the release notes; check the release is human-approved ([RELEASE_CHECKLIST](RELEASE_CHECKLIST.md)).
 2. Take and verify a backup **before** anything changes:
    `docker compose exec backend php artisan backup:run --type=ALL --verify` → must exit 0; confirm the off-host copy.
