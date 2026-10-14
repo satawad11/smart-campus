@@ -63,6 +63,7 @@ class MonitorSystemHealth extends Command
         $raised += $this->checkQueue($alerts);
         $raised += $this->checkNodeModels($alerts);
         $raised += $this->checkNodeDisks($alerts);
+        $raised += $this->checkServerDisk($alerts);
 
         $this->info("system:monitor raised {$raised} new alert(s).");
 
@@ -162,6 +163,34 @@ class MonitorSystemHealth extends Command
         }
 
         return $raised;
+    }
+
+    /**
+     * COM-05: the central server's own disk (local backups, exports, logs).
+     */
+    private function checkServerDisk(AlertLifecycleService $alerts, ?string $path = null): int
+    {
+        $path ??= storage_path();
+        $free = $this->safely(fn () => disk_free_space($path));
+        $total = $this->safely(fn () => disk_total_space($path));
+        if (! is_float($free) || ! is_float($total) || $total <= 0) {
+            return 0;
+        }
+
+        $freePercent = $free / $total * 100;
+        $threshold = (float) config('backup.disk_min_free_percent', 10);
+        if ($freePercent >= $threshold) {
+            return 0;
+        }
+
+        return $alerts->triggerOnce(
+            type: 'SERVER_DISK_LOW',
+            severity: SystemAlert::SEVERITY_CRITICAL,
+            title: 'Server disk almost full',
+            message: sprintf('%.1f%% free (%.1f GiB) on the storage volume; threshold %.0f%%. Backups and exports may fail.', $freePercent, $free / 1073741824, $threshold),
+            source: 'server_disk:storage',
+            metadata: ['free_percent' => round($freePercent, 1), 'free_bytes' => (int) $free],
+        ) ? 1 : 0;
     }
 
     private function safely(callable $probe): mixed

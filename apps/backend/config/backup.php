@@ -51,6 +51,10 @@ return [
     */
     'encryption_key' => env('BACKUP_ENCRYPTION_KEY'),
 
+    // COM-05: system:monitor alerts when the volume holding storage/ (local
+    // backups, exports, logs) has less free space than this percentage.
+    'disk_min_free_percent' => (float) env('SERVER_DISK_MIN_FREE_PERCENT', 10),
+
     // Optional read-only role for pg_dump (SEC-005 campus_backup_user). Falls
     // back to the application connection credentials when unset.
     'database' => [
