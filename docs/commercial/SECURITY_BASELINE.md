@@ -18,7 +18,7 @@
 | 8 | Encryption at rest | PARTIAL | Camera credentials encrypted (Laravel `Crypt`); MFA secrets encrypted. DB/MinIO/backup volumes rely on host disk encryption (GAP: not enforced by preflight) |
 | 9 | Secrets management | PARTIAL | `.env` outside repo, mandatory pilot secrets; no vault. License private key never in product (COM-02) |
 | 10 | Audit logging | TECH | `AuditService` with sensitive-key scrubbing; biometric, admin, licence actions audited |
-| 11 | Rate limiting | PARTIAL | login, MFA throttled; general API rate limit not configured |
+| 11 | Rate limiting | TECH | login, MFA throttled; `/api/v1` limited per user/IP (`API_RATE_LIMIT_PER_MINUTE`, default 300; `ApiRateLimitTest`); `/internal/v1` excluded |
 | 12 | Secure file upload | PARTIAL | type/size validation on student import, photos, face images; no malware scanning |
 | 13 | Database least privilege | TECH | `docs/security/LEAST-PRIVILEGE-ROLES.sql`, preflight warns on owner user |
 | 14 | Backup encryption | GAP | PDPA G-4 |

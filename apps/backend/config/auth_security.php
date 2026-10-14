@@ -20,6 +20,11 @@ return [
     'login_throttle_per_account_ip' => (int) env('AUTH_LOGIN_THROTTLE_PER_ACCOUNT_IP', 10),
     'login_throttle_per_ip' => (int) env('AUTH_LOGIN_THROTTLE_PER_IP', 30),
 
+    // General /api/v1 rate limit per signed-in user (or per IP when
+    // anonymous), per minute. Far above interactive use; caps scraping with
+    // a stolen session. The /internal/v1 node API is not affected.
+    'api_rate_limit_per_minute' => (int) env('API_RATE_LIMIT_PER_MINUTE', 300),
+
     'password_min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 12),
 
     'password_max_length' => (int) env('AUTH_PASSWORD_MAX_LENGTH', 128),

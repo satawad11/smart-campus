@@ -69,6 +69,10 @@ return Application::configure(basePath: dirname(__DIR__))
             SecurityHeadersMiddleware::class,
         ]);
 
+        // Security baseline: general /api/v1 rate limit (RateLimiter 'api',
+        // AppServiceProvider). /internal/v1 isn't in this group.
+        $middleware->throttleApi();
+
         $middleware->trustProxies(at: env('TRUSTED_PROXIES', '*'));
 
         $middleware->alias([

@@ -22,6 +22,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        RateLimiter::for('api', function (Request $request) {
+            $perMinute = (int) config('auth_security.api_rate_limit_per_minute', 300);
+
+            return Limit::perMinute(max(1, $perMinute))->by('api:'.($request->user()?->id ?: $request->ip()));
+        });
+
         RateLimiter::for('mfa', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
         });
