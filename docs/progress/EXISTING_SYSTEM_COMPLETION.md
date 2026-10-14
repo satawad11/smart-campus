@@ -20,6 +20,17 @@ acceptance needs human approvals, a pilot host, real cameras and a production mo
 | PDPA G-7 | Node health check fails on plain HTTP to a remote backend | `f6699a6` |
 | Tests | Flaky orchestrator test (fixed sleeps), PostgreSQL-rounding flake in missed-event recovery test | `2d4fb91`, `0f0f78d` |
 
+## 2b. Release candidate `v1.1.0-rc1` results (2026-10-14)
+| Suite | Result |
+|---|---|
+| Backend, PostgreSQL 16 (full) | **1220 tests: 1216 pass, 3 failures, 1 skipped** — the 3 failures are the backup tests that need `pg_dump` (absent on this Windows host); skipped = SQLite-only case |
+| Backend, SQLite (full, with sodium) | **1220 tests, 0 failures**, 9 incomplete (PostgreSQL-only) |
+| Pint | pass |
+| AI service | **320 passed**; ruff check/format clean |
+| Frontend | **180 passed** (21 files); eslint clean; production build OK (no frontend change after that run) |
+
+Still unverified here: the 3 backup tests on Linux with `pg_dump` (CI job `backend-pgsql`), anything on a real pilot host.
+
 ## 2a. Latest results (2026-10-14, branch head `95246d2`)
 | Suite | Result |
 |---|---|
