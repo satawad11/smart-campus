@@ -116,6 +116,9 @@ class EventNotificationTest extends TestCase
             'ai_node_uuid' => $node->uuid,
             'classification' => 'MATCH',
             'candidate_person_uuid' => $person->uuid,
+            // A real MATCH carries its similarity; since A-18 a MATCH without one
+            // (or below the approved threshold) is ingested as REVIEW.
+            'similarity' => 0.95,
         ]))->assertStatus(201);
 
         $this->assertSame(0, Notification::where('user_id', $watcher->id)->count());
