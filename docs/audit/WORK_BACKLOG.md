@@ -17,8 +17,8 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | P1-07 | 3 | A-17 audit-log viewer UI (also COM-05) | DONE | `affde83` |
 | P1-08 | 3 | A-17 incidents UI, session management UI | DONE | `d0c95a4`, `ad0847e` (own sessions; admin view of others' sessions still API-only) |
 | P1-09 | 1 | R-01/R-02 post-approval change review pack | DONE (pack) / HUMAN (approval) | `docs/pilot/PILOT-000B-*` [project owner] |
-| P1-10 | 1 | A-18 server-side MATCH consistency check | HUMAN | behaviour change after approval [project owner] |
-| P1-11 | 2 | A-14 SECURITY_OFFICER dashboard permission | HUMAN | RBAC matrix change [project owner] |
+| P1-10 | 1 | A-18 server-side MATCH consistency check | DONE | `ca4a3d1` (owner-delegated decision) |
+| P1-11 | 2 | A-14 SECURITY_OFFICER dashboard permission | DONE | `144164d` (owner-delegated decision) |
 | P1-12 | 4 | A-21 real camera snapshot | HUMAN | accept mock or implement |
 | P1-13 | 6 | A-22 summary refresh from ~1M raw events | TODO | needs PostgreSQL scale run |
 | P1-14 | 7 | P08-24 Prettier drift (71 files) | TODO (low) | not a CI gate |
@@ -41,8 +41,8 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | COM-03e | One-time enrollment code flow | TODO | |
 | COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | PARTIAL | `scripts/upgrade-campus.sh` (backup first, rollback tags; dry-run verified); host run BLOCKED (no host); release tagging = human |
 | COM-05a | Alerts: queue backlog, disk threshold, license expiry | DONE | queue backlog existed; node disk + model mismatch `fc641e4`; licence `0f0f78d`. Central-server disk alert: TODO |
-| COM-05b | Redacted support diagnostics bundle | TODO | |
-| COM-06a | Institution data export + offboarding guide | TODO | |
+| COM-05b | Redacted support diagnostics bundle | DONE | `4ee13ef` |
+| COM-06a | Institution data export + offboarding guide | DONE | OFFBOARDING_GUIDE (full SQL + object archive); student CSV export: optional |
 | COM-01 / COM-06 portal | Tenant model, central plane, portal | BLOCKED | ACR-COM-01 |
 | COM-07 | Integration API (tokens, scopes, rate limit, OpenAPI) | TODO (design) | partner systems unknown: no external API assumed |
 
@@ -52,7 +52,7 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | SEC-G7 | Node health check fails on plain HTTP to a remote backend | DONE `f6699a6` |
 | SEC-RL | General `/api/v1` rate limit | DONE `ff1da95` |
 | SEC-G4 | Opt-in backup encryption + `backup:decrypt` | DONE `49d70e0` |
-| SEC-NEXT | MFA enforcement for admin roles; dependency licence audit; threat model; upload malware scan | TODO / HUMAN (policy) |
+| SEC-NEXT | MFA enforcement for admin roles (DONE `f4a4bce`); dependency licence audit (DONE, counsel review of Redis/MinIO); threat model (DONE); upload malware scan (TODO) | PARTIAL |
 
 ## Phase 4 / 5 / 7 — Documents
 

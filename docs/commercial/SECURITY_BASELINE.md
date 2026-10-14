@@ -14,7 +14,7 @@
 | 4 | Password policy, lockout, login throttle | TECH | AUTH-006, `throttle:login` (A-03) |
 | 5 | Session management, forced logout, forced password change | TECH | AUTH-012; server-side forced change (A-04) |
 | 6 | Credential rotation | PARTIAL | AI-node credentials: issue/revoke API. App secrets: manual per `docs/security/SECRETS-STRATEGY.md` |
-| 7 | TLS in transit | PARTIAL | TLS gateway in the pilot overlay; node→backend may be HTTP on LAN (PDPA G-7) |
+| 7 | TLS in transit | TECH | TLS gateway; node `health_check` FAILs on plain HTTP to a remote backend (G-7) |
 | 8 | Encryption at rest | PARTIAL | Camera credentials encrypted (Laravel `Crypt`); MFA secrets encrypted. DB/MinIO/backup volumes rely on host disk encryption (GAP: not enforced by preflight) |
 | 9 | Secrets management | PARTIAL | `.env` outside repo, mandatory pilot secrets; no vault. License private key never in product (COM-02) |
 | 10 | Audit logging | TECH | `AuditService` with sensitive-key scrubbing; biometric, admin, licence actions audited |
@@ -24,8 +24,8 @@
 | 14 | Backup encryption | TECH (opt-in) | `BACKUP_ENCRYPTION_KEY` → libsodium secretstream, drill verifies by decrypting, `backup:decrypt`; key custody = ops (vault, apart from backups) |
 | 15 | Restore testing | PARTIAL | rehearsal restores into an empty DB pass (REPORTED); none on a production host (BLOCKED) |
 | 16 | Vulnerability / dependency scanning | PARTIAL | `composer audit` + `npm audit` in CI (advisory only); no container image scan |
-| 17 | Dependency licence audit | GAP | not performed; required before sale (and for AI models: B5) |
-| 18 | Threat model | GAP | not written; key threats known: stolen node token forging MATCH (A-18), insider misuse of biometric search, licence tampering (COM-02 mitigations) |
+| 17 | Dependency licence audit | PARTIAL | Done for libraries ([DEPENDENCY_LICENSES](DEPENDENCY_LICENSES.md)): all permissive; Redis ≥7.4 and MinIO (AGPL) images need counsel review |
+| 18 | Threat model | TECH | [THREAT_MODEL](THREAT_MODEL.md) (STRIDE, 15 threats); review each release |
 | 19 | Cross-tenant security tests | BLOCKED | depends on ACR-COM-01 |
 | 20 | Biometric data minimisation and erasure | GAP | PDPA G-1 / G-2 |
 | 21 | Security headers, CSP, HSTS, CORS | TECH | SEC-003 |
