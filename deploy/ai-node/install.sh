@@ -38,9 +38,22 @@ else
     chmod 600 .env
 fi
 
-# 4. Build AI Node container image
-echo "Building AI Node Docker image (smart-campus/ai-node:pilot)..."
-docker compose build
+# 4. Obtain the AI Node image: bundled in the kit, or built from the repository
+if [ -f ai-node-image.tar.gz ]; then
+    if [ -f SHA256SUMS ] && command -v sha256sum >/dev/null 2>&1; then
+        echo "Verifying kit checksums..."
+        sha256sum -c --quiet SHA256SUMS
+    fi
+    echo "Loading AI Node image from the kit (no source code or internet needed)..."
+    gunzip -c ai-node-image.tar.gz | docker load
+elif [ -d ../../apps/ai-service ]; then
+    echo "Building AI Node Docker image from the repository (smart-campus/ai-node:pilot)..."
+    docker build -t smart-campus/ai-node:pilot ../../apps/ai-service
+else
+    echo "ERROR: no ai-node-image.tar.gz in this kit and no repository to build from." >&2
+    echo "       Use a kit made with scripts/package-ai-node.sh." >&2
+    exit 1
+fi
 
 echo "============================================================"
 echo " Installation complete!"

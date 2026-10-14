@@ -8,9 +8,8 @@ name: smart-campus-ai-node
 
 services:
   ai-node:
-    build:
-      context: ../../apps/ai-service
-      dockerfile: Dockerfile
+    # Image comes from the kit (ai-node-image.tar.gz, loaded by install.sh) or,
+    # on a development machine with the repository, is built by install.sh.
     image: smart-campus/ai-node:pilot
     container_name: smart-campus-ai-node
     restart: unless-stopped
