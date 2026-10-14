@@ -31,6 +31,11 @@ class AiNodeHeartbeatRequest extends FormRequest
             'temperature' => ['sometimes', 'nullable', 'numeric'],
             'active_camera_count' => ['sometimes', 'nullable', 'integer', 'min:0'],
             'queue_depth' => ['sometimes', 'nullable', 'integer', 'min:0'],
+            // COM-03: disk usage and what the node runs (model compatibility)
+            'disk_usage' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:100'],
+            'software_version' => ['sometimes', 'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
+            'model_code' => ['sometimes', 'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
+            'model_version' => ['sometimes', 'nullable', 'string', 'max:64', 'regex:/^[A-Za-z0-9._+-]+$/'],
 
             'node_code' => ['prohibited'],
             'status' => ['prohibited'],

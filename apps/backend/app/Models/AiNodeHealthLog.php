@@ -30,6 +30,7 @@ class AiNodeHealthLog extends Model
         'temperature',
         'active_camera_count',
         'queue_depth',
+        'disk_usage',
         'status',
         'recorded_at',
     ];
@@ -48,6 +49,7 @@ class AiNodeHealthLog extends Model
             'temperature' => 'float',
             'active_camera_count' => 'integer',
             'queue_depth' => 'integer',
+            'disk_usage' => 'float',
             'recorded_at' => 'datetime',
         ];
     }

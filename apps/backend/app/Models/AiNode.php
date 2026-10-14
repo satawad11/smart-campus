@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
+use App\Enums\AIModelStatus;
+use App\Enums\AIModelType;
 use App\Enums\DeviceStatus;
 use Database\Factories\AiNodeFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +37,8 @@ class AiNode extends Model
         'api_url',
         'hardware_type',
         'software_version',
+        'model_code',
+        'model_version',
         'capabilities',
         'cpu_model',
         'gpu_name',
@@ -43,6 +47,25 @@ class AiNode extends Model
         'status',
         'last_seen_at',
     ];
+
+    /**
+     * COM-03: whether the model this node reports is registered as an ACTIVE
+     * FACE_EMBEDDING model, the rule InternalFaceRecognitionService applies
+     * to every recognition request. Null when the node hasn't reported one.
+     */
+    public function isModelCompatible(): ?bool
+    {
+        if ($this->model_code === null || $this->model_version === null) {
+            return null;
+        }
+
+        return AIModel::query()
+            ->where('model_type', AIModelType::FACE_EMBEDDING)
+            ->where('status', AIModelStatus::ACTIVE)
+            ->where('code', $this->model_code)
+            ->where('version', $this->model_version)
+            ->exists();
+    }
 
     /**
      * @return array<string, string>

@@ -28,6 +28,7 @@ class AiNodeHealthLogResource extends JsonResource
             'temperature' => $this->temperature,
             'active_camera_count' => $this->active_camera_count,
             'queue_depth' => $this->queue_depth,
+            'disk_usage' => $this->disk_usage,
             'recorded_at' => $this->recorded_at?->toISOString(),
         ];
     }

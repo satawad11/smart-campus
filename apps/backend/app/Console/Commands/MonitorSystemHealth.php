@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Enums\DeviceStatus;
+use App\Models\AiNode;
+use App\Models\AiNodeHealthLog;
 use App\Models\Camera;
 use App\Models\SystemAlert;
 use App\Services\System\AlertLifecycleService;
@@ -59,6 +61,8 @@ class MonitorSystemHealth extends Command
 
         $raised += $this->checkCameras($alerts);
         $raised += $this->checkQueue($alerts);
+        $raised += $this->checkNodeModels($alerts);
+        $raised += $this->checkNodeDisks($alerts);
 
         $this->info("system:monitor raised {$raised} new alert(s).");
 
@@ -107,6 +111,57 @@ class MonitorSystemHealth extends Command
             source: 'queue:default',
             metadata: ['size' => $size, 'threshold' => $threshold],
         ) ? 1 : 0;
+    }
+
+    /**
+     * COM-03: an ACTIVE node reporting a model the registry doesn't have
+     * ACTIVE can't get any recognition answered (every request is refused).
+     */
+    private function checkNodeModels(AlertLifecycleService $alerts): int
+    {
+        $raised = 0;
+        $nodes = AiNode::query()->where('status', DeviceStatus::ACTIVE)
+            ->whereNotNull('model_code')->whereNotNull('model_version')->get();
+
+        foreach ($nodes as $node) {
+            if ($node->isModelCompatible() === false) {
+                $raised += $alerts->triggerOnce(
+                    type: 'AI_NODE_MODEL_MISMATCH',
+                    severity: SystemAlert::SEVERITY_CRITICAL,
+                    title: "AI node {$node->node_code} runs an unregistered model",
+                    message: "Node reports {$node->model_code} {$node->model_version}, which is not an ACTIVE face embedding model; its recognition requests are refused.",
+                    source: 'ai_node_model:'.$node->uuid,
+                    metadata: ['ai_node_uuid' => $node->uuid, 'model_code' => $node->model_code, 'model_version' => $node->model_version],
+                ) ? 1 : 0;
+            }
+        }
+
+        return $raised;
+    }
+
+    /**
+     * COM-03: node disk fills up with the offline event buffer and logs.
+     */
+    private function checkNodeDisks(AlertLifecycleService $alerts): int
+    {
+        $threshold = (float) config('ai_node.health.degraded_disk_usage', 90.0);
+        $raised = 0;
+
+        foreach (AiNode::query()->where('status', DeviceStatus::ACTIVE)->get() as $node) {
+            $latest = AiNodeHealthLog::where('ai_node_id', $node->id)->latest('recorded_at')->latest('id')->first();
+            if ($latest?->disk_usage !== null && $latest->disk_usage >= $threshold) {
+                $raised += $alerts->triggerOnce(
+                    type: 'AI_NODE_DISK_HIGH',
+                    severity: SystemAlert::SEVERITY_WARNING,
+                    title: "AI node {$node->node_code} disk almost full",
+                    message: "Disk usage {$latest->disk_usage}% (threshold {$threshold}%). The offline event buffer needs free space.",
+                    source: 'ai_node_disk:'.$node->uuid,
+                    metadata: ['ai_node_uuid' => $node->uuid, 'disk_usage' => $latest->disk_usage],
+                ) ? 1 : 0;
+            }
+        }
+
+        return $raised;
     }
 
     private function safely(callable $probe): mixed

@@ -19,6 +19,8 @@ return [
         'degraded_gpu_usage' => env('AI_NODE_DEGRADED_GPU_USAGE', 95.0),
         'degraded_temperature' => env('AI_NODE_DEGRADED_TEMPERATURE', 85.0),
         'degraded_queue_depth' => env('AI_NODE_DEGRADED_QUEUE_DEPTH', 100),
+        // COM-03: the event buffer and logs live on the node disk.
+        'degraded_disk_usage' => env('AI_NODE_DEGRADED_DISK_USAGE', 90.0),
 
         'stale_after_seconds' => env('AI_NODE_STALE_AFTER_SECONDS', 90),
     ],

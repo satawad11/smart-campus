@@ -210,6 +210,13 @@ class AiNodeService
     {
         return DB::transaction(function () use ($node, $data) {
             $node->last_seen_at = now();
+            // COM-03: record what the node reports it runs; absent fields
+            // keep the previous value (older nodes don't send them).
+            foreach (['software_version', 'model_code', 'model_version'] as $field) {
+                if (! empty($data[$field])) {
+                    $node->{$field} = $data[$field];
+                }
+            }
             $node->save();
 
             AiNodeHealthLog::create([
@@ -221,6 +228,7 @@ class AiNodeService
                 'temperature' => $data['temperature'] ?? null,
                 'active_camera_count' => $data['active_camera_count'] ?? null,
                 'queue_depth' => $data['queue_depth'] ?? null,
+                'disk_usage' => $data['disk_usage'] ?? null,
                 'status' => $this->classifyHeartbeat($data)->value,
                 'recorded_at' => now(),
             ]);
@@ -239,6 +247,7 @@ class AiNodeService
             [$data['gpu_usage'] ?? null, $thresholds['degraded_gpu_usage']],
             [$data['temperature'] ?? null, $thresholds['degraded_temperature']],
             [$data['queue_depth'] ?? null, $thresholds['degraded_queue_depth']],
+            [$data['disk_usage'] ?? null, $thresholds['degraded_disk_usage'] ?? 90.0],
         ];
 
         foreach ($checks as [$value, $limit]) {

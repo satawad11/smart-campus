@@ -29,6 +29,11 @@ class AiNodeResource extends JsonResource
             'api_url' => $this->api_url,
             'hardware_type' => $this->hardware_type,
             'software_version' => $this->software_version,
+            // COM-03: reported runtime model and whether the registry has it
+            // ACTIVE (the same rule recognition requests are checked against).
+            'model_code' => $this->model_code,
+            'model_version' => $this->model_version,
+            'model_compatible' => $this->resource->isModelCompatible(),
             'capabilities' => $this->capabilities,
             'cpu_model' => $this->cpu_model,
             'gpu_name' => $this->gpu_name,
