@@ -26,7 +26,7 @@ DC="docker compose --env-file apps/backend/.env -f docker-compose.yml -f docker-
 | Deployment / rollback | `docs/runbooks/DEPLOYMENT.md`, `docs/runbooks/ROLLBACK.md` |
 | Backup policy | `docs/pilot/PILOT-BACKUP-RETENTION-POLICY.md` (AWAITING HUMAN RETENTION APPROVAL) |
 | Readiness checks | `php artisan pilot:preflight --require-backup`; `scripts/pilot-host-preflight.sh` (H1–H14) |
-| Release tag | `v1.0.0-pilot` (on the production candidate commit) |
+| Release tag | `v1.1.0-rc1` (supersedes `v1.0.0-pilot`; conditions in PILOT-000B) |
 
 ## 2. Host Prerequisites (human / infrastructure)
 

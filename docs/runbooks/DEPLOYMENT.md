@@ -18,7 +18,9 @@ DC="docker compose --env-file apps/backend/.env -f docker-compose.yml -f docker-
 ```
 
 ## 2. Pre-Deployment Checklist
-- [ ] Release tag exists on the approved candidate commit (`git tag -l v1.0.0-pilot`) and the working tree is clean.
+- [ ] Release tag exists on the approved candidate commit (`git tag -l v1.1.0-rc1`) and the working tree is clean.
+      `v1.1.0-rc1` (2026-10-14) supersedes `v1.0.0-pilot`, which lacks the V1 re-audit BLOCKER fixes (A-05, A-01).
+      It is approved for pilot rehearsal; see PILOT-000B for the conditions before real data.
 - [ ] `apps/backend/.env` created from `infrastructure/pilot/pilot.env.example`, mode 0600, every empty value filled with real secrets (secret manager or protected file). No development defaults.
 - [ ] `AI_MODE` decided by a human (the repository provides no production face or PAD model; see PILOT-000 B5).
 - [ ] TLS certificate installed: `infrastructure/pilot/certs/fullchain.pem` and `privkey.pem` for the pilot DNS name.
@@ -45,7 +47,7 @@ docker tag smart-campus/frontend:pilot smart-campus/frontend:pilot-previous
 ### Step 3.2: Code Checkout & Image Build
 ```bash
 git fetch origin --tags
-git checkout tags/v1.0.0-pilot
+git checkout tags/v1.1.0-rc1
 git status --porcelain            # must print nothing
 $DC config --quiet                # fails fast on any missing required secret
 $DC build backend frontend ai-service
