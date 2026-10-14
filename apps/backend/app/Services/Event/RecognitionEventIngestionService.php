@@ -53,6 +53,7 @@ class RecognitionEventIngestionService
     public function ingest(AiNode $resolvedNode, array $data): AccessEvent
     {
         $created = null;
+        $data = $this->enforceMatchThreshold($data);
 
         try {
             $event = DB::transaction(function () use ($resolvedNode, $data, &$created) {
@@ -119,6 +120,7 @@ class RecognitionEventIngestionService
                         'distance' => $data['distance'] ?? null,
                         'rejected_locally' => $data['rejected_locally'],
                         'reasons' => $data['reasons'] ?? [],
+                        'server_reclassified_from' => $data['server_reclassified_from'] ?? null,
                     ],
                 ]);
 
@@ -261,6 +263,35 @@ class RecognitionEventIngestionService
     /**
      * @param  array<string, mixed>  $data
      */
+    /**
+     * V1 audit A-18 (decision 2026-10-14): defence in depth against a stolen
+     * or faulty node credential. A node-asserted MATCH must carry a
+     * similarity at or above the approved FACE-021 MATCH threshold;
+     * otherwise the event is ingested as REVIEW so a human verifies it.
+     * The thresholds themselves are unchanged.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function enforceMatchThreshold(array $data): array
+    {
+        if (($data['classification'] ?? null) !== 'MATCH') {
+            return $data;
+        }
+
+        $threshold = (float) config('face.recognition.match_threshold', 0.80);
+        $similarity = $data['similarity'] ?? null;
+        if ($similarity !== null && (float) $similarity >= $threshold) {
+            return $data;
+        }
+
+        $data['classification'] = 'REVIEW';
+        $data['server_reclassified_from'] = 'MATCH';
+        $data['reasons'] = array_values(array_unique([...($data['reasons'] ?? []), 'SERVER_MATCH_THRESHOLD_NOT_MET']));
+
+        return $data;
+    }
+
     private function resolveEventType(array $data): string
     {
         if (($data['liveness_status'] ?? null) === 'SPOOF') {
