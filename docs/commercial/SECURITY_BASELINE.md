@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 1 | Least privilege / RBAC with permission codes | TECH | `RequirePermission`, `contracts/permissions.yaml`; open decisions A-14 (dashboard), A-27 (SYSTEM_ADMIN = `*`) |
 | 2 | Data scope GLOBAL / SITE / ZONE on REST and realtime | TECH | `DataScopeEnforcementTest`, `BroadcastChannelScopeTest` (A-05 fixed) |
-| 3 | MFA for administrators | PARTIAL | TOTP API + enrollment UI (A-15 fixed, `33eeb92`); MFA is **not enforced** per role yet: decide whether admins must enrol |
+| 3 | MFA for administrators | TECH | Enrollment UI (`33eeb92`); SUPER_ADMIN and SYSTEM_ADMIN must enrol before any permission-protected API or realtime channel (`AUTH_MFA_REQUIRED_ROLES`; `MfaEnforcementTest`) |
 | 4 | Password policy, lockout, login throttle | TECH | AUTH-006, `throttle:login` (A-03) |
 | 5 | Session management, forced logout, forced password change | TECH | AUTH-012; server-side forced change (A-04) |
 | 6 | Credential rotation | PARTIAL | AI-node credentials: issue/revoke API. App secrets: manual per `docs/security/SECRETS-STRATEGY.md` |

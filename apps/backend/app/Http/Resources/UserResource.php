@@ -30,6 +30,7 @@ class UserResource extends JsonResource
             'status' => $this->status?->value ?? $this->status,
             'mfa_enabled' => (bool) $this->mfa_enabled,
             'must_change_password' => (bool) $this->must_change_password,
+            'mfa_enrollment_required' => $this->resource->requiresMfaEnrollment(),
             'last_login_at' => $this->last_login_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
             'roles' => $this->roles->map(function ($role) {

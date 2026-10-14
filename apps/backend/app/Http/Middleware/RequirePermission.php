@@ -55,6 +55,19 @@ class RequirePermission
             ], 403);
         }
 
+        // Security baseline (decision 2026-10-14): administrators must enrol
+        // MFA first. MFA setup/confirm are self-service routes (no permission).
+        if ($user->requiresMfaEnrollment()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'MFA enrollment required for this role',
+                'error' => [
+                    'code' => 'MFA_ENROLLMENT_REQUIRED',
+                    'fields' => new stdClass,
+                ],
+            ], 403);
+        }
+
         $hasPermission = false;
 
         foreach ($permissions as $permission) {

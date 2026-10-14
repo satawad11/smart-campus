@@ -321,6 +321,14 @@ router.beforeEach(async (to, from, next) => {
       return next({ name: 'change-password' })
     }
 
+    // Admin roles must enrol MFA first (backend answers 403 MFA_ENROLLMENT_REQUIRED).
+    if (
+      authStore.user?.mfa_enrollment_required &&
+      !['account.security', 'change-password'].includes(to.name)
+    ) {
+      return next({ name: 'account.security' })
+    }
+
     // Guest-only or MFA challenge pages should redirect authenticated users
     if (to.meta.guestOnly || to.meta.requiresMfaPending) {
       if (mustChangePassword) {

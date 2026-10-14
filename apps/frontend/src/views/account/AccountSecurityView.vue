@@ -56,7 +56,10 @@ async function syncProfile(mfaEnabledNow) {
   try {
     await authStore.refreshUser()
   } catch {
-    if (authStore.user) authStore.user.mfa_enabled = mfaEnabledNow
+    if (authStore.user) {
+      authStore.user.mfa_enabled = mfaEnabledNow
+      if (mfaEnabledNow) authStore.user.mfa_enrollment_required = false
+    }
   }
 }
 
@@ -127,6 +130,15 @@ onBeforeUnmount(clearSetup)
         จัดการการยืนยันตัวตนแบบหลายปัจจัย (MFA) และรหัสผ่านของบัญชี
         {{ authStore.user?.username }}
       </p>
+    </div>
+
+    <div
+      v-if="authStore.user?.mfa_enrollment_required"
+      data-test="mfa-required-banner"
+      class="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900"
+      role="alert"
+    >
+      บัญชีผู้ดูแลระบบต้องเปิดใช้งาน MFA ก่อนจึงจะใช้งานส่วนอื่นของระบบได้
     </div>
 
     <div

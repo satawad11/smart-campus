@@ -121,4 +121,24 @@ class User extends Authenticatable
     {
         return $this->hasMany(ReportExport::class);
     }
+
+    /**
+     * Security baseline (decision 2026-10-14): holders of the roles in
+     * auth_security.mfa_required_roles must enrol MFA before using any
+     * permission-protected API. Self-service routes (me, MFA setup, password,
+     * sessions, logout) stay reachable so they can enrol.
+     */
+    public function requiresMfaEnrollment(): bool
+    {
+        if ($this->mfa_enabled) {
+            return false;
+        }
+
+        $required = array_filter(array_map('trim', explode(',', (string) config('auth_security.mfa_required_roles', ''))));
+        if ($required === []) {
+            return false;
+        }
+
+        return $this->roles()->whereIn('code', $required)->exists();
+    }
 }
