@@ -10,7 +10,7 @@ const RouterLinkStub = { template: '<a><slot /></a>', props: ['to'] }
 
 function mountView(pinia) {
   return mount(AccountSecurityView, {
-    global: { plugins: [pinia], stubs: { 'router-link': RouterLinkStub } },
+    global: { plugins: [pinia], stubs: { 'router-link': RouterLinkStub, SessionList: true } },
   })
 }
 

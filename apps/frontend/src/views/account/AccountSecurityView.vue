@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth'
+import SessionList from '@/components/account/SessionList.vue'
 
 /**
  * Account security (V1 audit A-15): MFA enrollment, confirmation and
@@ -283,6 +284,8 @@ onBeforeUnmount(clearSetup)
         </div>
       </form>
     </section>
+
+    <SessionList />
 
     <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
       <h2 class="text-lg font-semibold text-gray-900">รหัสผ่าน</h2>
