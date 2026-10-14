@@ -31,6 +31,20 @@ The fixes exist on `master` but have no recorded human change review. Neither op
 | `b93197b`, `57f4f64` + extension (branch) | uuid filters validated before `exists` | Malformed uuid filter → 422 instead of 500 | none | `MalformedUuidFilterTest`, `EventHistoryApiTest` |
 | branch | Dev seeder allowlist, ApiException log level, PostgreSQL CI job | No runtime behaviour change for production users | none | see EXISTING_SYSTEM_COMPLETION |
 
+### 2b. Added on the development branch after this pack was first prepared (2026-10-14)
+
+| Change | Behaviour visible to users/operators | Default / risk |
+|---|---|---|
+| Licensing (COM-02) | New `/system/license` API/UI, `license:*` commands, hourly `license:check` | `LICENSE_ENFORCEMENT=warn`: nothing is blocked; no alert without a licence |
+| `/api/v1` rate limit | 429 above 300 requests/min per user | Configurable `API_RATE_LIMIT_PER_MINUTE`; far above interactive use |
+| MFA enrollment, audit log, incidents, sessions, licence pages | New UI over existing APIs | none |
+| `face:purge` | New CLI erasure of revoked biometric data | Irreversible by design; CLI only |
+| Node telemetry, model compatibility, remote commands, versioned settings (COM-03) | New node fields, alerts `AI_NODE_MODEL_MISMATCH` / `AI_NODE_DISK_HIGH`, commands and settings APIs + Operations tab | Commands allowlisted, audited, time-limited |
+| Offline buffer thread-safety fix (AI node) | Prevents possible event loss | none |
+| Node `health_check` HTTPS check | FAILs on plain HTTP to a remote backend | Lab override available |
+| Backup encryption | Opt-in via `BACKUP_ENCRYPTION_KEY` | Off by default; losing the key loses backups |
+| Upgrade script | `scripts/upgrade-campus.sh` (backup first) | Not yet run on a host |
+
 Thresholds (FACE-021), feature-flag locks and the RBAC matrix are **unchanged** by this delta (verified: no diff in
 `config/face.php`, `FeatureFlagService::LOCKED_V1_FEATURES`, `RolePermissionSeeder`).
 

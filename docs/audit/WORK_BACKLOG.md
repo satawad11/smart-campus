@@ -13,9 +13,9 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | P1-03 | 6 | C-03 PostgreSQL test gate (script + CI job) | DONE | `scripts/test-backend-pgsql.sh`, `ci.yml` `backend-pgsql` |
 | P1-04 | 1 | C-04 dev seeder allowlist (`local`/`testing`) | DONE | `PilotBackupPolicyTest` |
 | P1-05 | 7 | A-24 ApiException log level; A-28 env fallback | DONE | `ApiExceptionLogLevelTest` |
-| P1-06 | 1 | A-15 MFA enrollment UI (setup / confirm / disable) using existing API | TODO | — |
-| P1-07 | 3 | A-17 audit-log viewer UI (also COM-05) | TODO | — |
-| P1-08 | 3 | A-17 incidents UI, session management UI | TODO | — |
+| P1-06 | 1 | A-15 MFA enrollment UI (setup / confirm / disable) using existing API | DONE | `33eeb92` |
+| P1-07 | 3 | A-17 audit-log viewer UI (also COM-05) | DONE | `affde83` |
+| P1-08 | 3 | A-17 incidents UI, session management UI | DONE | `d0c95a4`, `ad0847e` (own sessions; admin view of others' sessions still API-only) |
 | P1-09 | 1 | R-01/R-02 post-approval change review pack | DONE (pack) / HUMAN (approval) | `docs/pilot/PILOT-000B-*` [project owner] |
 | P1-10 | 1 | A-18 server-side MATCH consistency check | HUMAN | behaviour change after approval [project owner] |
 | P1-11 | 2 | A-14 SECURITY_OFFICER dashboard permission | HUMAN | RBAC matrix change [project owner] |
@@ -31,28 +31,36 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | ID | Item | State | Notes |
 |---|---|---|---|
 | COM-00 | ACR-COM-01 tenancy model | HUMAN | [project owner] |
-| COM-02a | License domain: installation identity, signed payload (Ed25519), offline verification, grace, revocation list, audit | TODO | first commercial item |
-| COM-02b | Entitlement enforcement (camera/node limits, features can only narrow flags) — modes `off`/`warn`/`enforce` | TODO | never deletes data, never blocks export |
-| COM-02c | License issuer CLI (private key from outside the repo), license status API + UI, expiry alerts | TODO | |
+| COM-02a | License domain: installation identity, signed payload (Ed25519), offline verification, grace, revocation list, audit | DONE | `0f0f78d` |
+| COM-02b | Entitlement enforcement (camera/node limits, features can only narrow flags) — modes `off`/`warn`/`enforce` | DONE | `0f0f78d`; default `warn` |
+| COM-02c | License issuer CLI (private key from outside the repo), license status API + UI, expiry alerts | DONE | `0f0f78d`, UI `c030ec7`; production key = human |
 | COM-03a | Node telemetry: disk, FPS, dropped frames, software + model version | DONE | node `2bafdbf`; backend + alerts (this commit); FPS/drops via camera health (existing) |
 | COM-03b | Versioned node configuration with validation and rollback | DONE | `b116095` backend, node apply/ack (this commit) |
 | COM-03c | Allowlisted remote commands (restart service, resync config) with audit, timeout, result; no shell | DONE | `aa75f9a` backend, `8e48806` node |
 | COM-03d | Model compatibility check (node model vs registry) | DONE | `model_compatible` on node API + `AI_NODE_MODEL_MISMATCH` alert; real models BLOCKED by B5 |
 | COM-03e | One-time enrollment code flow | TODO | |
 | COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | PARTIAL | `scripts/upgrade-campus.sh` (backup first, rollback tags; dry-run verified); host run BLOCKED (no host); release tagging = human |
-| COM-05a | Alerts: queue backlog, disk threshold, license expiry | TODO | |
+| COM-05a | Alerts: queue backlog, disk threshold, license expiry | DONE | queue backlog existed; node disk + model mismatch `fc641e4`; licence `0f0f78d`. Central-server disk alert: TODO |
 | COM-05b | Redacted support diagnostics bundle | TODO | |
 | COM-06a | Institution data export + offboarding guide | TODO | |
 | COM-01 / COM-06 portal | Tenant model, central plane, portal | BLOCKED | ACR-COM-01 |
 | COM-07 | Integration API (tokens, scopes, rate limit, OpenAPI) | TODO (design) | partner systems unknown: no external API assumed |
+
+## Security (Phase 4) items done on this branch
+| ID | Item | State |
+|---|---|---|
+| SEC-G7 | Node health check fails on plain HTTP to a remote backend | DONE `f6699a6` |
+| SEC-RL | General `/api/v1` rate limit | DONE `ff1da95` |
+| SEC-G4 | Opt-in backup encryption + `backup:decrypt` | DONE `49d70e0` |
+| SEC-NEXT | MFA enforcement for admin roles; dependency licence audit; threat model; upload malware scan | TODO / HUMAN (policy) |
 
 ## Phase 4 / 5 / 7 — Documents
 
 | ID | Item | State |
 |---|---|---|
 | PDPA-01 | Biometric erasure `face:purge` (PDPA G-1) | DONE — `BiometricPurgeTest` (10) SQLite + PostgreSQL |
-| DOC-01 | Security & privacy checklist, data inventory, data-flow map (`SECURITY_BASELINE`, `PDPA_DATA_MAP`) | TODO |
-| DOC-02 | `docs/commercial/*` packaging set (13 documents) | TODO |
+| DOC-01 | Security & privacy checklist, data inventory, data-flow map (`SECURITY_BASELINE`, `PDPA_DATA_MAP`) | DONE (legal review = human) |
+| DOC-02 | `docs/commercial/*` packaging set (13 documents) | DONE (drafts; owner review) |
 | DOC-03 | Model validation checklist (Phase 5) | TODO — execution BLOCKED by B5 |
 
 ## Resume instructions (after a context reset)
