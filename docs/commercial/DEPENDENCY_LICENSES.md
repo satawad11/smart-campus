@@ -27,5 +27,5 @@ non-commercial; YuNet MIT; SFace Apache-2.0; MiniFASNet weights' licence unstate
 
 ## 4. Actions
 1. Counsel review of Redis and MinIO licensing for the commercial package (or switch to Valkey / alternative S3).
-2. Pin image versions (`minio/minio:latest` → a dated release) in a reviewed change.
+2. ~~Pin image versions~~ Done 2026-10-14: `minio/minio` and `quay.io/minio/mc` pinned by digest to the images already in use (built 2025-09-07).
 3. Add a `THIRD_PARTY_NOTICES` file to release artefacts (generated from the tools above) before the first sale.
