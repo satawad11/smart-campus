@@ -18,5 +18,6 @@
 | Events arrive late after an outage | Node delivering from its offline buffer | Normal; delivery is idempotent on `event_uuid` |
 | Export stays PENDING | Queue worker stopped | `docker compose ps queue`; work drains on restart |
 
-Support diagnostics must not include face images, embeddings or student data. Share `pilot:preflight --json`,
-`/health/full` output and container logs filtered for errors.
+Support diagnostics: `php artisan support:diagnostics` writes a redacted JSON bundle (config checks, health, licence
+state, counts, node versions, alerts, backup status, redacted error lines) to `storage/app/diagnostics/`. It contains
+no names, e-mails, student codes, IPs, credentials, face images or embeddings by design; still review it before sending.
