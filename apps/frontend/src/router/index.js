@@ -263,6 +263,12 @@ const routes = [
         meta: { requiresAuth: true, permission: 'system.view' },
       },
       {
+        path: 'system/incidents',
+        name: 'system.incidents',
+        component: () => import('@/views/system/IncidentsView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
+      {
         path: 'audit-logs',
         name: 'audit-logs.index',
         component: () => import('@/views/system/AuditLogView.vue'),
