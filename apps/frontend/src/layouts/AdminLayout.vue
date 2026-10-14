@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter, RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { roleLabel } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -20,9 +21,9 @@ async function handleLogout() {
           <div
             class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white font-bold"
           >
-            SC
+            สอ
           </div>
-          <span class="text-lg font-bold text-gray-900">Smart Campus</span>
+          <span class="text-lg font-bold text-gray-900">สถานศึกษาอัจฉริยะ</span>
         </div>
         <nav class="space-y-1">
           <router-link
@@ -284,7 +285,7 @@ async function handleLogout() {
                 d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
               />
             </svg>
-            จัดการ AI Node
+            จัดการหน่วยประมวลผลปัญญาประดิษฐ์
           </router-link>
 
           <router-link
@@ -356,7 +357,7 @@ async function handleLogout() {
                 d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.040A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
               />
             </svg>
-            License
+            สิทธิ์การใช้งานระบบ
           </router-link>
 
           <router-link
@@ -400,7 +401,7 @@ async function handleLogout() {
                 d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
               />
             </svg>
-            เหตุการณ์ (Incidents)
+            บันทึกเหตุขัดข้องของระบบ
           </router-link>
 
           <router-link
@@ -436,7 +437,7 @@ async function handleLogout() {
             </p>
             <p class="truncate text-xs text-gray-500">
               {{
-                authStore.user.roles?.map((r) => r.name || r).join(', ') || authStore.user.username
+                authStore.user.roles?.map((r) => roleLabel(r)).join(', ') || authStore.user.username
               }}
             </p>
           </div>
@@ -473,7 +474,7 @@ async function handleLogout() {
             class="text-xs font-medium text-blue-600 hover:text-blue-800"
             :class="{ 'text-amber-600 hover:text-amber-800': !authStore.user?.mfa_enabled }"
           >
-            {{ authStore.user?.mfa_enabled ? 'ความปลอดภัยบัญชี' : 'ตั้งค่า MFA' }}
+            {{ authStore.user?.mfa_enabled ? 'ความปลอดภัยบัญชี' : 'ตั้งค่ายืนยันตัวตนสองชั้น' }}
           </router-link>
           <button
             @click="handleLogout"

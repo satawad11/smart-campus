@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import api from '@/services/api'
+import { decisionLabel, errorMessage } from '@/constants/labels'
 
 const loading = ref(true)
 const error = ref(null)
@@ -57,7 +58,8 @@ async function fetchDashboard() {
     cameraData.value = camRes.data.data || []
     departmentData.value = deptRes.data.data || []
   } catch (err) {
-    error.value = err.message || 'ไม่สามารถโหลดข้อมูลแดชบอร์ดได้'
+    // Thai only: backend messages are English, so map known codes instead.
+    error.value = errorMessage(err, 'ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
   }
@@ -164,7 +166,9 @@ onMounted(() => {
 
       <!-- AI Nodes Online -->
       <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <span class="text-xs font-medium text-gray-500 uppercase">AI Nodes ออนไลน์</span>
+        <span class="text-xs font-medium text-gray-500 uppercase"
+          >หน่วยประมวลผลปัญญาประดิษฐ์ออนไลน์</span
+        >
         <div class="mt-2 text-2xl font-bold text-gray-900">
           {{ summary.ai_nodes_online }} / {{ summary.ai_nodes_total }}
         </div>
@@ -221,7 +225,7 @@ onMounted(() => {
                   'text-gray-600': item.decision === 'UNKNOWN',
                 }"
               >
-                {{ item.decision }}
+                {{ decisionLabel(item.decision) }}
               </span>
               <span class="text-gray-500"
                 >{{ item.count.toLocaleString() }} ({{
@@ -257,7 +261,7 @@ onMounted(() => {
       <!-- By Camera -->
       <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
         <h2 class="text-base font-semibold text-gray-900 mb-3">
-          การเข้า-ออกแยกตามกล้อง (Top Cameras)
+          การเข้า-ออกแยกตามกล้อง (กล้องที่มีการเข้า-ออกมากที่สุด)
         </h2>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 text-sm">
