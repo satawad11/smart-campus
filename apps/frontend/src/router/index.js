@@ -263,6 +263,12 @@ const routes = [
         meta: { requiresAuth: true, permission: 'system.view' },
       },
       {
+        path: 'system/license',
+        name: 'system.license',
+        component: () => import('@/views/system/LicenseView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
+      {
         // Own account only (V1 audit A-15); no permission beyond being signed in.
         path: 'account/security',
         name: 'account.security',
