@@ -15,6 +15,10 @@
 $vendorKeys = [
     // key_id => base64 (standard alphabet) Ed25519 public key (32 bytes).
     // Production keys are added here by the vendor release process only.
+
+    // Generated 2026-10-14 with tools/license-issuer (owner decision). The
+    // private key is NOT in this repository; custody: docs/commercial/LICENSE_MODEL.md §6.
+    'vendor-2026-a' => '2DxHHcHvoEgU/TF/tsyssHA+Ur8KbO2WhYV4QbrAfrg=',
 ];
 
 // Extra trusted keys from the environment ("kid:base64key;kid2:base64key")
