@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     config_sync_interval_seconds: float = 30.0
     retry_interval_seconds: float = 10.0
     camera_health_interval_seconds: float = 15.0
+    command_poll_interval_seconds: float = 10.0
     target_fps: float = 5.0
 
 

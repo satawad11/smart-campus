@@ -25,6 +25,7 @@ import os
 import socket
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 from urllib.parse import quote, urlsplit, urlunsplit
 
@@ -276,6 +277,8 @@ class NodeOrchestrator:
         camera_health_interval: float | None = None,
         target_fps: float | None = None,
         buffer_initial_backoff_seconds: float = 5.0,
+        command_poll_interval: float | None = None,
+        restart_handler: Callable[[], None] | None = None,
     ):
         self.base_url = (base_url or settings.backend_base_url).rstrip("/")
         self.node_uuid = node_uuid or settings.ai_node_uuid or ""
@@ -291,6 +294,8 @@ class NodeOrchestrator:
         self.camera_health_interval = (
             camera_health_interval or settings.camera_health_interval_seconds
         )
+        self.command_poll_interval = command_poll_interval or settings.command_poll_interval_seconds
+        self._restart_handler = restart_handler or self._schedule_process_restart
 
         # Durable offline SQLite buffer (CAM-012)
         buffer_path = event_buffer_path or settings.event_buffer_path
@@ -338,6 +343,7 @@ class NodeOrchestrator:
         self._start_time: float | None = None
         self._last_heartbeat_at: float | None = None
         self._last_sync_at: float | None = None
+        self._last_sync_error: str | None = None
         self._telemetry = SystemTelemetry()
 
     @property
@@ -406,6 +412,7 @@ class NodeOrchestrator:
             threading.Thread(
                 target=self._camera_health_loop, name="worker-camera-health", daemon=True
             ),
+            threading.Thread(target=self._command_loop, name="worker-commands", daemon=True),
         ]
         for t in self._threads:
             t.start()
@@ -457,18 +464,73 @@ class NodeOrchestrator:
                 "Initial check-in failed (backend will receive heartbeat later): %s", exc
             )
 
-    def sync_config(self) -> None:
-        """Fetches assigned camera configuration and updates running pipelines (CAM-015)."""
+    def process_commands(self) -> int:
+        """COM-03: run this node's pending allowlisted commands and report
+        each result. Unknown commands are refused, never interpreted.
+        Returns the number of commands handled."""
+        handled = 0
+        for command in self.node_client.claim_commands():
+            uuid = str(command.get("uuid", ""))
+            kind = command.get("command")
+            if not uuid:
+                continue
+            handled += 1
+            try:
+                if kind == "RESYNC_CONFIG":
+                    if not self.sync_config():
+                        raise RuntimeError(self._last_sync_error or "configuration sync failed")
+                    self.node_client.report_command_result(
+                        uuid, True, f"configuration synced ({self.active_camera_count} camera(s))"
+                    )
+                elif kind == "RESTART_SERVICE":
+                    # Report first: after the restart this process is gone.
+                    self.node_client.report_command_result(uuid, True, "restarting service")
+                    self._restart_handler()
+                else:
+                    self.node_client.report_command_result(
+                        uuid, False, f"unsupported command: {kind}"
+                    )
+            except Exception as exc:
+                logger.warning("Command %s (%s) failed: %s", uuid, kind, exc)
+                try:
+                    self.node_client.report_command_result(uuid, False, str(exc)[:500])
+                except Exception:
+                    logger.warning("Could not report result of command %s", uuid)
+        return handled
+
+    def _command_loop(self) -> None:
+        while not self._stop_event.is_set():
+            try:
+                self.process_commands()
+            except Exception as exc:
+                logger.warning("Command poll blip: %s", exc)
+            self._stop_event.wait(self.command_poll_interval)
+
+    def _schedule_process_restart(self) -> None:
+        """Stop gracefully, then exit non-zero so the container restart policy
+        (deploy/ai-node: restart: unless-stopped) starts a fresh process."""
+
+        def restart() -> None:
+            time.sleep(0.5)
+            self.stop()
+            os._exit(3)
+
+        threading.Thread(target=restart, name="node-restart", daemon=True).start()
+
+    def sync_config(self) -> bool:
+        """Fetches assigned camera configuration and updates running pipelines (CAM-015).
+        Returns False when the configuration could not be fetched."""
         if not self.node_uuid:
             logger.warning("No AI_NODE_UUID configured; skipping config sync")
-            return
+            return False
 
         try:
             config_data = self.node_client.get_config(self.node_uuid)
             self._last_sync_at = time.time()
         except Exception as exc:
             logger.warning("Config sync failed: %s", exc)
-            return
+            self._last_sync_error = str(exc)
+            return False
 
         cameras_data = config_data.get("cameras", [])
         active_uuids = set()
@@ -521,6 +583,9 @@ class NodeOrchestrator:
                 logger.info("Camera %s unassigned from this node; stopping", r_uuid)
                 self._cameras[r_uuid].stop()
                 del self._cameras[r_uuid]
+
+        self._last_sync_error = None
+        return True
 
     def _heartbeat_loop(self) -> None:
         """Sends periodic operational telemetry heartbeat (CAM-003, CAM-014)."""

@@ -47,6 +47,16 @@ class AiNodeClient(ABC):
     @abstractmethod
     def get_config(self, ai_node_uuid: str) -> dict[str, Any]: ...
 
+    # COM-03 remote commands. Non-abstract so clients without support simply
+    # never receive any command.
+    def claim_commands(self) -> list[dict[str, Any]]:
+        return []
+
+    def report_command_result(
+        self, command_uuid: str, succeeded: bool, message: str | None = None
+    ) -> None:
+        return None
+
 
 class HttpAiNodeClient(AiNodeClient):
     """Real HTTP backend client for AI node management."""
@@ -169,6 +179,47 @@ class HttpAiNodeClient(AiNodeClient):
             return response.json()
         except Exception as exc:
             raise AiNodeClientError("Malformed JSON response from heartbeat") from exc
+
+    def claim_commands(self) -> list[dict[str, Any]]:
+        """COM-03: pull this node's pending allowlisted commands."""
+        import httpx
+
+        try:
+            response = httpx.post(
+                f"{self._base_url}/internal/v1/ai-nodes/commands/claim",
+                json={},
+                headers=self._headers(),
+                timeout=self._timeout_seconds,
+            )
+        except Exception as exc:
+            raise AiNodeClientError(f"Command claim failed: {exc}") from exc
+        if response.status_code != 200:
+            raise AiNodeClientError(f"Command claim returned HTTP {response.status_code}")
+        try:
+            data = response.json().get("data") or []
+        except Exception as exc:
+            raise AiNodeClientError("Malformed JSON response from command claim") from exc
+        return [c for c in data if isinstance(c, dict)]
+
+    def report_command_result(
+        self, command_uuid: str, succeeded: bool, message: str | None = None
+    ) -> None:
+        import httpx
+
+        payload: dict[str, Any] = {"status": "SUCCEEDED" if succeeded else "FAILED"}
+        if message:
+            payload["message"] = message[:500]
+        try:
+            response = httpx.post(
+                f"{self._base_url}/internal/v1/ai-nodes/commands/{command_uuid}/result",
+                json=payload,
+                headers=self._headers(),
+                timeout=self._timeout_seconds,
+            )
+        except Exception as exc:
+            raise AiNodeClientError(f"Command result failed: {exc}") from exc
+        if response.status_code != 200:
+            raise AiNodeClientError(f"Command result returned HTTP {response.status_code}")
 
     def get_config(self, ai_node_uuid: str) -> dict[str, Any]:
         try:
