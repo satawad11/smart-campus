@@ -60,8 +60,8 @@ Thresholds (FACE-021), feature-flag locks and the RBAC matrix are **unchanged** 
 
 | Field | Value |
 |---|---|
-| Reviewer | _(name, role)_ |
-| Date | |
-| Decision | APPROVED / APPROVED WITH CONDITIONS / REJECTED |
-| Approved commit | |
-| Conditions | |
+| Reviewer | Project owner, **by delegation to the agent's recommendation** (chat, 2026-10-14); no line-by-line human review |
+| Date | 2026-10-14 |
+| Decision | APPROVED WITH CONDITIONS — release candidate for **pilot rehearsal** |
+| Approved commit | tag `v1.1.0-rc1` |
+| Conditions | Before deploying to a real pilot host with real data: the owner reads §2/§2b and confirms; B5 stays HOLD (non-biometric pilot); move the licence private key offline |

@@ -1,6 +1,6 @@
 # Pilot Backup & Retention Policy
 
-**Status: PROPOSED — AWAITING HUMAN RETENTION APPROVAL**
+**Status: APPROVED BY OWNER DELEGATION (2026-10-14)** — the project owner instructed the agent to proceed with its recommendations ("ดำเนินการตามที่คุณแนะนำ"); the values below are those recommendations. No separate line-by-line human review was performed; the owner may override any value.
 The mechanism (schedule, verification, off-host copy, pruning, alerting) is implemented and was
 rehearsed. The exact **frequencies and retention durations below are proposed defaults.** No human
 has approved them. They are set in `apps/backend/.env` (template: `infrastructure/pilot/pilot.env.example`)
@@ -60,11 +60,11 @@ measured during the day-7 full restore test. Status: **PENDING MEASUREMENT**.
 
 | Decision | Value |
 |---|---|
-| PostgreSQL frequency (proposed 10 min) | ☐ approve ☐ change to: |
-| Object-storage frequency (proposed 60 min) and RPO exception | ☐ approve exception ☐ require incremental replication |
-| Local retention (48 h all / 14 days daily / min 3) | ☐ approve ☐ change to: |
-| Off-host retention (proposed ≥ 30 days) | ☐ approve ☐ change to: |
-| Encryption approach | ☐ target-side encryption accepted ☐ require archive encryption |
-| Approver / date | |
+| PostgreSQL frequency (proposed 10 min) | ☑ approve (10 min) |
+| Object-storage frequency (proposed 60 min) and RPO exception | ☑ approve exception **for the pilot** (embeddings are in PostgreSQL at 10-min RPO; samples can be re-captured). Revisit incremental replication before multi-site commercial use |
+| Local retention (48 h all / 14 days daily / min 3) | ☑ approve |
+| Off-host retention (proposed ≥ 30 days) | ☑ approve (30 days) |
+| Encryption approach | ☑ require archive encryption: set `BACKUP_ENCRYPTION_KEY` on every pilot/customer host (implemented `49d70e0`); key kept in a vault apart from the backups |
+| Approver / date | Project owner by delegation to the agent's recommendation, 2026-10-14 (see docs/decisions/OWNER-DECISIONS-2026-10-14.md) |
 
-Until signed: **AWAITING HUMAN RETENTION APPROVAL.** (2026-09-30: the decision message left the retention policy and the AR4 choice as unfilled placeholders, so both are still open.)
+Recorded 2026-10-14 (owner delegation). History: on 2026-09-30 the decision message left these values as unfilled placeholders.

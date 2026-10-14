@@ -1,7 +1,7 @@
 # ARCHITECTURE_CHANGE_REQUEST — ACR-COM-01 Tenancy Model for Commercial V1
 
-**Status:** AWAITING PROJECT-OWNER DECISION · **Raised:** 2026-10-13 · **Raised by:** AI coding agent
-Per PROJECT_RULES §17, nothing in this document is implemented until a human approves an option.
+**Status:** DECIDED — **Option B** (owner delegation, 2026-10-14; see docs/decisions/OWNER-DECISIONS-2026-10-14.md D2) · **Raised:** 2026-10-13 · **Raised by:** AI coding agent
+The central management plane is a separate later project; the campus instance stays single-tenant.
 
 ```text
 ARCHITECTURE_CHANGE_REQUEST
