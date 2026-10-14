@@ -62,7 +62,7 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 | G-4 | Backups are not encrypted at rest by the application | Encrypted backup volume / off-host target, or `age`/GPG encryption in `backup:run` | Engineering + ops |
 | G-5 | No Data Subject Request (DSR) workflow (access/export, correction, erasure, objection) | Runbook using existing student export + G-1 purge; ticket template; SLA set by controller | Controller + engineering |
 | G-6 | No privacy notice, consent/legal-basis record, DPIA, or DPA template | Legal documents; the platform can store a consent/legal-basis reference per person later | Legal |
-| G-7 | Node → backend traffic may be plain HTTP on the LAN | Require HTTPS for `BACKEND_BASE_URL` in production; preflight check | Engineering |
+| G-7 | ~~Node → backend traffic may be plain HTTP on the LAN~~ **Mitigated:** node `health_check` FAILs on plain HTTP to a remote backend (`backend_transport`); lab override `AI_NODE_ALLOW_INSECURE_BACKEND` | — | Engineering (done) |
 
 ## 4. Technical controls already in place (VERIFIED in code or earlier audits)
 RBAC with GLOBAL/SITE/ZONE scope on REST and realtime; raw embeddings never returned to the browser; private

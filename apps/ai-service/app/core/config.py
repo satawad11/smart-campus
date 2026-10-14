@@ -18,6 +18,8 @@ class Settings(BaseSettings):
 
     # AI Node runtime contract
     backend_base_url: str = "http://localhost:8000"
+    # Lab/rehearsal only: downgrade the plain-HTTP backend check from FAIL to WARNING.
+    ai_node_allow_insecure_backend: bool = False
     ai_node_uuid: str | None = None
     ai_node_token: str | None = None
     model_code: str = "arcface-r50-v1"

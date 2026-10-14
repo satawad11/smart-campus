@@ -60,6 +60,32 @@ def check_node_identity() -> CheckResult:
         return CheckResult("node_identity", "FAIL", f"Invalid UUID format: {uuid_val}")
 
 
+# Hostnames that never leave the host or the compose network.
+_LOCAL_BACKEND_HOSTS = {"localhost", "127.0.0.1", "::1", "backend", "nginx", "host.docker.internal"}
+
+
+def check_backend_transport() -> CheckResult:
+    """PDPA G-7: the node bearer token and live probe embeddings must not
+    cross the network in clear text. HTTPS passes; plain HTTP is tolerated
+    only to a same-host / compose-network name."""
+    parsed = urllib.parse.urlparse(settings.backend_base_url.strip())
+    if parsed.scheme == "https":
+        return CheckResult("backend_transport", "PASS", "HTTPS")
+    if parsed.scheme != "http" or not parsed.hostname:
+        return CheckResult("backend_transport", "FAIL", "BACKEND_BASE_URL must be an http(s) URL")
+    if parsed.hostname in _LOCAL_BACKEND_HOSTS:
+        return CheckResult(
+            "backend_transport", "WARNING", f"plain HTTP to local host '{parsed.hostname}'"
+        )
+    status = "WARNING" if settings.ai_node_allow_insecure_backend else "FAIL"
+    return CheckResult(
+        "backend_transport",
+        status,
+        f"plain HTTP to '{parsed.hostname}': node token and face embeddings would travel "
+        "unencrypted; use https:// (AI_NODE_ALLOW_INSECURE_BACKEND only for labs)",
+    )
+
+
 def check_backend_connectivity() -> CheckResult:
     base_url = settings.backend_base_url.strip()
     if not base_url:
@@ -327,6 +353,7 @@ def run_all_checks() -> list[CheckResult]:
 
     # 2. Backend Connectivity
     results.append(check_backend_connectivity())
+    results.append(check_backend_transport())
 
     # 3. Credential Validity & 4. Heartbeat
     cred_res, hb_res, _ = check_credential_validity_and_heartbeat()
