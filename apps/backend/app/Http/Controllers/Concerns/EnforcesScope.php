@@ -91,6 +91,23 @@ trait EnforcesScope
         throw ApiException::unprocessable('SITE_REQUIRED', 'Select a site within your scope (site_uuid).');
     }
 
+    /**
+     * The first of $permissions the caller holds (route middleware already
+     * required at least one), so scope is resolved for a grant that exists.
+     *
+     * @param  list<string>  $permissions
+     */
+    protected function heldPermission(Request $request, array $permissions): string
+    {
+        foreach ($permissions as $permission) {
+            if ($this->scopes()->hasPermission($request->user(), $permission)) {
+                return $permission;
+            }
+        }
+
+        return $permissions[0];
+    }
+
     /** resolveScopedSiteId() expressed as a site UUID, for code that filters by site_uuid. */
     protected function scopedSiteUuid(Request $request, string $permission, ?string $siteUuid): ?string
     {

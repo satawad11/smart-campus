@@ -36,7 +36,13 @@ class DashboardController extends Controller
         ]);
 
         $date = ! empty($validated['date']) ? $validated['date'] : now()->toDateString();
-        $validated['site_uuid'] = $this->scopedSiteUuid($request, 'report.view', $validated['site_uuid'] ?? null);
+        $validated['site_uuid'] = $this->scopedSiteUuid(
+            $request,
+            // Decision A-14 (2026-10-14): the dashboard is every role's landing
+            // page; dashboard.view grants it (SECURITY_OFFICER), as does report.view.
+            $this->heldPermission($request, ['report.view', 'dashboard.view']),
+            $validated['site_uuid'] ?? null,
+        );
 
         // whereDate(), not where(): a `date` column casts through Eloquent
         // as a full 'Y-m-d 00:00:00' string, and SQLite (unlike

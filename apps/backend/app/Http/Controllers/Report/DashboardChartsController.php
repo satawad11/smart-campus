@@ -114,7 +114,13 @@ class DashboardChartsController extends Controller
             ];
 
         $validated = $request->validate($rules);
-        $validated['site_uuid'] = $this->scopedSiteUuid($request, 'report.view', $validated['site_uuid'] ?? null);
+        $validated['site_uuid'] = $this->scopedSiteUuid(
+            $request,
+            // Decision A-14 (2026-10-14): the dashboard is every role's landing
+            // page; dashboard.view grants it (SECURITY_OFFICER), as does report.view.
+            $this->heldPermission($request, ['report.view', 'dashboard.view']),
+            $validated['site_uuid'] ?? null,
+        );
 
         if (! $dateOnly) {
             $validated['from'] = $validated['from'] ?? now()->toDateString();
