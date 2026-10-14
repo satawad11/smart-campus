@@ -50,14 +50,18 @@ sudo usermod -aG docker "$USER"
 
 ## 2. Package Deployment & Secret Configuration
 
-### Step 2.1: Clone Repository / Deploy Package
-Clone the repository or transfer the AI Node deployment package to the target host:
+### Step 2.1: Deploy the Standalone Kit
+On the vendor/build machine (repository + Docker), build the kit:
 ```bash
-# Example directory setup
-mkdir -p ~/smart-campus
-cd ~/smart-campus
-git clone <repository-url> .
-cd deploy/ai-node
+scripts/package-ai-node.sh <version>
+# -> dist/ai-node-kit-<version>.tar.gz
+```
+Transfer that one archive to the node host (USB or scp) and extract it. The node
+does not need the source repository or internet access to build:
+```bash
+mkdir -p ~/smart-campus && cd ~/smart-campus
+tar -xzf ai-node-kit-<version>.tar.gz
+cd ai-node-kit-<version>
 ```
 
 ### Step 2.2: Run Installer
@@ -66,6 +70,8 @@ Run the package installer to prepare directories and configuration:
 chmod +x *.sh
 ./install.sh
 ```
+The installer verifies `SHA256SUMS` and loads the bundled image
+(`docker load`). A checksum mismatch stops the install: re-copy the kit.
 
 ### Step 2.3: Node Registration & Credential Provisioning in Backend
 On the central backend administrative console:
@@ -94,11 +100,28 @@ AI_MODE=mock
 EVENT_BUFFER_PATH=/data/offline_events.db
 LOG_LEVEL=INFO
 TARGET_FPS=5.0
+MODEL_CODE=<code registered in the backend model registry>
+MODEL_VERSION=<version registered in the backend model registry>
+# AI_NODE_PORT=8001   # change if port 8001 is already used on this host
 ```
 Save and secure permissions:
 ```bash
 chmod 600 .env
 ```
+
+Notes from the kit rehearsal (2026-10-14):
+- **`MODEL_CODE` / `MODEL_VERSION` must exist in the backend model registry**
+  (and be active). Otherwise every recognition is rejected with
+  `422 EMBEDDING_SEARCH_FAILED` and the backend raises
+  `AI_NODE_MODEL_MISMATCH`. For a mock rehearsal, register a mock entry (for
+  example `mock-face` / `0.0.0`) and use the same values here. Never register a
+  production model before Blocker B5 is resolved.
+- **`BACKEND_BASE_URL` must be `https://`** for a real site. Plain HTTP is
+  accepted only for a local test host and `healthcheck.sh` reports it as WARNING.
+- **`AI_NODE_PORT`**: the local diagnostics port binds to `127.0.0.1` only. If
+  `start.sh` fails with "port is already allocated", set another port.
+- **`LOG_LEVEL`**: use `INFO` in operation; `DEBUG` also logs every HTTP
+  exchange and is meant only for short diagnostics.
 
 ---
 
@@ -288,6 +311,12 @@ Run the comprehensive installation verification script:
   1. Check backend logs: `docker compose logs -f backend`
   2. Check AI Node retry worker logs: `docker compose logs ai-node | grep "Offline buffer retry"`
   3. The buffer is durable and will never drop events. Once backend connectivity is restored, the retry worker drains buffered events with bounded backoff.
+  4. Events the backend **permanently rejects** (HTTP 400/409/422, for example an
+     unregistered model or an invalid payload) are not retried forever: they are
+     moved to the `rejected_events` table in `/data/offline_events.db` and
+     `healthcheck.sh` shows `[WARNING] event_buffer`. The table keeps the payload,
+     status code and error code. Fix the cause and keep the records until they
+     have been investigated; do not delete the volume.
 
 ### 8. Clock / NTP Synchronization Problem
 - **Symptom:** `[FAIL] time_synchronization : Clock drift exceeds threshold`

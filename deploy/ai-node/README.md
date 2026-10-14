@@ -8,11 +8,26 @@ It reuses the existing, audited Module 04 perception implementation (**CAM-003 t
 
 ## 1. Package Structure
 
+The node is installed from a **standalone kit** built on the vendor/build machine:
+
+```bash
+scripts/package-ai-node.sh <version>     # run from the repository root
+# -> dist/ai-node-kit-<version>.tar.gz   (prebuilt image + scripts + SHA256SUMS)
+```
+
+Copy that single archive to the node and extract it. The node needs only Docker:
+no source code, no internet access to rebuild. `install.sh` and `update.sh`
+verify `SHA256SUMS` and `docker load` the bundled `ai-node-image.tar.gz`
+(when run inside a full repository checkout without the image, they build from
+`apps/ai-service` instead).
+
 ```text
-deploy/ai-node/
+ai-node-kit-<version>/
+├── ai-node-image.tar.gz     # Prebuilt smart-campus/ai-node:pilot image (kit only)
+├── VERSION, SHA256SUMS      # Kit version and checksums (kit only)
 ├── docker-compose.yml       # Production edge Docker Compose definition
 ├── .env.example             # Documented environment contract template (no secrets)
-├── install.sh               # Host setup & container image build script
+├── install.sh               # Host setup & image load (or build in a repo checkout)
 ├── start.sh                 # Service startup script
 ├── stop.sh                  # Graceful shutdown script
 ├── restart.sh               # Graceful restart script
@@ -34,7 +49,8 @@ Ensure the host has:
 
 ### Step 2: Initialize Configuration
 ```bash
-cd deploy/ai-node
+tar -xzf ai-node-kit-<version>.tar.gz
+cd ai-node-kit-<version>
 ./install.sh
 ```
 This generates a local `.env` file with restrictive permissions (`chmod 600`).
