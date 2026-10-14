@@ -40,6 +40,16 @@ fi
 
 # 4. Obtain the AI Node image: bundled in the kit, or built from the repository
 if [ -f ai-node-image.tar.gz ]; then
+    case "$(uname -m)" in
+        x86_64|amd64) HOST_ARCH=amd64 ;;
+        aarch64|arm64) HOST_ARCH=arm64 ;;
+        *) HOST_ARCH="$(uname -m)" ;;
+    esac
+    if [ -f ARCH ] && [ "$(cat ARCH)" != "${HOST_ARCH}" ]; then
+        echo "ERROR: this kit was built for $(cat ARCH) but this host is ${HOST_ARCH}." >&2
+        echo "       Build a matching kit: AI_NODE_PLATFORM=linux/${HOST_ARCH} scripts/package-ai-node.sh" >&2
+        exit 1
+    fi
     if [ -f SHA256SUMS ] && command -v sha256sum >/dev/null 2>&1; then
         echo "Verifying kit checksums..."
         sha256sum -c --quiet SHA256SUMS
