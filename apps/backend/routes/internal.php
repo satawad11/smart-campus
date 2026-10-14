@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Internal\AiNodeCommandInternalController;
 use App\Http\Controllers\Internal\AiNodeConfigInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
@@ -42,4 +43,9 @@ Route::middleware('ai_node.token')->group(function () {
     // EVT-003: recognition-event ingestion. Perception only — no access
     // decision is ever accepted here or produced by this endpoint.
     Route::post('/events/recognition', [RecognitionEventInternalController::class, 'store']);
+
+    // COM-03: allowlisted remote operations. The node pulls its own pending
+    // commands (marking them delivered) and reports each result.
+    Route::post('/ai-nodes/commands/claim', [AiNodeCommandInternalController::class, 'claim']);
+    Route::post('/ai-nodes/commands/{commandUuid}/result', [AiNodeCommandInternalController::class, 'result']);
 });

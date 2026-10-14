@@ -81,6 +81,10 @@ enum AuditAction: string
     case AI_NODE_CREDENTIAL_ISSUED = 'AI_NODE_CREDENTIAL_ISSUED';
     case AI_NODE_CREDENTIAL_REVOKED = 'AI_NODE_CREDENTIAL_REVOKED';
 
+    // Commercial — remote node operations (COM-03)
+    case AI_NODE_COMMAND_REQUESTED = 'AI_NODE_COMMAND_REQUESTED';
+    case AI_NODE_COMMAND_COMPLETED = 'AI_NODE_COMMAND_COMPLETED';
+
     // Module 05 — manual event review (EVT-010)
     case EVENT_REVIEWED = 'EVENT_REVIEWED';
 

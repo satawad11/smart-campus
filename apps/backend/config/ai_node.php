@@ -24,4 +24,9 @@ return [
 
         'stale_after_seconds' => env('AI_NODE_STALE_AFTER_SECONDS', 90),
     ],
+
+    // COM-03 remote commands: an unfinished command expires after this.
+    'commands' => [
+        'ttl_seconds' => env('AI_NODE_COMMAND_TTL_SECONDS', 300),
+    ],
 ];

@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Camera\AiNodeCommandService;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -30,6 +31,10 @@ Schedule::command('retention:cleanup')->dailyAt('02:00');
 // Pilot pre-deployment: automatic alerts for failed dependencies, stale
 // cameras and queue backlog (SEC-013 alert table).
 Schedule::command('system:monitor')->everyMinute()->withoutOverlapping(5);
+
+// COM-03: unfinished remote node commands past their deadline become EXPIRED.
+Schedule::call(fn () => app(AiNodeCommandService::class)->expireStale())
+    ->name('ai-node-commands:expire')->everyMinute()->withoutOverlapping(5);
 
 // COM-02: advance the license clock high-water mark and raise expiry/limit alerts.
 Schedule::command('license:check')->hourly()->withoutOverlapping(10);

@@ -12,6 +12,7 @@ use App\Http\Controllers\Auth\RoleController;
 use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
+use App\Http\Controllers\Camera\AiNodeCommandController;
 use App\Http\Controllers\Camera\AiNodeController;
 use App\Http\Controllers\Camera\AiNodeCredentialController;
 use App\Http\Controllers\Camera\CameraController;
@@ -265,6 +266,10 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'index'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'store'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials/{credential}/revoke', [AiNodeCredentialController::class, 'revoke'])->middleware('permission:ai_node.manage');
+
+    // COM-03 allowlisted remote operations (RESYNC_CONFIG, RESTART_SERVICE)
+    Route::get('/ai-nodes/{aiNode}/commands', [AiNodeCommandController::class, 'index'])->middleware('permission:ai_node.view');
+    Route::post('/ai-nodes/{aiNode}/commands', [AiNodeCommandController::class, 'store'])->middleware('permission:ai_node.manage');
 });
 
 /*
