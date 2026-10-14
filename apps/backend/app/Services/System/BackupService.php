@@ -4,6 +4,7 @@ namespace App\Services\System;
 
 use App\Models\BackupJob;
 use App\Services\Audit\AuditService;
+use App\Support\BackupEncryption;
 use Exception;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Process;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 use ZipArchive;
 
 class BackupService
@@ -62,6 +64,8 @@ class BackupService
                 $this->dumpPostgresql($targetPath);
             }
 
+            [$targetPath, $encrypted] = $this->finalizeFile($targetPath);
+
             $size = File::size($targetPath);
             $checksum = hash_file('sha256', $targetPath);
 
@@ -75,6 +79,7 @@ class BackupService
                 'metadata' => [
                     'connection' => $connection,
                     'file' => basename($targetPath),
+                    'encrypted' => $encrypted,
                 ],
             ]);
 
@@ -204,6 +209,8 @@ class BackupService
             $zipOpen = false;
             @chmod($targetPath, 0600);
 
+            [$targetPath, $encrypted] = $this->finalizeFile($targetPath);
+
             $size = File::size($targetPath);
             $checksum = hash_file('sha256', $targetPath);
 
@@ -218,6 +225,7 @@ class BackupService
                     'source' => $sourcePath,
                     'file' => basename($targetPath),
                     'object_storage' => $objectCounts,
+                    'encrypted' => $encrypted,
                 ],
             ]);
 
@@ -271,6 +279,8 @@ class BackupService
             'metadata' => ['source_job_id' => $sourceJob->id],
         ]);
 
+        $tempPath = null;
+
         try {
             if (! File::exists($sourceJob->target)) {
                 throw new Exception("Backup target file not found: {$sourceJob->target}");
@@ -282,16 +292,31 @@ class BackupService
                 throw new Exception("Checksum mismatch: expected {$sourceJob->checksum}, got {$calculatedChecksum}");
             }
 
+            // PDPA G-4: an encrypted backup is verified by decrypting it (which
+            // also authenticates every chunk) into a temporary file.
+            $verifyPath = $sourceJob->target;
+            if (BackupEncryption::isEncrypted($sourceJob->target)) {
+                $key = BackupEncryption::keyFromConfig(config('backup.encryption_key'));
+                if ($key === null) {
+                    throw new Exception('Backup is encrypted but BACKUP_ENCRYPTION_KEY is not configured');
+                }
+                $tempDir = storage_path('app/backups/tmp');
+                File::ensureDirectoryExists($tempDir, 0700);
+                $tempPath = $tempDir.DIRECTORY_SEPARATOR.'drill_'.$drillJob->id;
+                BackupEncryption::decryptFile($sourceJob->target, $tempPath, $key);
+                $verifyPath = $tempPath;
+            }
+
             // Verify content based on type
             if ($sourceJob->type === BackupJob::TYPE_STORAGE) {
                 $zip = new ZipArchive;
-                $res = $zip->open($sourceJob->target, ZipArchive::CHECKCONS);
+                $res = $zip->open($verifyPath, ZipArchive::CHECKCONS);
                 if ($res !== true) {
                     throw new Exception("Corrupt zip archive: error code {$res}");
                 }
                 $zip->close();
             } elseif ($sourceJob->type === BackupJob::TYPE_POSTGRESQL) {
-                $head = (string) file_get_contents($sourceJob->target, false, null, 0, 512);
+                $head = (string) file_get_contents($verifyPath, false, null, 0, 512);
                 if ($head === '') {
                     throw new Exception('Database backup file is empty');
                 }
@@ -299,6 +324,10 @@ class BackupService
                     && ! str_contains($head, 'PostgreSQL database dump')) {
                     throw new Exception('Database backup file is not a pg_dump plain-format dump');
                 }
+            }
+
+            if ($tempPath !== null) {
+                File::delete($tempPath);
             }
 
             $drillJob->update([
@@ -324,6 +353,10 @@ class BackupService
 
             return $drillJob;
         } catch (Exception $e) {
+            if ($tempPath !== null) {
+                File::delete($tempPath);
+            }
+
             $drillJob->update([
                 'status' => BackupJob::STATUS_FAILED,
                 'error_message' => $e->getMessage(),
@@ -334,6 +367,36 @@ class BackupService
 
             return $drillJob;
         }
+    }
+
+    /**
+     * PDPA G-4: when BACKUP_ENCRYPTION_KEY is set, replace the plaintext
+     * backup with its encrypted form (<file>.enc). A misconfigured key fails
+     * the backup rather than silently leaving plaintext; on any failure both
+     * files are removed.
+     *
+     * @return array{0: string, 1: bool} final path, whether it is encrypted
+     */
+    private function finalizeFile(string $path): array
+    {
+        $configured = config('backup.encryption_key');
+        if ($configured === null || trim((string) $configured) === '') {
+            return [$path, false];
+        }
+
+        $encryptedPath = $path.'.enc';
+        try {
+            $key = BackupEncryption::keyFromConfig((string) $configured);
+            BackupEncryption::encryptFile($path, $encryptedPath, $key);
+        } catch (Throwable $e) {
+            File::delete($encryptedPath);
+
+            throw new Exception('Backup encryption failed: '.$e->getMessage(), 0, $e);
+        } finally {
+            File::delete($path);
+        }
+
+        return [$encryptedPath, true];
     }
 
     /**

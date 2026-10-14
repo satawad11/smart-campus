@@ -6,7 +6,7 @@
 | Scheduled backups + retention pruning | Implemented, off by default (`BACKUP_SCHEDULE_ENABLED`) |
 | Retention values | **Proposed, AWAITING HUMAN APPROVAL** ([PILOT-BACKUP-RETENTION-POLICY](../pilot/PILOT-BACKUP-RETENTION-POLICY.md)) |
 | RPO | PostgreSQL ≤ 15 min target; object storage ≈ 60 min (**RPO exception AR4 awaiting approval**) |
-| Backup encryption | **GAP** (PDPA G-4): use an encrypted volume / off-host target until implemented |
+| Backup encryption | Implemented, **opt-in**: `BACKUP_ENCRYPTION_KEY` (generate with `php artisan backup:key`); files become `<name>.enc`, checksum covers the ciphertext, the restore drill decrypts to verify, `php artisan backup:decrypt <file.enc> <out>` for manual restores. **Losing the key loses the backups**: store it in a vault, apart from the backups |
 | Production restore test | **BLOCKED** (no production host) |
 | Full DR rehearsal | Not performed end to end |
 

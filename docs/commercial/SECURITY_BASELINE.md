@@ -21,7 +21,7 @@
 | 11 | Rate limiting | TECH | login, MFA throttled; `/api/v1` limited per user/IP (`API_RATE_LIMIT_PER_MINUTE`, default 300; `ApiRateLimitTest`); `/internal/v1` excluded |
 | 12 | Secure file upload | PARTIAL | type/size validation on student import, photos, face images; no malware scanning |
 | 13 | Database least privilege | TECH | `docs/security/LEAST-PRIVILEGE-ROLES.sql`, preflight warns on owner user |
-| 14 | Backup encryption | GAP | PDPA G-4 |
+| 14 | Backup encryption | TECH (opt-in) | `BACKUP_ENCRYPTION_KEY` → libsodium secretstream, drill verifies by decrypting, `backup:decrypt`; key custody = ops (vault, apart from backups) |
 | 15 | Restore testing | PARTIAL | rehearsal restores into an empty DB pass (REPORTED); none on a production host (BLOCKED) |
 | 16 | Vulnerability / dependency scanning | PARTIAL | `composer audit` + `npm audit` in CI (advisory only); no container image scan |
 | 17 | Dependency licence audit | GAP | not performed; required before sale (and for AI models: B5) |

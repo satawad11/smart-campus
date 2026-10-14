@@ -43,6 +43,14 @@ return [
     // is copied there with a .sha256 sidecar and the copy's checksum re-verified.
     'offhost_path' => env('BACKUP_OFFHOST_PATH'),
 
+    /*
+    | PDPA G-4: optional backup encryption (libsodium secretstream). 32 random
+    | bytes, base64 (php artisan backup:key). Keep the key in a password vault,
+    | NOT next to the backups: without it encrypted backups can't be restored.
+    | Empty = backups are written in plaintext (rely on volume encryption).
+    */
+    'encryption_key' => env('BACKUP_ENCRYPTION_KEY'),
+
     // Optional read-only role for pg_dump (SEC-005 campus_backup_user). Falls
     // back to the application connection credentials when unset.
     'database' => [
