@@ -6,8 +6,12 @@ embedding on this path, and never logs the bearer token.
 
 from abc import ABC, abstractmethod
 
-from app.delivery.exceptions import EventDeliveryError
+from app.delivery.exceptions import EventDeliveryError, EventRejectedError
 from app.delivery.schemas import RecognitionEventPayload
+
+# Invalid or conflicting content: retrying the same payload can never succeed.
+# 401/403 (credential rotation), 429 and 5xx stay retryable.
+PERMANENT_REJECTION_STATUSES = (400, 409, 422)
 
 
 class EventDeliveryClient(ABC):
@@ -61,5 +65,16 @@ class HttpEventDeliveryClient(EventDeliveryClient):
         except Exception as exc:  # noqa: BLE001 — normalize any transport failure
             raise EventDeliveryError(f"Event delivery call failed: {exc}") from exc
 
+        if response.status_code in PERMANENT_REJECTION_STATUSES:
+            try:
+                error_code = (response.json().get("error") or {}).get("code")
+            except Exception:  # noqa: BLE001 — body is informational only
+                error_code = None
+            detail = f" {error_code}" if error_code else ""
+            raise EventRejectedError(
+                f"Event rejected by backend: HTTP {response.status_code}{detail}",
+                response.status_code,
+                error_code,
+            )
         if response.status_code not in (200, 201, 202):
             raise EventDeliveryError(f"Event delivery call returned HTTP {response.status_code}")

@@ -1,5 +1,6 @@
 """FastAPI application entry point (FACE-003, FND-005)."""
 
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -16,6 +17,14 @@ async def lifespan(app: FastAPI):
     readiness_checker.is_started = True
     orchestrator = None
     if settings.ai_node_autorun or (settings.ai_node_uuid and settings.ai_node_token):
+        # The node image starts `uvicorn app.main`, which configures only
+        # uvicorn's own loggers: without this, LOG_LEVEL was ignored and the
+        # node's operational logs (delivery failures, camera errors) were lost.
+        logging.basicConfig(
+            level=getattr(logging, settings.log_level.upper(), logging.INFO),
+            format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
         from app.orchestration.orchestrator import NodeOrchestrator
 
         orchestrator = NodeOrchestrator()

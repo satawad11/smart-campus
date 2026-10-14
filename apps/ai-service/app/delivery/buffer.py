@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS pending_events (
     attempts INTEGER NOT NULL DEFAULT 0,
     next_retry_at REAL NOT NULL,
     enqueued_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS rejected_events (
+    event_uuid TEXT PRIMARY KEY,
+    payload_json TEXT NOT NULL,
+    status_code INTEGER NOT NULL,
+    error_code TEXT,
+    rejected_at REAL NOT NULL
 )
 """
 
@@ -84,7 +91,7 @@ class OfflineEventBuffer:
         self._lock = threading.RLock()
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         with self._lock:
-            self._conn.execute(_SCHEMA)
+            self._conn.executescript(_SCHEMA)
             self._conn.commit()
 
     @property
@@ -156,6 +163,38 @@ class OfflineEventBuffer:
             (attempts, next_retry_at, event_uuid),
         )
         self._conn.commit()
+
+    @property
+    def rejected_count(self) -> int:
+        with self._lock:
+            row = self._conn.execute("SELECT COUNT(*) FROM rejected_events").fetchone()
+        return row[0]
+
+    def reject(
+        self, payload: RecognitionEventPayload, status_code: int, error_code: str | None
+    ) -> None:
+        """Quarantine an event the backend permanently refused: kept for
+        inspection (never silently dropped) and removed from the retry queue."""
+        with self._lock:
+            self._conn.execute(
+                """
+                INSERT INTO rejected_events
+                    (event_uuid, payload_json, status_code, error_code, rejected_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(event_uuid) DO NOTHING
+                """,
+                (
+                    payload.event_uuid,
+                    _serialize(payload),
+                    status_code,
+                    error_code,
+                    self._clock_fn(),
+                ),
+            )
+            self._conn.execute(
+                "DELETE FROM pending_events WHERE event_uuid = ?", (payload.event_uuid,)
+            )
+            self._conn.commit()
 
     def close(self) -> None:
         with self._lock:

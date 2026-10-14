@@ -291,3 +291,72 @@ class TestOfflineEventBufferConcurrency:
 
         assert errors == []
         assert buffer.size == writers * per_writer
+
+
+class TestPermanentRejection:
+    """Kit rehearsal 2026-10-14: an event the backend refuses as invalid
+    (422) was retried forever. It is now quarantined, never dropped."""
+
+    def test_rejected_event_is_quarantined_not_retried(self) -> None:
+        from app.delivery.buffered_service import BufferedEventDeliveryService
+        from app.delivery.client import EventDeliveryClient
+        from app.delivery.exceptions import EventRejectedError
+
+        class RejectingClient(EventDeliveryClient):
+            calls = 0
+
+            def deliver(self, payload):
+                RejectingClient.calls += 1
+                raise EventRejectedError("rejected", 422, "VALIDATION_ERROR")
+
+        buffer = OfflineEventBuffer(initial_backoff_seconds=0.0)
+        buffer.enqueue(make_payload("bad-1"))
+        service = BufferedEventDeliveryService(RejectingClient(), buffer)
+
+        service.retry_pending()
+        service.retry_pending()
+
+        assert RejectingClient.calls == 1  # tried once, then quarantined
+        assert buffer.size == 0
+        assert buffer.rejected_count == 1
+
+    def test_transient_errors_still_retry(self) -> None:
+        from app.delivery.buffered_service import BufferedEventDeliveryService
+        from app.delivery.client import EventDeliveryClient
+
+        class FailingClient(EventDeliveryClient):
+            def deliver(self, payload):
+                raise EventDeliveryError("HTTP 503")
+
+        buffer = OfflineEventBuffer(initial_backoff_seconds=0.0)
+        buffer.enqueue(make_payload("later-1"))
+        BufferedEventDeliveryService(FailingClient(), buffer).retry_pending()
+
+        assert buffer.size == 1
+        assert buffer.rejected_count == 0
+
+
+def test_http_client_classifies_permanent_and_transient_statuses(monkeypatch):
+    import httpx
+    import pytest
+
+    from app.delivery.client import HttpEventDeliveryClient
+    from app.delivery.exceptions import EventRejectedError
+
+    class Response:
+        def __init__(self, status):
+            self.status_code = status
+
+        def json(self):
+            return {"error": {"code": "VALIDATION_ERROR"}}
+
+    for status in (400, 409, 422):
+        monkeypatch.setattr(httpx, "post", lambda *a, s=status, **k: Response(s))
+        with pytest.raises(EventRejectedError) as exc:
+            HttpEventDeliveryClient("http://backend", "t").deliver(make_payload("x"))
+        assert exc.value.status_code == status
+    for status in (401, 403, 429, 500, 503):
+        monkeypatch.setattr(httpx, "post", lambda *a, s=status, **k: Response(s))
+        with pytest.raises(EventDeliveryError) as exc:
+            HttpEventDeliveryClient("http://backend", "t").deliver(make_payload("x"))
+        assert not isinstance(exc.value, EventRejectedError)

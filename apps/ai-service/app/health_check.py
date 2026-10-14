@@ -272,7 +272,19 @@ def check_event_buffer() -> CheckResult:
         conn.execute("INSERT INTO _test_probe VALUES (1)")
         conn.execute("DROP TABLE _test_probe")
         conn.commit()
+        rejected = 0
+        if conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='rejected_events'"
+        ).fetchone():
+            rejected = conn.execute("SELECT COUNT(*) FROM rejected_events").fetchone()[0]
         conn.close()
+        if rejected:
+            return CheckResult(
+                "event_buffer",
+                "WARNING",
+                f"{rejected} event(s) rejected by the backend are quarantined in {buf_path} "
+                "(table rejected_events); investigate before deleting",
+            )
         return CheckResult("event_buffer", "PASS", f"SQLite buffer writable at {buf_path}")
     except Exception as exc:
         return CheckResult("event_buffer", "FAIL", f"Event buffer storage error: {exc}")

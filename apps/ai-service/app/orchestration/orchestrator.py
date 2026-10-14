@@ -111,7 +111,9 @@ class CameraPipelineRunner:
 
         # VideoSource instantiation
         if self.stream_url.startswith("mock://") or not self.stream_url:
-            self.source: VideoSource = MockVideoSource(name=self.camera_code)
+            # Rehearsal camera: simulate a live stream (endless frames), not a
+            # 10-frame clip that silently goes dark right after startup.
+            self.source: VideoSource = MockVideoSource(num_frames=None, name=self.camera_code)
         else:
             self.source = RTSPVideoSource(rtsp_url=self.stream_url, name=self.camera_code)
 
@@ -207,6 +209,10 @@ class CameraPipelineRunner:
                 sampled = self.sampler.sample()
             except Exception:
                 self.collector.record_dropped_frames(1)
+                # Recognitions already in flight must still be delivered when
+                # the stream fails; skipping this stranded them in the pool
+                # (lost on restart, or forever if the camera never recovered).
+                self._drain_results()
                 time.sleep(1.0)
                 continue
 
@@ -244,15 +250,21 @@ class CameraPipelineRunner:
                             matched_det = detections[0]
                             self.pool.submit(sampled, matched_det, track)
 
-            # Poll results from recognition worker pool and deliver
-            while not self._stop_event.is_set():
-                result = self.pool.poll_result(timeout=0.0)
-                if result is None:
-                    break
-                try:
-                    self._delivery_service.deliver(result)
-                except Exception as exc:
-                    logger.error("Unexpected error in deliver on %s: %s", self.camera_code, exc)
+            self._drain_results()
+
+    def _drain_results(self) -> int:
+        """Deliver every finished recognition result (buffered offline on failure)."""
+        delivered = 0
+        while not self._stop_event.is_set():
+            result = self.pool.poll_result(timeout=0.0)
+            if result is None:
+                break
+            try:
+                self._delivery_service.deliver(result)
+                delivered += 1
+            except Exception as exc:
+                logger.error("Unexpected error in deliver on %s: %s", self.camera_code, exc)
+        return delivered
 
 
 class NodeOrchestrator:
@@ -383,6 +395,7 @@ class NodeOrchestrator:
             "model_version": self.model_version,
             "uptime_seconds": round(uptime, 1),
             "buffer_pending_count": self.pending_buffer_count,
+            "buffer_rejected_count": self.buffer.rejected_count,
             "active_camera_count": len(cameras_summary),
             "cameras": cameras_summary,
             "last_heartbeat_at": self._last_heartbeat_at,

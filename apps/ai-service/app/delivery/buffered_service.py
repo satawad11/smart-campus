@@ -12,7 +12,7 @@ from dataclasses import dataclass
 
 from app.delivery.buffer import OfflineEventBuffer
 from app.delivery.client import EventDeliveryClient
-from app.delivery.exceptions import EventDeliveryError
+from app.delivery.exceptions import EventDeliveryError, EventRejectedError
 from app.delivery.schemas import DeliveryOutcome
 from app.delivery.service import to_event_payload
 from app.orchestration.schemas import RecognitionWorkerResult
@@ -36,6 +36,9 @@ class BufferedEventDeliveryService:
         payload = to_event_payload(result)
         try:
             self._client.deliver(payload)
+        except EventRejectedError as exc:
+            self._buffer.reject(payload, exc.status_code, exc.error_code)
+            return DeliveryOutcome(delivered=False, reason="rejected")
         except EventDeliveryError:
             self._buffer.enqueue(payload)
             return DeliveryOutcome(delivered=False, reason="buffered_offline")
@@ -50,6 +53,9 @@ class BufferedEventDeliveryService:
         for buffered in due:
             try:
                 self._client.deliver(buffered.payload)
+            except EventRejectedError as exc:
+                self._buffer.reject(buffered.payload, exc.status_code, exc.error_code)
+                continue
             except EventDeliveryError:
                 self._buffer.mark_failed(buffered.payload.event_uuid)
                 continue

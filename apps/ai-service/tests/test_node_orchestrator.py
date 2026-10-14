@@ -348,3 +348,51 @@ class TestNodeOrchestrator:
             assert orchestrator.pending_buffer_count < pending_count
         finally:
             orchestrator.stop(timeout=1.0)
+
+
+class SlowRecognitionClient(FakeRecognitionClient):
+    """Finishes each recognition only after the camera has already failed."""
+
+    def recognize(self, embedding, model_code, model_version):
+        time.sleep(0.3)
+        return super().recognize(embedding, model_code, model_version)
+
+
+def test_results_finished_after_the_camera_fails_are_still_delivered(monkeypatch):
+    """Regression (AI-node kit rehearsal 2026-10-14): when frame reads failed,
+    the camera loop skipped collecting finished recognitions, so an event
+    completed after a camera drop was stranded in the worker pool."""
+    import app.orchestration.orchestrator as orch_module
+    from app.streams.mock import MockVideoSource
+
+    # One frame, then the stream is gone for good.
+    monkeypatch.setattr(
+        orch_module,
+        "MockVideoSource",
+        lambda num_frames=None, name="cam": MockVideoSource(num_frames=1, name=name),
+    )
+    delivery = FakeDeliveryClient()
+    camera = {
+        "camera_uuid": "cam-drop-1",
+        "camera_code": "CAM-DROP",
+        "name": "Drops after one frame",
+        "rtsp_url": "mock://drop",
+        "status": "ACTIVE",
+        "face_detection_enabled": True,
+    }
+    orchestrator = NodeOrchestrator(
+        node_uuid="node-uuid-test",
+        ai_mode="mock",
+        event_buffer_path=":memory:",
+        node_client=FakeNodeClient(cameras=[camera]),
+        delivery_client=delivery,
+        backend_client=SlowRecognitionClient(),
+        health_client=FakeHealthClient(),
+    )
+
+    try:
+        orchestrator.start()
+        _wait_for(lambda: len(delivery.delivered_events) >= 1, timeout=5.0)
+        assert len(delivery.delivered_events) >= 1
+    finally:
+        orchestrator.stop(timeout=1.0)
