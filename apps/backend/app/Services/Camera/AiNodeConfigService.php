@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Crypt;
  */
 class AiNodeConfigService
 {
+    public function __construct(
+        private readonly AiNodeRuntimeConfigService $runtime,
+    ) {}
+
     public function getConfig(AiNode $node): array
     {
         $cameras = Camera::where('ai_node_id', $node->id)->get();
@@ -27,6 +31,8 @@ class AiNodeConfigService
             'ai_node_uuid' => $node->uuid,
             'generated_at' => now()->toISOString(),
             'cameras' => $cameras->map(fn (Camera $camera) => $this->cameraConfig($camera))->all(),
+            // COM-03: latest versioned runtime settings (null until one exists)
+            'runtime' => $this->runtime->forNode($node),
         ];
     }
 

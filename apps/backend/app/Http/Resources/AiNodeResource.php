@@ -34,6 +34,7 @@ class AiNodeResource extends JsonResource
             'model_code' => $this->model_code,
             'model_version' => $this->model_version,
             'model_compatible' => $this->resource->isModelCompatible(),
+            'applied_config_revision' => $this->applied_config_revision,
             'capabilities' => $this->capabilities,
             'cpu_model' => $this->cpu_model,
             'gpu_name' => $this->gpu_name,

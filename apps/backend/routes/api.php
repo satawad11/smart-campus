@@ -13,6 +13,7 @@ use App\Http\Controllers\Auth\SessionController;
 use App\Http\Controllers\Auth\UserController;
 use App\Http\Controllers\Auth\UserSessionController;
 use App\Http\Controllers\Camera\AiNodeCommandController;
+use App\Http\Controllers\Camera\AiNodeConfigRevisionController;
 use App\Http\Controllers\Camera\AiNodeController;
 use App\Http\Controllers\Camera\AiNodeCredentialController;
 use App\Http\Controllers\Camera\CameraController;
@@ -270,6 +271,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     // COM-03 allowlisted remote operations (RESYNC_CONFIG, RESTART_SERVICE)
     Route::get('/ai-nodes/{aiNode}/commands', [AiNodeCommandController::class, 'index'])->middleware('permission:ai_node.view');
     Route::post('/ai-nodes/{aiNode}/commands', [AiNodeCommandController::class, 'store'])->middleware('permission:ai_node.manage');
+
+    // COM-03 versioned runtime settings with rollback
+    Route::get('/ai-nodes/{aiNode}/config-revisions', [AiNodeConfigRevisionController::class, 'index'])->middleware('permission:ai_node.view');
+    Route::post('/ai-nodes/{aiNode}/config-revisions', [AiNodeConfigRevisionController::class, 'store'])->middleware('permission:ai_node.manage');
+    Route::post('/ai-nodes/{aiNode}/config-revisions/{revision}/rollback', [AiNodeConfigRevisionController::class, 'rollback'])->whereNumber('revision')->middleware('permission:ai_node.manage');
 });
 
 /*

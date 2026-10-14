@@ -39,6 +39,7 @@ class AiNode extends Model
         'software_version',
         'model_code',
         'model_version',
+        'applied_config_revision',
         'capabilities',
         'cpu_model',
         'gpu_name',

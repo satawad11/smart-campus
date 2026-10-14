@@ -217,6 +217,9 @@ class AiNodeService
                     $node->{$field} = $data[$field];
                 }
             }
+            if (isset($data['config_revision'])) {
+                $node->applied_config_revision = (int) $data['config_revision'];
+            }
             $node->save();
 
             AiNodeHealthLog::create([

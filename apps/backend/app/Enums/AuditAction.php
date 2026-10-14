@@ -84,6 +84,8 @@ enum AuditAction: string
     // Commercial — remote node operations (COM-03)
     case AI_NODE_COMMAND_REQUESTED = 'AI_NODE_COMMAND_REQUESTED';
     case AI_NODE_COMMAND_COMPLETED = 'AI_NODE_COMMAND_COMPLETED';
+    case AI_NODE_CONFIG_REVISED = 'AI_NODE_CONFIG_REVISED';
+    case AI_NODE_CONFIG_ROLLED_BACK = 'AI_NODE_CONFIG_ROLLED_BACK';
 
     // Module 05 — manual event review (EVT-010)
     case EVENT_REVIEWED = 'EVENT_REVIEWED';
