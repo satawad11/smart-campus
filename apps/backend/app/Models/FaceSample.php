@@ -93,6 +93,7 @@ class FaceSample extends Model
             'width' => 'integer',
             'height' => 'integer',
             'captured_at' => 'datetime',
+            'purged_at' => 'datetime',
         ];
     }
 

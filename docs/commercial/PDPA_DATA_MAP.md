@@ -38,8 +38,8 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 |---|---|---|---|---|
 | Camera video frames | biometric source | camera → node memory | not stored | VERIFIED (no frame persistence in ai-service) |
 | Probe embeddings (live) | biometric | node memory → backend request | not stored by the node; backend matches and discards | VERIFIED |
-| Enrolled face embeddings (512-d) | **sensitive** | PostgreSQL `face_profiles.embedding` | **indefinite, also after revocation** | **DESIGN GAP G-1** |
-| Face sample images | **sensitive** | MinIO `face-samples` + `face_samples` rows (SHA-256, path) | **indefinite, also after revocation** | **DESIGN GAP G-1** |
+| Enrolled face embeddings (512-d) | **sensitive** | PostgreSQL `face_profiles.embedding` | until revoked **and** purged (`face:purge`) | G-1 closed technically; when to purge is G-2 |
+| Face sample images | **sensitive** | MinIO `face-samples` + `face_samples` rows (SHA-256, path) | until revoked **and** purged (`face:purge`) | G-1 closed technically; G-2 |
 | Person photos | personal | MinIO `person-photos` | until replaced/deleted (STD-010) | VERIFIED |
 | Person / student profile (name, codes, class, status history) | personal (minors) | PostgreSQL `persons`, `student_profiles`, `student_status_histories` | indefinite (archive, no delete) | DECISION NEEDED |
 | Access events + decisions (who, where, when, score) | personal (location) | PostgreSQL `access_events`, `access_decisions` | `retention.events_days` = 90 | VERIFIED (setting) |
@@ -56,7 +56,7 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 
 | ID | Gap | Proposed remedy | Owner |
 |---|---|---|---|
-| **G-1** | No erasure path for biometric data. Revocation only flips status; the embedding and sample images remain in DB and MinIO (and in backups) | Audited, irreversible `face:purge` operation that nulls the embedding, deletes sample objects and records only hashes/IDs in the audit log; documented backup expiry as the bound for backup copies | Engineering (backlog PDPA-01) + controller decides who may purge |
+| **G-1** | ~~No erasure path for biometric data~~ **Implemented:** `php artisan face:purge <person_uuid> --reason=<DSR ref>` (CLI only; requires all profiles REVOKED; nulls embeddings, deletes sample objects, keeps rows/checksums, audits counts + IDs only; `--dry-run`; idempotent). Copies in backups persist until backup expiry | Controller decides who may run it and when (G-2) |
 | G-2 | No retention period for revoked biometric profiles or archived students | Controller decision; then a retention job like `retention.*` | Controller + legal |
 | G-3 | Node offline buffer is unencrypted on disk | Full-disk encryption on the node (install guide requirement) or encrypt the buffer file | Engineering + site |
 | G-4 | Backups are not encrypted at rest by the application | Encrypted backup volume / off-host target, or `age`/GPG encryption in `backup:run` | Engineering + ops |

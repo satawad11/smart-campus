@@ -15,6 +15,11 @@ For day-to-day operator tasks see [PILOT-004 operator onboarding](../pilot/PILOT
 
 Data scope: SITE/ZONE-scoped users only see records in their scope; out-of-scope records answer 404.
 
+## Biometric erasure (data subject requests)
+1. Revoke the person's face profile (UI or API; audited).
+2. `php artisan face:purge <person_uuid> --dry-run` to review, then `php artisan face:purge <person_uuid> --reason=<DSR ticket>`.
+3. Record the DSR ticket. Copies inside existing backups disappear when those backups expire.
+
 ## Licence
 `php artisan license:status` · `license:install <file>` · `license:import-revocations <file>`; API
 `/api/v1/system/license`. Alerts appear in System → Alerts. Details: [LICENSE_MODEL](LICENSE_MODEL.md).

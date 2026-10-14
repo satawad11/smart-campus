@@ -72,6 +72,7 @@ class FaceProfile extends Model
             'quality_score' => 'float',
             'enrolled_at' => 'datetime',
             'revoked_at' => 'datetime',
+            'biometrics_purged_at' => 'datetime',
         ];
     }
 

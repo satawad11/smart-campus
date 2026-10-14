@@ -3,7 +3,7 @@
 | Area | Limitation | Reference |
 |---|---|---|
 | Biometrics | No production face detection/embedding/PAD model; only `AI_MODE=mock`. Live recognition impossible; preflight FAILs on purpose | B5 |
-| Biometrics | No erasure of biometric data after revocation | PDPA G-1 |
+| Biometrics | Biometric erasure is CLI-only (`face:purge`); no retention schedule triggers it automatically; backup copies persist until backups expire | PDPA G-1/G-2 |
 | Tenancy | Single institution per instance; central management plane not built | ACR-COM-01 |
 | Licensing | Deters casual misuse; not DRM against a customer with root on their own server. Feature entitlements gate only new face enrollments. No licence UI (API/CLI only) | LICENSE_MODEL §7 |
 | Licensing | Two simultaneous additions can overshoot a limit by one (alerted hourly) | LICENSE_MODEL §4 |

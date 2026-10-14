@@ -50,6 +50,7 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 
 | ID | Item | State |
 |---|---|---|
+| PDPA-01 | Biometric erasure `face:purge` (PDPA G-1) | DONE — `BiometricPurgeTest` (10) SQLite + PostgreSQL |
 | DOC-01 | Security & privacy checklist, data inventory, data-flow map (`SECURITY_BASELINE`, `PDPA_DATA_MAP`) | TODO |
 | DOC-02 | `docs/commercial/*` packaging set (13 documents) | TODO |
 | DOC-03 | Model validation checklist (Phase 5) | TODO — execution BLOCKED by B5 |
