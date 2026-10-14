@@ -27,3 +27,6 @@ __pycache__/
 
 # Keep intentionally-empty directories tracked via their placeholders.
 !**/.gitkeep
+
+# scripts/upgrade-campus.sh run record (host-local)
+.upgrade-state
