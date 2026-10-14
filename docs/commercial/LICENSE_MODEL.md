@@ -1,8 +1,8 @@
 # License Model (COM-02)
 
 **Status:** Implemented in the campus instance (development branch, tested). Commercial terms (plans, prices) are
-**not** defined here; see [PRICING_ASSUMPTIONS](PRICING_ASSUMPTIONS.md). Production signing key: **not yet generated**
-(human step, §6).
+**not** defined here; see [PRICING_ASSUMPTIONS](PRICING_ASSUMPTIONS.md). Production signing key `vendor-2026-a` generated 2026-10-14; offline custody pending
+(§6).
 
 ## 1. Principles
 
@@ -81,7 +81,15 @@ then raises `LICENSE_LIMIT_EXCEEDED`.
 Renewal: issue a new license with a later `issued_at`; installing it supersedes the old one (kept as history).
 Installing an **older** license over a newer one is refused (`LICENSE_OLDER_THAN_ACTIVE`).
 
-## 6. Vendor key management (human steps — not done)
+## 6. Vendor key management
+
+**Done 2026-10-14 (owner decision, executed by the agent):** key `vendor-2026-a` generated with the issuer on the
+development workstation; public key added to `config/license.php`; private key stored at
+`C:\Users\DataCenter\SmartCampus-LicenseKeys\vendor-2026-a.secret` (ACL: only the `DataCenter` account),
+**not** in the repository. Key pair verified (sign + verify). **Still a human task:** move the private key to an
+offline machine or hardware token, make two encrypted offline backups, then delete it from the workstation.
+
+Procedure for future keys:
 
 1. On an offline workstation: `php tools/license-issuer/issue.php keygen --key-id=vendor-YYYY-a --out=/secure/vendor-YYYY-a.secret`.
 2. Keep two encrypted offline copies of the secret key (e.g. hardware token / encrypted USB in separate safes). Record custodians.
