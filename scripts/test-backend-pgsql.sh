@@ -50,8 +50,12 @@ else
     "${PG_ENV[@]}" "${PG_IMAGE}" >/dev/null
 fi
 
-for _ in $(seq 1 60); do
-  docker exec "${PG}" pg_isready -U testing -d testing >/dev/null 2>&1 && break
+# The image runs a temporary server during initdb and then restarts, so
+# pg_isready alone can succeed just before that restart (seen as a 08006
+# connect timeout in the first test). Wait for init to finish first.
+for _ in $(seq 1 90); do
+  docker logs "${PG}" 2>&1 | grep -q "PostgreSQL init process complete" \
+    && docker exec "${PG}" pg_isready -U testing -d testing >/dev/null 2>&1 && break
   sleep 1
 done
 docker exec "${PG}" psql -U testing -d testing -c "SELECT 1" >/dev/null
