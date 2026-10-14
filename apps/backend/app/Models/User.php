@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
 use App\Enums\UserStatus;
+use App\Services\System\SystemSettingService;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -123,14 +124,20 @@ class User extends Authenticatable
     }
 
     /**
-     * Security baseline (decision 2026-10-14): holders of the roles in
-     * auth_security.mfa_required_roles must enrol MFA before using any
-     * permission-protected API. Self-service routes (me, MFA setup, password,
-     * sessions, logout) stay reachable so they can enrol.
+     * When an administrator switches on System Settings -> Security ->
+     * security.admin_mfa_enforced (off by default, owner decision
+     * 2026-10-14), holders of the roles in auth_security.mfa_required_roles
+     * must enrol MFA before using any permission-protected API.
+     * Self-service routes (me, MFA setup, password, sessions, logout) stay
+     * reachable so they can enrol.
      */
     public function requiresMfaEnrollment(): bool
     {
         if ($this->mfa_enabled) {
+            return false;
+        }
+
+        if (! (bool) app(SystemSettingService::class)->get('security.admin_mfa_enforced', false)) {
             return false;
         }
 

@@ -8,7 +8,7 @@ For day-to-day operator tasks see [PILOT-004 operator onboarding](../pilot/PILOT
 | First administrator | `php artisan access:bootstrap-admin <username>` (once; one-time password, forced change) |
 | Create users | UI → Users → New (forced password change at first login) |
 | Assign a role with scope | `php artisan access:assign-role <username> <ROLE>` (GLOBAL), add `--site=<code>` (SITE) or `--site=<code> --zone=<code>` (ZONE); `--until=`, `--revoke` (CLI only, A-01) |
-| Enrol MFA (own account) | header link **ตั้งค่า MFA** → Account security; **required** for SUPER_ADMIN and SYSTEM_ADMIN (the app redirects there) |
+| Enrol MFA (own account) | header link **ตั้งค่า MFA** → Account security; strongly recommended. To make it **required** for SUPER_ADMIN/SYSTEM_ADMIN: System Settings → Security → `security.admin_mfa_enforced` = on (off by default). Enrol your own MFA first |
 | Sites and gates | `php artisan locations:provision <SITE_CODE> "<Site name>" --zone="GATE-1:Main Gate:GATE"` (idempotent) |
 | Disable a user | UI → Users → user → status |
 | Revoke a user's sessions | API `POST /api/v1/users/{uuid}/sessions/revoke-all` (`user.update`; no UI yet, A-17) |

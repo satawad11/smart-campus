@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\SystemSetting;
+use App\Services\System\FeatureFlagService;
 use Illuminate\Database\Seeder;
 
 /**
@@ -16,17 +17,29 @@ class SystemSettingSeeder extends Seeder
         $settings = $this->getDefaultSettings();
 
         foreach ($settings as $setting) {
+            $existing = SystemSetting::where('key', $setting['key'])->first();
+
+            // Re-seeding (every deployment/upgrade) must not overwrite values an
+            // administrator changed in System Settings. Only V1-locked feature
+            // flags are forced back to their seeded (disabled) value.
+            $forceValue = $existing === null || $this->isLockedFeature($setting['key']);
+
             SystemSetting::updateOrCreate(
                 ['key' => $setting['key']],
-                [
+                array_merge([
                     'group' => $setting['group'],
                     'type' => $setting['type'],
-                    'value' => $setting['value'],
                     'description' => $setting['description'] ?? null,
                     'is_public' => $setting['is_public'] ?? false,
-                ]
+                ], $forceValue ? ['value' => $setting['value']] : [])
             );
         }
+    }
+
+    private function isLockedFeature(string $key): bool
+    {
+        return str_starts_with($key, 'feature.')
+            && in_array(substr($key, 8), FeatureFlagService::LOCKED_V1_FEATURES, true);
     }
 
     /**
@@ -66,8 +79,10 @@ class SystemSettingSeeder extends Seeder
                 'key' => 'security.admin_mfa_enforced',
                 'group' => 'SECURITY',
                 'type' => 'boolean',
-                'value' => 'true',
-                'description' => 'Enforce multi-factor authentication for administrators',
+                // Off by default (owner decision 2026-10-14); an administrator
+                // turns it on in System Settings -> Security.
+                'value' => 'false',
+                'description' => 'Require MFA enrollment for administrator roles (AUTH_MFA_REQUIRED_ROLES) before they can use the system',
                 'is_public' => false,
             ],
             [

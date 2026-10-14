@@ -25,8 +25,9 @@ return [
     // a stolen session. The /internal/v1 node API is not affected.
     'api_rate_limit_per_minute' => (int) env('API_RATE_LIMIT_PER_MINUTE', 300),
 
-    // Roles that must have MFA enabled before using permission-protected
-    // APIs (comma-separated role codes; empty disables). Decision 2026-10-14.
+    // Roles that must enrol MFA when System Settings -> Security ->
+    // security.admin_mfa_enforced is switched on (off by default).
+    // Comma-separated role codes; empty disables entirely.
     'mfa_required_roles' => env('AUTH_MFA_REQUIRED_ROLES', 'SUPER_ADMIN,SYSTEM_ADMIN'),
 
     'password_min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 12),

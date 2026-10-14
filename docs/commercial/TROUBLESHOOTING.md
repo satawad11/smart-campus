@@ -12,7 +12,7 @@
 | `/health/database` slow then 503 | PostgreSQL down (≈16 s to fail, A-23) | `docker compose ps postgres`; disk space |
 | User gets 403 `PASSWORD_CHANGE_REQUIRED` | Forced password change pending | User changes password at `/change-password` |
 | SITE/ZONE officer can't see an event (404) | Event outside the officer's scope | Correct the role scope with `access:assign-role` |
-| Admin gets 403 `MFA_ENROLLMENT_REQUIRED` | SUPER_ADMIN/SYSTEM_ADMIN without MFA (`AUTH_MFA_REQUIRED_ROLES`) | Enrol on Account security (the app redirects there) |
+| Admin gets 403 `MFA_ENROLLMENT_REQUIRED` | `security.admin_mfa_enforced` is on and the SUPER_ADMIN/SYSTEM_ADMIN has no MFA | Enrol on Account security (the app redirects there); another admin with MFA can switch the setting off |
 | 429 Too Many Requests | `/api/v1` rate limit (`API_RATE_LIMIT_PER_MINUTE`, default 300/min per user) | Wait for `Retry-After`; raise the limit only with a reason |
 | AI node OFFLINE | No heartbeat within the stale window | Node: `deploy/ai-node/healthcheck.sh`; token valid?; `BACKEND_BASE_URL` reachable? |
 | Node CPU/RAM blank in health | Node build before telemetry fix | Upgrade node (stdlib telemetry, `2bafdbf`) |

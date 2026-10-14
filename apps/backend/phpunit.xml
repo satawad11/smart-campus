@@ -56,9 +56,5 @@
         <env name="FEATURE_AI_ASSISTANT_ENABLED" value="(null)"/>
         <!-- Tests do not reach MinIO; BackupIntegrityTest fakes object-storage disks explicitly. -->
         <env name="BACKUP_OBJECT_STORAGE_DISKS" value=""/>
-        <!-- Admin MFA enforcement (production default SUPER_ADMIN,SYSTEM_ADMIN) is off for the
-             general suite, whose admin fixtures predate it; MfaEnforcementTest sets the production
-             value explicitly (same pattern as the kill switches above). -->
-        <env name="AUTH_MFA_REQUIRED_ROLES" value=""/>
     </php>
 </phpunit>
