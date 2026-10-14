@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import aiNodesService from '@/services/aiNodes'
+import NodeOperationsPanel from '@/components/aiNodes/NodeOperationsPanel.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,7 +139,7 @@ onMounted(() => {
 
       <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700 text-sm">
         <button
-          v-for="tab in ['overview', 'credentials', 'health']"
+          v-for="tab in ['overview', 'credentials', 'health', 'operations']"
           :key="tab"
           @click="setTab(tab)"
           class="px-4 py-2 font-medium capitalize"
@@ -165,6 +166,20 @@ onMounted(() => {
           <div><span class="text-gray-500">API URL:</span> {{ node.api_url || '-' }}</div>
           <div>
             <span class="text-gray-500">Software Version:</span> {{ node.software_version || '-' }}
+          </div>
+          <div data-test="node-model">
+            <span class="text-gray-500">Model:</span>
+            {{ node.model_code ? `${node.model_code} ${node.model_version}` : '-' }}
+            <span
+              v-if="node.model_compatible === false"
+              class="ml-1 rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800"
+              >ไม่ตรงกับทะเบียนโมเดล</span
+            >
+            <span
+              v-else-if="node.model_compatible === true"
+              class="ml-1 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800"
+              >ตรงกับทะเบียนโมเดล</span
+            >
           </div>
           <div>
             <span class="text-gray-500">Hardware Type:</span> {{ node.hardware_type || '-' }}
@@ -303,6 +318,8 @@ onMounted(() => {
           </tbody>
         </table>
       </div>
+      <!-- Operations (COM-03) -->
+      <NodeOperationsPanel v-if="activeTab === 'operations'" :node-uuid="node.uuid" />
     </template>
   </div>
 </template>
