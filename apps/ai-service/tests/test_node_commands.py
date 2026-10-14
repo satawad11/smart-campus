@@ -111,3 +111,67 @@ def test_http_client_claims_and_reports(monkeypatch):
     assert calls[1][0] == "http://backend:8000/internal/v1/ai-nodes/commands/c5/result"
     assert calls[1][1]["status"] == "FAILED"
     assert len(calls[1][1]["message"]) == 500
+
+
+class RuntimeConfigClient(CommandNodeClient):
+    def __init__(self, runtime):
+        super().__init__([])
+        self.runtime = runtime
+
+    def get_config(self, ai_node_uuid: str) -> dict:
+        return {"ai_node_uuid": ai_node_uuid, "cameras": [], "runtime": self.runtime}
+
+
+def test_runtime_settings_revision_is_applied_and_reported():
+    client = RuntimeConfigClient(
+        {"revision": 3, "settings": {"heartbeat_interval_seconds": 20, "target_fps": 8}}
+    )
+    orchestrator = _orchestrator(client, [])
+
+    assert orchestrator.sync_config() is True
+    assert orchestrator.applied_config_revision == 3
+    assert orchestrator.heartbeat_interval == 20.0
+    assert orchestrator.target_fps == 8.0
+    assert orchestrator.get_status_summary()["applied_config_revision"] == 3
+
+
+def test_out_of_range_or_unknown_runtime_settings_are_ignored():
+    bad = {"heartbeat_interval_seconds": 1, "shell": "x", "target_fps": True}
+    client = RuntimeConfigClient({"revision": 4, "settings": bad})
+    orchestrator = _orchestrator(client, [])
+    before = (orchestrator.heartbeat_interval, orchestrator.target_fps)
+
+    orchestrator.sync_config()
+
+    assert (orchestrator.heartbeat_interval, orchestrator.target_fps) == before
+    assert orchestrator.applied_config_revision == 4
+
+
+def test_missing_runtime_section_keeps_defaults():
+    orchestrator = _orchestrator(RuntimeConfigClient(None), [])
+
+    orchestrator.sync_config()
+
+    assert orchestrator.applied_config_revision is None
+
+
+def test_heartbeat_sends_config_revision(monkeypatch):
+    sent = {}
+
+    class Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"success": True}
+
+    def fake_post(url, json, headers, timeout):
+        sent.update(json)
+        return Response()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "post", fake_post)
+    HttpAiNodeClient("http://backend:8000", "t").heartbeat(config_revision=5)
+
+    assert sent["config_revision"] == 5

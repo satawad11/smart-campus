@@ -8,7 +8,7 @@
 | Licensing | Deters casual misuse; not DRM against a customer with root on their own server. Feature entitlements gate only new face enrollments. No licence UI (API/CLI only) | LICENSE_MODEL §7 |
 | Licensing | Two simultaneous additions can overshoot a limit by one (alerted hourly) | LICENSE_MODEL §4 |
 | Cameras | "Snapshot" returns a labelled mock placeholder | A-21 |
-| Node | No remote restart / versioned config / rollback yet | COM-03b/c |
+| Node | Remote commands limited to RESYNC_CONFIG / RESTART_SERVICE; versioned settings cover intervals and target FPS only (target FPS applies to cameras started afterwards); no admin UI for either yet (API only) | COM-03b/c |
 | Node | Offline buffer unencrypted on node disk (use disk encryption) | PDPA G-3 |
 | Node | Edge kit not yet run on real hardware/cameras | R-09 |
 | Security | MFA available to all users but not enforced for admins; no general API rate limit; no malware scan of uploads; backups not encrypted by the app | SECURITY_BASELINE |

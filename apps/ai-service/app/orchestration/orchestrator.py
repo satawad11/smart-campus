@@ -344,6 +344,7 @@ class NodeOrchestrator:
         self._last_heartbeat_at: float | None = None
         self._last_sync_at: float | None = None
         self._last_sync_error: str | None = None
+        self.applied_config_revision: int | None = None
         self._telemetry = SystemTelemetry()
 
     @property
@@ -385,6 +386,7 @@ class NodeOrchestrator:
             "active_camera_count": len(cameras_summary),
             "cameras": cameras_summary,
             "last_heartbeat_at": self._last_heartbeat_at,
+            "applied_config_revision": self.applied_config_revision,
             "last_config_sync_at": self._last_sync_at,
         }
 
@@ -532,6 +534,8 @@ class NodeOrchestrator:
             self._last_sync_error = str(exc)
             return False
 
+        self._apply_runtime_settings(config_data.get("runtime"))
+
         cameras_data = config_data.get("cameras", [])
         active_uuids = set()
 
@@ -587,6 +591,40 @@ class NodeOrchestrator:
         self._last_sync_error = None
         return True
 
+    # COM-03: runtime settings the backend may change, with the same bounds
+    # it validates against (checked again here; out-of-range values ignored).
+    _RUNTIME_SETTINGS = {
+        "target_fps": ("target_fps", 1, 30),
+        "heartbeat_interval_seconds": ("heartbeat_interval", 5, 300),
+        "config_sync_interval_seconds": ("config_sync_interval", 10, 600),
+        "camera_health_interval_seconds": ("camera_health_interval", 5, 300),
+        "command_poll_interval_seconds": ("command_poll_interval", 5, 300),
+    }
+
+    def _apply_runtime_settings(self, runtime: Any) -> None:
+        """Apply a versioned settings revision. Intervals take effect on the
+        next loop iteration; target_fps applies to cameras started after it."""
+        if not isinstance(runtime, dict):
+            return
+        revision = runtime.get("revision")
+        settings_data = runtime.get("settings")
+        if not isinstance(revision, int) or not isinstance(settings_data, dict):
+            return
+        if revision == self.applied_config_revision:
+            return
+        for key, value in settings_data.items():
+            spec = self._RUNTIME_SETTINGS.get(key)
+            if spec is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+                logger.warning("Ignoring unsupported runtime setting %s", key)
+                continue
+            attr, low, high = spec
+            if not low <= value <= high:
+                logger.warning("Ignoring out-of-range runtime setting %s=%s", key, value)
+                continue
+            setattr(self, attr, float(value))
+        self.applied_config_revision = revision
+        logger.info("Applied runtime settings revision %s", revision)
+
     def _heartbeat_loop(self) -> None:
         """Sends periodic operational telemetry heartbeat (CAM-003, CAM-014)."""
         while not self._stop_event.is_set():
@@ -606,6 +644,7 @@ class NodeOrchestrator:
                     software_version=settings.version,
                     model_code=self.model_code,
                     model_version=self.model_version,
+                    config_revision=self.applied_config_revision,
                 )
                 self._last_heartbeat_at = time.time()
                 logger.debug(

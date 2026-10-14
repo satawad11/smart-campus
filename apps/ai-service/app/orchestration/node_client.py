@@ -42,6 +42,7 @@ class AiNodeClient(ABC):
         software_version: str | None = None,
         model_code: str | None = None,
         model_version: str | None = None,
+        config_revision: int | None = None,
     ) -> dict[str, Any]: ...
 
     @abstractmethod
@@ -129,6 +130,7 @@ class HttpAiNodeClient(AiNodeClient):
         software_version: str | None = None,
         model_code: str | None = None,
         model_version: str | None = None,
+        config_revision: int | None = None,
     ) -> dict[str, Any]:
         try:
             import httpx
@@ -161,6 +163,8 @@ class HttpAiNodeClient(AiNodeClient):
         ):
             if value:
                 payload[key] = str(value)[:64]
+        if config_revision is not None:
+            payload["config_revision"] = int(config_revision)
 
         try:
             response = httpx.post(

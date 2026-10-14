@@ -35,8 +35,8 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | COM-02b | Entitlement enforcement (camera/node limits, features can only narrow flags) — modes `off`/`warn`/`enforce` | TODO | never deletes data, never blocks export |
 | COM-02c | License issuer CLI (private key from outside the repo), license status API + UI, expiry alerts | TODO | |
 | COM-03a | Node telemetry: disk, FPS, dropped frames, software + model version | DONE | node `2bafdbf`; backend + alerts (this commit); FPS/drops via camera health (existing) |
-| COM-03b | Versioned node configuration with validation and rollback | TODO | |
-| COM-03c | Allowlisted remote commands (restart service, resync config) with audit, timeout, result; no shell | TODO | |
+| COM-03b | Versioned node configuration with validation and rollback | DONE | `b116095` backend, node apply/ack (this commit) |
+| COM-03c | Allowlisted remote commands (restart service, resync config) with audit, timeout, result; no shell | DONE | `aa75f9a` backend, `8e48806` node |
 | COM-03d | Model compatibility check (node model vs registry) | DONE | `model_compatible` on node API + `AI_NODE_MODEL_MISMATCH` alert; real models BLOCKED by B5 |
 | COM-03e | One-time enrollment code flow | TODO | |
 | COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | TODO | |
