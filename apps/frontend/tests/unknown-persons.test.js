@@ -60,7 +60,13 @@ describe('EVT-018: Unknown Persons page', () => {
     await flushPromises()
 
     expect(getSpy).toHaveBeenCalledWith('/events', {
-      params: { event_type: 'UNKNOWN_PERSON', from: undefined, to: undefined, page: 1, per_page: 20 },
+      params: {
+        event_type: 'UNKNOWN_PERSON',
+        from: undefined,
+        to: undefined,
+        page: 1,
+        per_page: 20,
+      },
     })
     expect(wrapper.text()).toContain('Gate 1')
     expect(wrapper.text()).toContain('UNKNOWN')
@@ -73,8 +79,22 @@ describe('EVT-018: Unknown Persons page', () => {
     vi.spyOn(api, 'get').mockResolvedValue({
       data: {
         data: [
-          { uuid: 'evt-1', event_type: 'UNKNOWN_PERSON', occurred_at: '2026-09-23T09:00:00Z', site: null, camera: null, current_decision: { decision: 'UNKNOWN' } },
-          { uuid: 'evt-2', event_type: 'UNKNOWN_PERSON', occurred_at: '2026-09-23T09:01:00Z', site: null, camera: null, current_decision: { decision: 'ALLOW' } },
+          {
+            uuid: 'evt-1',
+            event_type: 'UNKNOWN_PERSON',
+            occurred_at: '2026-09-23T09:00:00Z',
+            site: null,
+            camera: null,
+            current_decision: { decision: 'UNKNOWN' },
+          },
+          {
+            uuid: 'evt-2',
+            event_type: 'UNKNOWN_PERSON',
+            occurred_at: '2026-09-23T09:01:00Z',
+            site: null,
+            camera: null,
+            current_decision: { decision: 'ALLOW' },
+          },
         ],
         meta: { pagination: { current_page: 1, per_page: 20, total: 2, last_page: 1 } },
       },
@@ -94,7 +114,14 @@ describe('EVT-018: Unknown Persons page', () => {
     vi.spyOn(api, 'get').mockResolvedValue({
       data: {
         data: [
-          { uuid: 'evt-9', event_type: 'UNKNOWN_PERSON', occurred_at: '2026-09-23T09:00:00Z', site: null, camera: null, current_decision: { decision: 'UNKNOWN' } },
+          {
+            uuid: 'evt-9',
+            event_type: 'UNKNOWN_PERSON',
+            occurred_at: '2026-09-23T09:00:00Z',
+            site: null,
+            camera: null,
+            current_decision: { decision: 'UNKNOWN' },
+          },
         ],
         meta: { pagination: { current_page: 1, per_page: 20, total: 1, last_page: 1 } },
       },

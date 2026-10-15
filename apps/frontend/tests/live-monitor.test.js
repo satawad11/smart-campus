@@ -83,7 +83,10 @@ describe('EVT-016: Live Monitor UI', () => {
       }
       if (url === '/events' && config?.params?.decision) {
         return Promise.resolve({
-          data: { data: [], meta: { pagination: { current_page: 1, per_page: 1, total: 3, last_page: 1 } } },
+          data: {
+            data: [],
+            meta: { pagination: { current_page: 1, per_page: 1, total: 3, last_page: 1 } },
+          },
         })
       }
       if (url === '/events') {
@@ -138,13 +141,18 @@ describe('EVT-016: Live Monitor UI', () => {
       if (url === '/cameras') {
         return Promise.resolve({
           data: {
-            data: [{ uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main Campus' } }],
+            data: [
+              { uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main Campus' } },
+            ],
             meta: { pagination: { current_page: 1, per_page: 100, total: 1, last_page: 1 } },
           },
         })
       }
       return Promise.resolve({
-        data: { data: [], meta: { pagination: { current_page: 1, per_page: 1, total: 0, last_page: 1 } } },
+        data: {
+          data: [],
+          meta: { pagination: { current_page: 1, per_page: 1, total: 0, last_page: 1 } },
+        },
       })
     })
 
@@ -181,13 +189,18 @@ describe('EVT-016: Live Monitor UI', () => {
       if (url === '/cameras') {
         return Promise.resolve({
           data: {
-            data: [{ uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main Campus' } }],
+            data: [
+              { uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main Campus' } },
+            ],
             meta: { pagination: { current_page: 1, per_page: 100, total: 1, last_page: 1 } },
           },
         })
       }
       return Promise.resolve({
-        data: { data: [], meta: { pagination: { current_page: 1, per_page: 1, total: 0, last_page: 1 } } },
+        data: {
+          data: [],
+          meta: { pagination: { current_page: 1, per_page: 1, total: 0, last_page: 1 } },
+        },
       })
     })
 

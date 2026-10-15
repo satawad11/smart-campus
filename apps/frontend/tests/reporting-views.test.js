@@ -49,12 +49,22 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
       }
       if (url === '/dashboard/events-by-hour') {
         return Promise.resolve({
-          data: { data: [{ hour: '08:00', count: 35 }, { hour: '09:00', count: 50 }] },
+          data: {
+            data: [
+              { hour: '08:00', count: 35 },
+              { hour: '09:00', count: 50 },
+            ],
+          },
         })
       }
       if (url === '/dashboard/events-by-decision') {
         return Promise.resolve({
-          data: { data: [{ decision: 'ALLOW', count: 110 }, { decision: 'DENY', count: 20 }] },
+          data: {
+            data: [
+              { decision: 'ALLOW', count: 110 },
+              { decision: 'DENY', count: 20 },
+            ],
+          },
         })
       }
       if (url === '/dashboard/events-by-camera') {
@@ -64,7 +74,9 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
       }
       if (url === '/dashboard/events-by-department') {
         return Promise.resolve({
-          data: { data: [{ department_uuid: 'dept-1', department_name: 'Computer Science', count: 70 }] },
+          data: {
+            data: [{ department_uuid: 'dept-1', department_name: 'Computer Science', count: 70 }],
+          },
         })
       }
       return Promise.reject(new Error(`Unhandled URL: ${url}`))
@@ -150,9 +162,12 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
     await csvButton.trigger('click')
     await flushPromises()
 
-    expect(postSpy).toHaveBeenCalledWith('/reports/exports', expect.objectContaining({
-      report_type: 'daily',
-      format: 'CSV',
-    }))
+    expect(postSpy).toHaveBeenCalledWith(
+      '/reports/exports',
+      expect.objectContaining({
+        report_type: 'daily',
+        format: 'CSV',
+      }),
+    )
   })
 })

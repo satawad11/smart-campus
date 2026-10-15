@@ -29,7 +29,13 @@ const errorMessage = ref('')
 
 const canManage = computed(() => authStore.hasPermission('system.manage'))
 
-const LOCKED_FEATURES = ['feature.door', 'feature.visitor', 'feature.vehicle', 'feature.alpr', 'feature.ai_assistant']
+const LOCKED_FEATURES = [
+  'feature.door',
+  'feature.visitor',
+  'feature.vehicle',
+  'feature.alpr',
+  'feature.ai_assistant',
+]
 
 async function fetchSettings() {
   isLoading.value = true
@@ -67,7 +73,7 @@ async function saveSettings() {
     const payload = { settings: formValues.value }
     const res = await api.put(`/settings/${activeGroup.value.toLowerCase()}`, payload)
     successMessage.value = `บันทึกการตั้งค่ากลุ่ม ${activeGroup.value} สำเร็จ`
-    
+
     // Update local state
     if (res.data.data) {
       allSettings.value[activeGroup.value] = res.data.data
@@ -93,9 +99,13 @@ onMounted(() => {
 <template>
   <div class="system-settings-view max-w-7xl mx-auto p-6 space-y-6">
     <!-- Header -->
-    <div class="border-b pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div
+      class="border-b pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+    >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">การตั้งค่าระบบ (System Settings)</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          การตั้งค่าระบบ (System Settings)
+        </h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
           กำหนดค่าพารามิเตอร์หลัก นโยบายความปลอดภัย และการเปิด/ปิดฟีเจอร์ระบบ (SEC-001, SEC-002)
         </p>
@@ -112,10 +122,16 @@ onMounted(() => {
     </div>
 
     <!-- Alerts -->
-    <div v-if="successMessage" class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm">
+    <div
+      v-if="successMessage"
+      class="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-sm"
+    >
       {{ successMessage }}
     </div>
-    <div v-if="errorMessage" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+    <div
+      v-if="errorMessage"
+      class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"
+    >
       {{ errorMessage }}
     </div>
 
@@ -126,20 +142,23 @@ onMounted(() => {
         :key="group.id"
         @click="loadGroup(group.id)"
         class="px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition"
-        :class="activeGroup === group.id
-          ? 'bg-indigo-600 text-white shadow-sm'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'"
+        :class="
+          activeGroup === group.id
+            ? 'bg-indigo-600 text-white shadow-sm'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+        "
       >
         {{ group.label }}
       </button>
     </div>
 
     <!-- Settings Content -->
-    <div v-if="isLoading" class="p-12 text-center text-gray-400">
-      กำลังโหลดข้อมูลการตั้งค่า...
-    </div>
+    <div v-if="isLoading" class="p-12 text-center text-gray-400">กำลังโหลดข้อมูลการตั้งค่า...</div>
 
-    <div v-else class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+    <div
+      v-else
+      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700"
+    >
       <div v-if="currentSettings.length === 0" class="p-8 text-center text-gray-400 text-sm">
         ไม่มีรายการตั้งค่าในหมวดหมู่นี้
       </div>
@@ -151,10 +170,22 @@ onMounted(() => {
       >
         <div class="max-w-xl space-y-1">
           <div class="flex items-center gap-2">
-            <span class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{ setting.key }}</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 uppercase">{{ setting.type }}</span>
-            <span v-if="setting.is_public" class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600">Public</span>
-            <span v-if="LOCKED_FEATURES.includes(setting.key)" class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold">
+            <span class="font-mono text-sm font-semibold text-gray-900 dark:text-white">{{
+              setting.key
+            }}</span>
+            <span
+              class="text-xs px-2 py-0.5 rounded bg-gray-100 dark:bg-gray-700 text-gray-500 uppercase"
+              >{{ setting.type }}</span
+            >
+            <span
+              v-if="setting.is_public"
+              class="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600"
+              >Public</span
+            >
+            <span
+              v-if="LOCKED_FEATURES.includes(setting.key)"
+              class="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-semibold"
+            >
               🔒 Locked V1
             </span>
           </div>
@@ -181,7 +212,10 @@ onMounted(() => {
                 class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"
               ></div>
             </label>
-            <span class="text-sm font-medium" :class="formValues[setting.key] ? 'text-indigo-600' : 'text-gray-400'">
+            <span
+              class="text-sm font-medium"
+              :class="formValues[setting.key] ? 'text-indigo-600' : 'text-gray-400'"
+            >
               {{ formValues[setting.key] ? 'เปิดใช้งาน (Enabled)' : 'ปิดใช้งาน (Disabled)' }}
             </span>
           </div>

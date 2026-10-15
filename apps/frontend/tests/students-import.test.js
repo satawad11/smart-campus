@@ -128,7 +128,10 @@ describe('STD-017: Student Import Wizard UI', () => {
       }
 
       vi.spyOn(api, 'get').mockResolvedValue({
-        data: { data: [], meta: { pagination: { total: 0, current_page: 1, last_page: 1, per_page: 20 } } },
+        data: {
+          data: [],
+          meta: { pagination: { total: 0, current_page: 1, last_page: 1, per_page: 20 } },
+        },
       })
 
       router.push('/students')
@@ -153,7 +156,10 @@ describe('STD-017: Student Import Wizard UI', () => {
       }
 
       vi.spyOn(api, 'get').mockResolvedValue({
-        data: { data: [], meta: { pagination: { total: 0, current_page: 1, last_page: 1, per_page: 20 } } },
+        data: {
+          data: [],
+          meta: { pagination: { total: 0, current_page: 1, last_page: 1, per_page: 20 } },
+        },
       })
 
       router.push('/students')
@@ -232,7 +238,9 @@ describe('STD-017: Student Import Wizard UI', () => {
       })
       const input = wrapper.find('input[type="file"]')
 
-      const validFile = new File(['student_code,first_name\nSTD-1,John'], 'students.csv', { type: 'text/csv' })
+      const validFile = new File(['student_code,first_name\nSTD-1,John'], 'students.csv', {
+        type: 'text/csv',
+      })
       Object.defineProperty(input.element, 'files', { value: [validFile] })
       await input.trigger('change')
 
@@ -240,7 +248,9 @@ describe('STD-017: Student Import Wizard UI', () => {
       await wrapper.find('input[value="UPDATE_EXISTING"]').setChecked()
 
       // Click upload
-      const submitBtn = wrapper.findAll('button').find((b) => b.text().includes('อัปโหลดและตรวจสอบ'))
+      const submitBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('อัปโหลดและตรวจสอบ'))
       expect(submitBtn).toBeDefined()
       await submitBtn.trigger('click')
       await flushPromises()
@@ -271,8 +281,8 @@ describe('STD-017: Student Import Wizard UI', () => {
       })
 
       expect(wrapper.text()).toContain('10') // Total rows
-      expect(wrapper.text()).toContain('8')  // Valid rows
-      expect(wrapper.text()).toContain('2')  // Invalid rows
+      expect(wrapper.text()).toContain('8') // Valid rows
+      expect(wrapper.text()).toContain('2') // Invalid rows
       expect(wrapper.text()).toContain('STD-66001')
       expect(wrapper.text()).toContain('สมชาย สุขใจ')
       expect(wrapper.text()).toContain('พร้อมนำเข้า')
@@ -313,7 +323,9 @@ describe('STD-017: Student Import Wizard UI', () => {
         global: { plugins: [router] },
       })
 
-      const proceedBtn = wrapper.findAll('button').find((b) => b.text().includes('ยืนยันและไปขั้นตอนประมวลผล'))
+      const proceedBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('ยืนยันและไปขั้นตอนประมวลผล'))
       expect(proceedBtn).toBeDefined()
       await proceedBtn.trigger('click')
 
@@ -380,7 +392,9 @@ describe('STD-017: Student Import Wizard UI', () => {
         global: { plugins: [router] },
       })
 
-      const startBtn = wrapper.findAll('button').find((b) => b.text().includes('ยืนยันและเริ่มประมวลผล'))
+      const startBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('ยืนยันและเริ่มประมวลผล'))
       expect(startBtn).toBeDefined()
       await startBtn.trigger('click')
       await flushPromises()

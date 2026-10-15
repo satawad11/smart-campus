@@ -164,7 +164,10 @@ describe('STD-016: Student Academic Status and History UI', () => {
         },
       })
 
-      const result = await studentsService.getStatusHistory('std-uuid-12345', { page: 1, per_page: 5 })
+      const result = await studentsService.getStatusHistory('std-uuid-12345', {
+        page: 1,
+        per_page: 5,
+      })
 
       expect(api.get).toHaveBeenCalledWith('/students/std-uuid-12345/status-history', {
         params: { page: 1, per_page: 5 },
@@ -426,8 +429,10 @@ describe('STD-016: Student Academic Status and History UI', () => {
 
       expect(wrapper.text()).toContain('สมชาย สุขใจ')
       expect(wrapper.text()).toContain('แก้ไขข้อมูล')
-      
-      let changeStatusBtn = wrapper.findAll('button').find((b) => b.text().trim() === 'เปลี่ยนสถานะการศึกษา')
+
+      let changeStatusBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().trim() === 'เปลี่ยนสถานะการศึกษา')
       expect(changeStatusBtn).toBeUndefined()
 
       // Grant permission
@@ -438,7 +443,9 @@ describe('STD-016: Student Academic Status and History UI', () => {
       }
       await wrapper.vm.$nextTick()
 
-      changeStatusBtn = wrapper.findAll('button').find((b) => b.text().trim() === 'เปลี่ยนสถานะการศึกษา')
+      changeStatusBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().trim() === 'เปลี่ยนสถานะการศึกษา')
       expect(changeStatusBtn).toBeDefined()
     })
 
@@ -467,7 +474,9 @@ describe('STD-016: Student Academic Status and History UI', () => {
 
       await flushPromises()
 
-      const changeStatusBtn = wrapper.findAll('button').find((b) => b.text().includes('เปลี่ยนสถานะการศึกษา'))
+      const changeStatusBtn = wrapper
+        .findAll('button')
+        .find((b) => b.text().includes('เปลี่ยนสถานะการศึกษา'))
       expect(changeStatusBtn).toBeDefined()
       await changeStatusBtn.trigger('click')
 

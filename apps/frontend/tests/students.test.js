@@ -65,11 +65,23 @@ describe('STD-015: Student Management UI', () => {
   ]
 
   const samplePrograms = [
-    { uuid: 'prog-uuid-001', code: 'IT-DEV', name: 'การพัฒนาซอฟต์แวร์', department_uuid: 'dept-uuid-001', status: 'ACTIVE' },
+    {
+      uuid: 'prog-uuid-001',
+      code: 'IT-DEV',
+      name: 'การพัฒนาซอฟต์แวร์',
+      department_uuid: 'dept-uuid-001',
+      status: 'ACTIVE',
+    },
   ]
 
   const sampleClassrooms = [
-    { uuid: 'class-uuid-001', code: 'IT-101', name: 'ปวช. 2/1', department_uuid: 'dept-uuid-001', status: 'ACTIVE' },
+    {
+      uuid: 'class-uuid-001',
+      code: 'IT-101',
+      name: 'ปวช. 2/1',
+      department_uuid: 'dept-uuid-001',
+      status: 'ACTIVE',
+    },
   ]
 
   beforeEach(async () => {
@@ -84,10 +96,30 @@ describe('STD-015: Student Management UI', () => {
     router = createRouter({
       history: createMemoryHistory(),
       routes: [
-        { path: '/students', name: 'students.index', component: StudentListView, meta: { requiresAuth: true, permission: 'student.view' } },
-        { path: '/students/new', name: 'students.create', component: StudentCreateView, meta: { requiresAuth: true, permission: 'student.create' } },
-        { path: '/students/:uuid', name: 'students.show', component: StudentDetailView, meta: { requiresAuth: true, permission: 'student.view' } },
-        { path: '/students/:uuid/edit', name: 'students.edit', component: StudentEditView, meta: { requiresAuth: true, permission: 'student.update' } },
+        {
+          path: '/students',
+          name: 'students.index',
+          component: StudentListView,
+          meta: { requiresAuth: true, permission: 'student.view' },
+        },
+        {
+          path: '/students/new',
+          name: 'students.create',
+          component: StudentCreateView,
+          meta: { requiresAuth: true, permission: 'student.create' },
+        },
+        {
+          path: '/students/:uuid',
+          name: 'students.show',
+          component: StudentDetailView,
+          meta: { requiresAuth: true, permission: 'student.view' },
+        },
+        {
+          path: '/students/:uuid/edit',
+          name: 'students.edit',
+          component: StudentEditView,
+          meta: { requiresAuth: true, permission: 'student.update' },
+        },
       ],
     })
     await router.push('/students')
@@ -188,7 +220,9 @@ describe('STD-015: Student Management UI', () => {
       })
 
       const depts = await academicsService.listDepartments()
-      expect(getSpy).toHaveBeenCalledWith('/departments', { params: { per_page: 100, status: 'ACTIVE' } })
+      expect(getSpy).toHaveBeenCalledWith('/departments', {
+        params: { per_page: 100, status: 'ACTIVE' },
+      })
       expect(depts).toHaveLength(2)
     })
   })
@@ -252,13 +286,17 @@ describe('STD-015: Student Management UI', () => {
       expect(listSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           academic_status: 'LEAVE',
-        })
+        }),
       )
     })
 
     it('filters students by department and updates dependent programs/classrooms', async () => {
-      const listProgsSpy = vi.spyOn(academicsService, 'listPrograms').mockResolvedValue(samplePrograms)
-      const listClassesSpy = vi.spyOn(academicsService, 'listClassrooms').mockResolvedValue(sampleClassrooms)
+      const listProgsSpy = vi
+        .spyOn(academicsService, 'listPrograms')
+        .mockResolvedValue(samplePrograms)
+      const listClassesSpy = vi
+        .spyOn(academicsService, 'listClassrooms')
+        .mockResolvedValue(sampleClassrooms)
       const listSpy = vi.spyOn(studentsService, 'list').mockResolvedValue({
         data: [sampleStudent],
         meta: { pagination: { current_page: 1, per_page: 20, total: 1, last_page: 1 } },
@@ -278,17 +316,17 @@ describe('STD-015: Student Management UI', () => {
       expect(listProgsSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           department_uuid: 'dept-uuid-001',
-        })
+        }),
       )
       expect(listClassesSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           department_uuid: 'dept-uuid-001',
-        })
+        }),
       )
       expect(listSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           department_uuid: 'dept-uuid-001',
-        })
+        }),
       )
     })
 
@@ -371,7 +409,9 @@ describe('STD-015: Student Management UI', () => {
     })
 
     it('loads academic departments on mount', async () => {
-      const listDeptSpy = vi.spyOn(academicsService, 'listDepartments').mockResolvedValue(sampleDepartments)
+      const listDeptSpy = vi
+        .spyOn(academicsService, 'listDepartments')
+        .mockResolvedValue(sampleDepartments)
 
       const wrapper = mount(StudentCreateView, {
         global: {
@@ -449,7 +489,7 @@ describe('STD-015: Student Management UI', () => {
           department_uuid: 'dept-uuid-001',
           education_level: 'VOC_CERT',
           year_level: 2,
-        })
+        }),
       )
 
       expect(pushSpy).toHaveBeenCalledWith({
@@ -630,7 +670,10 @@ describe('STD-015: Student Management UI', () => {
       vi.spyOn(api, 'get').mockImplementation((url) => {
         if (url === '/events') {
           return Promise.resolve({
-            data: { data: [], meta: { pagination: { current_page: 1, per_page: 5, total: 0, last_page: 1 } } },
+            data: {
+              data: [],
+              meta: { pagination: { current_page: 1, per_page: 5, total: 0, last_page: 1 } },
+            },
           })
         }
         return Promise.resolve({ data: { data: null } })
@@ -671,7 +714,7 @@ describe('STD-015: Student Management UI', () => {
       expect(wrapper.find('#display_name').element.value).toBe('ชาย')
 
       // Immutable attributes must be disabled / read-only
-      const studentCodeInput = wrapper.findAll('input').find(i => i.element.value === 'STD-66001')
+      const studentCodeInput = wrapper.findAll('input').find((i) => i.element.value === 'STD-66001')
       expect(studentCodeInput.attributes('disabled')).toBeDefined()
     })
 
@@ -701,7 +744,7 @@ describe('STD-015: Student Management UI', () => {
             first_name: 'สมชายวิชญ์',
             last_name: 'สุขใจ',
           }),
-        })
+        }),
       )
 
       expect(pushSpy).toHaveBeenCalledWith({

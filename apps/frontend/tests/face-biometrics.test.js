@@ -57,7 +57,10 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
 
   it('renders FaceProfileListView with status filter and table headers', async () => {
     const authStore = useAuthStore()
-    authStore.user = { id: 'user-uuid', permissions: ['face.view', 'face.revoke', 'face.reenroll', 'face.enroll'] }
+    authStore.user = {
+      id: 'user-uuid',
+      permissions: ['face.view', 'face.revoke', 'face.reenroll', 'face.enroll'],
+    }
 
     vi.spyOn(facesService, 'listProfiles').mockResolvedValue({
       data: [

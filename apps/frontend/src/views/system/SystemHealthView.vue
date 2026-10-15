@@ -3,7 +3,9 @@
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gray-900">System Health &amp; Operations</h1>
-        <p class="text-sm text-gray-500">Live infrastructure status, service availability, and alert lifecycle management.</p>
+        <p class="text-sm text-gray-500">
+          Live infrastructure status, service availability, and alert lifecycle management.
+        </p>
       </div>
       <button
         @click="loadHealth"
@@ -19,7 +21,11 @@
         <span class="text-sm font-medium text-gray-500">Overall Status</span>
         <div class="mt-2 flex items-center gap-2">
           <span
-            :class="health.status === 'HEALTHY' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'"
+            :class="
+              health.status === 'HEALTHY'
+                ? 'bg-green-100 text-green-800'
+                : 'bg-red-100 text-red-800'
+            "
             class="px-2.5 py-0.5 rounded-full text-sm font-bold"
           >
             {{ health.status }}
@@ -30,8 +36,18 @@
       <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <span class="text-sm font-medium text-gray-500">Database &amp; Redis</span>
         <div class="mt-2 text-sm text-gray-900 space-y-1">
-          <div>Postgres: <span class="font-semibold text-green-600">{{ health.core_services?.database?.status }}</span></div>
-          <div>Redis: <span class="font-semibold text-green-600">{{ health.core_services?.redis?.status }}</span></div>
+          <div>
+            Postgres:
+            <span class="font-semibold text-green-600">{{
+              health.core_services?.database?.status
+            }}</span>
+          </div>
+          <div>
+            Redis:
+            <span class="font-semibold text-green-600">{{
+              health.core_services?.redis?.status
+            }}</span>
+          </div>
         </div>
       </div>
 
@@ -48,7 +64,9 @@
         <div class="mt-2 text-2xl font-bold text-red-600">
           {{ health.alerts?.open_total || 0 }}
         </div>
-        <div class="text-xs text-gray-500 mt-1">{{ health.alerts?.open_critical || 0 }} Critical</div>
+        <div class="text-xs text-gray-500 mt-1">
+          {{ health.alerts?.open_critical || 0 }} Critical
+        </div>
       </div>
     </div>
 
@@ -63,7 +81,11 @@
           <div>
             <div class="flex items-center gap-2">
               <span
-                :class="alert.severity === 'CRITICAL' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'"
+                :class="
+                  alert.severity === 'CRITICAL'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
+                "
                 class="px-2 py-0.5 rounded text-xs font-semibold"
               >
                 {{ alert.severity }}
