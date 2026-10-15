@@ -2,8 +2,6 @@
 
 namespace App\Services\Report;
 
-use App\Models\EventDailySummary;
-use App\Models\EventHourlySummary;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -16,52 +14,37 @@ use Illuminate\Support\Facades\DB;
  * migration comment on why the DB unique constraint alone isn't enough
  * once a dimension is NULL).
  *
+ * A refresh only inserts or updates rows; it never deletes a summary row,
+ * so summaries outlive raw events removed by retention.
+ *
  * Deliberately avoids SQL date-truncation functions (e.g. PostgreSQL's
  * date_trunc, which SQLite doesn't have): the caller passes an
  * already-truncated bucket boundary, and this class filters
  * occurred_at with a plain range comparison — the same portable pattern
  * EventSearchQuery already established for from/to filtering.
+ *
+ * V1 audit A-22 (1M raw events): the latest-decision lookup is limited to
+ * the bucket's events, and each bucket is written with one read of its
+ * existing rows, a bulk insert and per-row updates only where counts
+ * changed, inside one transaction, instead of a SELECT plus a write for
+ * every summary row.
  */
 class EventSummaryRefreshService
 {
+    private const DIMENSIONS = ['site_id', 'zone_id', 'camera_id', 'department_id', 'event_type', 'decision'];
+
     public function refreshHour(Carbon $hourStart): int
     {
-        $hourEnd = $hourStart->copy()->addHour();
-        $rows = $this->aggregate($hourStart, $hourEnd);
+        $rows = $this->aggregate($hourStart, $hourStart->copy()->addHour());
 
-        foreach ($rows as $row) {
-            $this->upsert(EventHourlySummary::class, [
-                'site_id' => $row->site_id,
-                'zone_id' => $row->zone_id,
-                'camera_id' => $row->camera_id,
-                'department_id' => $row->department_id,
-                'hour_bucket' => $hourStart,
-                'event_type' => $row->event_type,
-                'decision' => $row->decision,
-            ], (int) $row->event_count, (int) $row->unique_person_count);
-        }
-
-        return count($rows);
+        return $this->store('event_hourly_summaries', 'hour_bucket', $hourStart->copy(), $rows, dateOnly: false);
     }
 
     public function refreshDay(Carbon $dayStart): int
     {
-        $dayEnd = $dayStart->copy()->addDay();
-        $rows = $this->aggregate($dayStart, $dayEnd);
+        $rows = $this->aggregate($dayStart, $dayStart->copy()->addDay());
 
-        foreach ($rows as $row) {
-            $this->upsert(EventDailySummary::class, [
-                'site_id' => $row->site_id,
-                'zone_id' => $row->zone_id,
-                'camera_id' => $row->camera_id,
-                'department_id' => $row->department_id,
-                'summary_date' => $dayStart->toDateString(),
-                'event_type' => $row->event_type,
-                'decision' => $row->decision,
-            ], (int) $row->event_count, (int) $row->unique_person_count);
-        }
-
-        return count($rows);
+        return $this->store('event_daily_summaries', 'summary_date', $dayStart->copy()->startOfDay(), $rows, dateOnly: true);
     }
 
     /**
@@ -74,8 +57,13 @@ class EventSummaryRefreshService
      */
     private function aggregate(Carbon $start, Carbon $end): array
     {
+        $eventsInWindow = fn ($q) => $q->select('id')->from('access_events')
+            ->where('occurred_at', '>=', $start)
+            ->where('occurred_at', '<', $end);
+
         $latestDecisionIds = DB::table('access_decisions')
             ->select('event_id', DB::raw('MAX(id) as latest_id'))
+            ->whereIn('event_id', $eventsInWindow)
             ->groupBy('event_id');
 
         return DB::table('access_events')
@@ -108,46 +96,82 @@ class EventSummaryRefreshService
     }
 
     /**
-     * @param  class-string<EventHourlySummary|EventDailySummary>  $modelClass
-     * @param  array<string, mixed>  $dimensions
+     * Upserts one bucket. Existing rows are matched on every dimension in
+     * PHP (NULL-safe), so the NULL-distinct unique constraint is never relied
+     * on. The bucket value is bound as a Carbon instance, which the query
+     * builder formats exactly as the models' date/datetime casts do.
+     *
+     * @param  array<int, object>  $rows
      */
-    private function upsert(string $modelClass, array $dimensions, int $eventCount, int $uniquePersonCount): void
+    private function store(string $table, string $bucketColumn, Carbon $bucket, array $rows, bool $dateOnly): int
     {
-        $query = $modelClass::query();
-        foreach ($dimensions as $column => $value) {
-            if ($value === null) {
-                $query->whereNull($column);
-            } elseif ($column === 'summary_date') {
-                // whereDate(), not where(): a `date`-cast column serializes
-                // through Eloquent as a full 'Y-m-d 00:00:00' string, and
-                // SQLite (unlike PostgreSQL's native DATE type, which
-                // discards the time part on write) stores exactly that as
-                // TEXT — a plain where() against a bare 'Y-m-d' value then
-                // never matches on SQLite, silently re-inserting a
-                // duplicate row every refresh instead of updating.
-                $query->whereDate($column, $value);
-            } else {
-                $query->where($column, $value);
+        if ($rows === []) {
+            return 0;
+        }
+
+        DB::transaction(function () use ($table, $bucketColumn, $bucket, $rows, $dateOnly) {
+            $now = now();
+            $bucketQuery = fn () => $dateOnly
+                // whereDate(), not where(): SQLite stores a `date`-cast column
+                // as 'Y-m-d 00:00:00' TEXT, which a bare 'Y-m-d' never equals.
+                ? DB::table($table)->whereDate($bucketColumn, $bucket->toDateString())
+                : DB::table($table)->where($bucketColumn, $bucket);
+
+            $existing = [];
+            foreach ($bucketQuery()->get(['id', 'event_count', 'unique_person_count', ...self::DIMENSIONS]) as $row) {
+                $existing[$this->key($row)] = $row;
             }
+
+            $inserts = [];
+            $unchangedIds = [];
+            foreach ($rows as $row) {
+                $eventCount = (int) $row->event_count;
+                $uniqueCount = (int) $row->unique_person_count;
+                $current = $existing[$this->key($row)] ?? null;
+
+                if ($current === null) {
+                    $inserts[] = [
+                        'site_id' => $row->site_id,
+                        'zone_id' => $row->zone_id,
+                        'camera_id' => $row->camera_id,
+                        'department_id' => $row->department_id,
+                        $bucketColumn => $bucket,
+                        'event_type' => $row->event_type,
+                        'decision' => $row->decision,
+                        'event_count' => $eventCount,
+                        'unique_person_count' => $uniqueCount,
+                        'refreshed_at' => $now,
+                    ];
+                } elseif ((int) $current->event_count !== $eventCount || (int) $current->unique_person_count !== $uniqueCount) {
+                    DB::table($table)->where('id', $current->id)->update([
+                        'event_count' => $eventCount,
+                        'unique_person_count' => $uniqueCount,
+                        'refreshed_at' => $now,
+                    ]);
+                } else {
+                    $unchangedIds[] = $current->id;
+                }
+            }
+
+            foreach (array_chunk($inserts, 500) as $chunk) {
+                DB::table($table)->insert($chunk);
+            }
+            foreach (array_chunk($unchangedIds, 1000) as $chunk) {
+                DB::table($table)->whereIn('id', $chunk)->update(['refreshed_at' => $now]);
+            }
+        });
+
+        return count($rows);
+    }
+
+    private function key(object $row): string
+    {
+        $parts = [];
+        foreach (self::DIMENSIONS as $column) {
+            $value = $row->{$column};
+            $parts[] = $value === null ? "\0" : (string) $value;
         }
 
-        $existing = $query->first();
-
-        if ($existing !== null) {
-            $existing->update([
-                'event_count' => $eventCount,
-                'unique_person_count' => $uniquePersonCount,
-                'refreshed_at' => now(),
-            ]);
-
-            return;
-        }
-
-        $modelClass::create([
-            ...$dimensions,
-            'event_count' => $eventCount,
-            'unique_person_count' => $uniquePersonCount,
-            'refreshed_at' => now(),
-        ]);
+        return implode('|', $parts);
     }
 }
