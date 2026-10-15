@@ -4,6 +4,7 @@ namespace App\Http\Requests\Face;
 
 use App\Enums\FaceSamplePose;
 use App\Enums\FaceSampleSource;
+use App\Rules\MalwareFreeUpload;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Enum;
 
@@ -43,6 +44,7 @@ class EnrollFaceRequest extends FormRequest
                 'file',
                 'mimes:jpeg,jpg,png,webp',
                 'max:10240', // 10MB
+                new MalwareFreeUpload,
             ],
             'pose' => [
                 'nullable',

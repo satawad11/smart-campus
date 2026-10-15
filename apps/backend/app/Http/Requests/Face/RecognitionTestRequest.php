@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Face;
 
+use App\Rules\MalwareFreeUpload;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -51,6 +52,7 @@ class RecognitionTestRequest extends FormRequest
                 'file',
                 'mimes:jpeg,jpg,png,webp',
                 'max:10240', // 10MB
+                new MalwareFreeUpload,
             ],
             'top_k' => [
                 'nullable',

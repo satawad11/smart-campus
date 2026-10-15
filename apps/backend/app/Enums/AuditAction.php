@@ -81,6 +81,9 @@ enum AuditAction: string
     case AI_NODE_CREDENTIAL_ISSUED = 'AI_NODE_CREDENTIAL_ISSUED';
     case AI_NODE_CREDENTIAL_REVOKED = 'AI_NODE_CREDENTIAL_REVOKED';
 
+    // Security — upload malware scan (SEC-NEXT)
+    case UPLOAD_MALWARE_DETECTED = 'UPLOAD_MALWARE_DETECTED';
+
     // Commercial — one-time node enrollment (COM-03e)
     case AI_NODE_ENROLLMENT_CODE_ISSUED = 'AI_NODE_ENROLLMENT_CODE_ISSUED';
     case AI_NODE_ENROLLED = 'AI_NODE_ENROLLED';

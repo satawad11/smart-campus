@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Student;
 
+use App\Rules\MalwareFreeUpload;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -27,6 +28,7 @@ class UploadStudentImportRequest extends FormRequest
                 'file',
                 'mimes:csv,txt',
                 'max:10240', // 10MB maximum
+                new MalwareFreeUpload,
             ],
             'conflict_mode' => [
                 'sometimes',

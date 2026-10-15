@@ -14,6 +14,7 @@ use App\Models\Classroom;
 use App\Models\Department;
 use App\Models\Program;
 use App\Models\StudentProfile;
+use App\Rules\MalwareFreeUpload;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Student\StudentService;
 use Illuminate\Http\JsonResponse;
@@ -243,7 +244,7 @@ class StudentController extends Controller
     public function uploadPhoto(Request $request, StudentProfile $student): JsonResponse
     {
         $request->validate([
-            'photo' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+            'photo' => ['required', 'file', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120', new MalwareFreeUpload],
         ]);
 
         $updated = $this->service->updatePhoto(

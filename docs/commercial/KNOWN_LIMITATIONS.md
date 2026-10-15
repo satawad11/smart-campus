@@ -11,7 +11,7 @@
 | Node | Remote commands limited to RESYNC_CONFIG / RESTART_SERVICE; versioned settings cover intervals and target FPS only (target FPS applies to cameras started afterwards); managed in the AI node Operations tab | COM-03b/c |
 | Node | Offline buffer unencrypted on node disk (use disk encryption) | PDPA G-3 |
 | Node | Edge kit not yet run on real hardware/cameras | R-09 |
-| Security | MFA required only for SUPER_ADMIN/SYSTEM_ADMIN; no malware scan of uploads; backup encryption is opt-in (set `BACKUP_ENCRYPTION_KEY`) | SECURITY_BASELINE |
+| Security | Admin MFA enforcement is off by default (switch on in System Settings → Security before real data); upload malware scan needs the `clamav` service and its signatures go stale without outbound HTTPS; backup encryption is opt-in (set `BACKUP_ENCRYPTION_KEY`) | SECURITY_BASELINE |
 | UI | No UI yet for login history, notifications, or an admin view of other users' sessions (audit log, incidents and own sessions have UIs) | A-17 |
 | RBAC | SYSTEM_ADMIN holds `*` like SUPER_ADMIN (separation of duties) | A-27 |
 | Reporting | Summary refresh from ~1M raw events untested at scale | A-22 |

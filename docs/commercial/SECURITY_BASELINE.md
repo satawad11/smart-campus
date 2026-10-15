@@ -19,7 +19,7 @@
 | 9 | Secrets management | PARTIAL | `.env` outside repo, mandatory pilot secrets; no vault. License private key never in product (COM-02) |
 | 10 | Audit logging | TECH | `AuditService` with sensitive-key scrubbing; biometric, admin, licence actions audited |
 | 11 | Rate limiting | TECH | login, MFA throttled; `/api/v1` limited per user/IP (`API_RATE_LIMIT_PER_MINUTE`, default 300; `ApiRateLimitTest`); `/internal/v1` excluded |
-| 12 | Secure file upload | PARTIAL | type/size validation on student import, photos, face images; no malware scanning |
+| 12 | Secure file upload | DONE (needs clamav running) | type/size validation plus ClamAV malware scan (`MalwareFreeUpload`) on student import, student photos, face enrollment/re-enrollment and recognition-test images; infected files are rejected, audited (`UPLOAD_MALWARE_DETECTED`) and alerted; fail-closed (503) when the scanner is down. `UPLOAD_SCAN_DRIVER=clamav` in the pilot env; off in development. Signatures update over outbound HTTPS (stale on fully offline sites) |
 | 13 | Database least privilege | TECH | `docs/security/LEAST-PRIVILEGE-ROLES.sql`, preflight warns on owner user |
 | 14 | Backup encryption | TECH (opt-in) | `BACKUP_ENCRYPTION_KEY` → libsodium secretstream, drill verifies by decrypting, `backup:decrypt`; key custody = ops (vault, apart from backups) |
 | 15 | Restore testing | PARTIAL | rehearsal restores into an empty DB pass (REPORTED); none on a production host (BLOCKED) |

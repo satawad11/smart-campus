@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Services\Security\ClamAvUploadScanner;
+use App\Services\Security\DisabledUploadScanner;
+use App\Services\Security\UploadScanner;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,7 +17,17 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(UploadScanner::class, function () {
+            if (config('upload_scan.driver') === 'clamav') {
+                return new ClamAvUploadScanner(
+                    (string) config('upload_scan.clamav.host'),
+                    (int) config('upload_scan.clamav.port'),
+                    (float) config('upload_scan.clamav.timeout_seconds'),
+                );
+            }
+
+            return new DisabledUploadScanner;
+        });
     }
 
     /**
