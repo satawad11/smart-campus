@@ -23,7 +23,7 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 
 # 2. Create required directories
-mkdir -p models
+mkdir -p models certs
 
 # 3. Initialize .env if missing
 if [ ! -f .env ]; then

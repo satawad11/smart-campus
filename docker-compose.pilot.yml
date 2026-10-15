@@ -24,6 +24,8 @@ services:
     volumes: !override
       - ./infrastructure/pilot/nginx:/etc/nginx/conf.d:ro
       - ${PILOT_CERTS_DIR:-./infrastructure/pilot/certs}:/etc/nginx/certs:ro
+      # Let's Encrypt HTTP-01 webroot (scripts/tls-setup.sh)
+      - ${PILOT_ACME_DIR:-./infrastructure/pilot/acme}:/var/www/acme:ro
 
   frontend:
     build:

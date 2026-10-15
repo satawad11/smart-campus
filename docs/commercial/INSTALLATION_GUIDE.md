@@ -17,6 +17,8 @@ Dev seeders never create shared-password accounts outside `local`/`testing` (C-0
 Follow [PILOT-HOST-DEPLOYMENT-CHECKLIST](../pilot/PILOT-HOST-DEPLOYMENT-CHECKLIST.md) §2–§3: Linux host, Docker
 Engine + Compose v2, DNS name and trusted TLS certificate, NTP, **full-disk encryption** (PDPA G-3/G-4), off-host
 backup target, firewall allowing only 443 from the campus network, no inbound SSH from the Internet.
+Install the certificate with `scripts/tls-setup.sh` ([TLS_SETUP](TLS_SETUP.md): import, internal CA or
+Let's Encrypt; vendor-hosted instances also open port 80 for renewal).
 Run `scripts/pilot-host-preflight.sh` (H1–H14) and fix every FAIL.
 
 ## 3. Install

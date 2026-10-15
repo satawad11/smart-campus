@@ -12,6 +12,12 @@ Thumbs.db
 !.env.example
 *.pem
 *.key
+# scripts/tls-setup.sh working directories (CA, Let's Encrypt state, ACME webroot)
+infrastructure/pilot/ca/
+infrastructure/pilot/letsencrypt/
+infrastructure/pilot/acme/
+# AI node: trusted backend CA copied onto the node
+deploy/ai-node/certs/
 # License signing keys (tools/license-issuer) and issued customer licenses
 *.secret
 *.lic

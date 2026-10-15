@@ -32,6 +32,9 @@ services:
       - ai-node-data:/data
       # Local models directory mounted read-only for ONNX weights
       - ${MODELS_DIR:-./models}:/models:ro
+      # Trusted CA of a campus backend using an internal CA (scripts/tls-setup.sh
+      # internal-ca): put it at certs/backend-ca.crt and set SSL_CERT_FILE.
+      - ./certs:/certs:ro
     ports:
       # Local-only health inspection port; no inbound public port is opened
       - "127.0.0.1:${AI_NODE_PORT:-8001}:8001"

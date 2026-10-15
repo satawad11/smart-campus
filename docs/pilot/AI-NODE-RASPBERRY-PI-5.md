@@ -78,6 +78,8 @@ Transport security: a real site needs `https://`. For a lab backend that only
 serves plain HTTP on the LAN, `healthcheck.sh` reports `backend_transport` as
 FAIL unless `AI_NODE_ALLOW_INSECURE_BACKEND=true`. Set that only for a lab
 rehearsal with mock cameras, because the node token travels unencrypted.
+With HTTPS from a campus internal CA, copy its `ca.crt` to `certs/backend-ca.crt`
+and set `SSL_CERT_FILE=/certs/backend-ca.crt` ([TLS_SETUP](../commercial/TLS_SETUP.md)).
 
 ## 5. Accept
 
