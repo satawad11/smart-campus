@@ -28,6 +28,12 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(max(1, $perMinute))->by('api:'.($request->user()?->id ?: $request->ip()));
         });
 
+        // COM-03e: the unauthenticated enrollment-code exchange, per IP.
+        RateLimiter::for('ai-node-enroll', function (Request $request) {
+            return Limit::perMinute(max(1, (int) config('ai_node.enrollment.attempts_per_minute', 10)))
+                ->by('ai-node-enroll:'.$request->ip());
+        });
+
         RateLimiter::for('mfa', function (Request $request) {
             return Limit::perMinute(10)->by($request->user()?->id ?: $request->ip());
         });

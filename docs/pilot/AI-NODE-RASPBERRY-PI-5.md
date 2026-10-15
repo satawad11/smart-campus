@@ -54,7 +54,8 @@ curl -sS -o /dev/null -w '%{http_code}\n' <BACKEND_BASE_URL>/up
 
 As in the main guide (Step 2.3 and Section 5):
 
-1. Create the AI node and issue a credential (the token is shown once).
+1. Create the AI node, open its credentials tab and press **Create enrollment
+   code** (single use, valid 30 minutes).
 2. Make sure the node's `MODEL_CODE` / `MODEL_VERSION` exist in the model
    registry. For rehearsal, use a mock entry such as `mock-face` / `0.0.0`.
 3. Assign a camera: a real RTSP URL, or `mock://<name>` for a simulated stream.
@@ -67,7 +68,8 @@ scp dist/ai-node-kit-<version>-arm64.tar.gz <user>@<pi>:~
 tar -xzf ai-node-kit-<version>-arm64.tar.gz
 cd ai-node-kit-<version>-arm64
 ./install.sh
-nano .env      # BACKEND_BASE_URL, AI_NODE_UUID, AI_NODE_TOKEN, MODEL_CODE, MODEL_VERSION
+nano .env      # BACKEND_BASE_URL, MODEL_CODE, MODEL_VERSION
+./enroll.sh <ENROLLMENT-CODE>   # writes AI_NODE_UUID / AI_NODE_TOKEN into .env
 ./start.sh
 ./healthcheck.sh
 ```

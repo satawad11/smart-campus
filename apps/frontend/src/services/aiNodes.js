@@ -44,6 +44,12 @@ export default {
     return response.data
   },
 
+  // COM-03e one-time enrollment code (shown once)
+  async issueEnrollmentCode(uuid) {
+    const response = await api.post(`/ai-nodes/${uuid}/enrollment-codes`)
+    return response.data
+  },
+
   async revokeCredential(uuid, credentialUuid) {
     const response = await api.post(`/ai-nodes/${uuid}/credentials/${credentialUuid}/revoke`)
     return response.data

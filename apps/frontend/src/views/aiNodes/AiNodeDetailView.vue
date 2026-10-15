@@ -67,6 +67,28 @@ async function issueCredential() {
   }
 }
 
+// COM-03e: one-time enrollment code for ./enroll.sh on the node
+const enrollmentCode = ref(null)
+const enrollmentError = ref('')
+const enrollmentLoading = ref(false)
+
+async function issueEnrollmentCode() {
+  enrollmentLoading.value = true
+  enrollmentError.value = ''
+  enrollmentCode.value = null
+  try {
+    const res = await aiNodesService.issueEnrollmentCode(node.value.uuid)
+    enrollmentCode.value = res.data
+  } catch (err) {
+    enrollmentError.value =
+      err.code === 'AI_NODE_NOT_ACTIVE'
+        ? 'ต้องเปิดใช้งานหน่วยประมวลผลก่อนจึงจะสร้างรหัสลงทะเบียนได้'
+        : 'สร้างรหัสลงทะเบียนไม่สำเร็จ'
+  } finally {
+    enrollmentLoading.value = false
+  }
+}
+
 async function revokeCredential(credential) {
   try {
     await aiNodesService.revokeCredential(node.value.uuid, credential.uuid)
@@ -203,6 +225,40 @@ onMounted(() => {
         v-if="activeTab === 'credentials'"
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
       >
+        <div
+          v-if="canManage"
+          data-test="enrollment-code"
+          class="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 space-y-2 text-sm"
+        >
+          <p class="font-semibold text-blue-900 dark:text-blue-200">
+            ลงทะเบียนหน่วยประมวลผลด้วยรหัสใช้ครั้งเดียว
+          </p>
+          <p class="text-blue-800 dark:text-blue-300">
+            สร้างรหัสแล้วรันคำสั่ง <code>./enroll.sh รหัส</code> บนเครื่องหน่วยประมวลผล
+            ระบบจะบันทึกตัวตนและกุญแจลงในไฟล์ตั้งค่าให้เอง รหัสใช้ได้ครั้งเดียวและหมดอายุใน 30 นาที
+            การลงทะเบียนจะยกเลิกกุญแจเดิมของหน่วยนี้
+          </p>
+          <button
+            @click="issueEnrollmentCode"
+            :disabled="enrollmentLoading"
+            class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {{ enrollmentLoading ? 'กำลังสร้าง...' : 'สร้างรหัสลงทะเบียน' }}
+          </button>
+          <p v-if="enrollmentError" class="text-red-600">{{ enrollmentError }}</p>
+          <div v-if="enrollmentCode" class="space-y-1">
+            <p class="text-blue-900 dark:text-blue-200">รหัสลงทะเบียน (แสดงครั้งเดียว):</p>
+            <code
+              data-test="enrollment-code-value"
+              class="block text-2xl font-mono tracking-widest bg-white dark:bg-gray-900 p-3 rounded border text-center"
+              >{{ enrollmentCode.code }}</code
+            >
+            <p class="text-xs text-blue-700 dark:text-blue-300">
+              หมดอายุ {{ new Date(enrollmentCode.expires_at).toLocaleString('th-TH') }}
+            </p>
+          </div>
+        </div>
+
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Per-node bearer credentials used by the machine-to-machine /internal/v1 surface (CAM-004).
           A newly issued token is shown once and cannot be retrieved again.

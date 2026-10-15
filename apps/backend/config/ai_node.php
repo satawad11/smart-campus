@@ -29,4 +29,12 @@ return [
     'commands' => [
         'ttl_seconds' => env('AI_NODE_COMMAND_TTL_SECONDS', 300),
     ],
+
+    // COM-03e one-time enrollment codes: lifetime and per-IP attempt limit
+    // on the unauthenticated exchange endpoint (a 60-bit code plus this
+    // limit keeps guessing infeasible).
+    'enrollment' => [
+        'code_ttl_minutes' => env('AI_NODE_ENROLLMENT_CODE_TTL_MINUTES', 30),
+        'attempts_per_minute' => env('AI_NODE_ENROLLMENT_ATTEMPTS_PER_MINUTE', 10),
+    ],
 ];

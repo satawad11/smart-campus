@@ -74,6 +74,15 @@ The installer verifies `SHA256SUMS` and loads the bundled image
 (`docker load`). A checksum mismatch stops the install: re-copy the kit.
 
 ### Step 2.3: Node Registration & Credential Provisioning in Backend
+
+**Recommended (COM-03e):** create the node record (steps 1-4 below), then in its
+credentials tab press **Create enrollment code** and on the node run
+`./enroll.sh <CODE>` after setting `BACKEND_BASE_URL` in `.env`. The script stores
+`AI_NODE_UUID` and `AI_NODE_TOKEN` in `.env` itself; skip step 5 and the manual
+UUID/token lines of Step 2.4. The code works once, expires after 30 minutes, and
+the exchange endpoint is rate-limited per IP.
+
+Manual path:
 On the central backend administrative console:
 1. Log in as an administrator with `ai_node.manage` permission.
 2. Navigate to **Infrastructure -> AI Nodes**.

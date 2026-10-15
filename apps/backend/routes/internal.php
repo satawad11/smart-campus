@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Internal\AiNodeCommandInternalController;
 use App\Http\Controllers\Internal\AiNodeConfigInternalController;
+use App\Http\Controllers\Internal\AiNodeEnrollmentInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
@@ -20,6 +21,12 @@ use Illuminate\Support\Facades\Route;
 | Never mix with the human-session /api/v1 middleware stack.
 |
 */
+// COM-03e: a node without a credential exchanges a one-time enrollment code
+// (issued by an administrator) for its UUID and token. The code is the
+// secret, so this one route runs without ai_node.token and is throttled.
+Route::post('/ai-nodes/enroll', [AiNodeEnrollmentInternalController::class, 'enroll'])
+    ->middleware('throttle:ai-node-enroll');
+
 Route::middleware('ai_node.token')->group(function () {
     Route::post('/ai-nodes/register', [AiNodeInternalController::class, 'register']);
     Route::post('/ai-nodes/heartbeat', [AiNodeInternalController::class, 'heartbeat']);

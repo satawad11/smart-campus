@@ -16,6 +16,7 @@ use App\Http\Controllers\Camera\AiNodeCommandController;
 use App\Http\Controllers\Camera\AiNodeConfigRevisionController;
 use App\Http\Controllers\Camera\AiNodeController;
 use App\Http\Controllers\Camera\AiNodeCredentialController;
+use App\Http\Controllers\Camera\AiNodeEnrollmentCodeController;
 use App\Http\Controllers\Camera\CameraController;
 use App\Http\Controllers\Event\EventController;
 use App\Http\Controllers\Face\FaceDuplicateReviewController;
@@ -267,6 +268,8 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'index'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials', [AiNodeCredentialController::class, 'store'])->middleware('permission:ai_node.manage');
     Route::post('/ai-nodes/{aiNode}/credentials/{credential}/revoke', [AiNodeCredentialController::class, 'revoke'])->middleware('permission:ai_node.manage');
+    // COM-03e: one-time enrollment code (shown once; the node exchanges it at /internal/v1/ai-nodes/enroll)
+    Route::post('/ai-nodes/{aiNode}/enrollment-codes', [AiNodeEnrollmentCodeController::class, 'store'])->middleware('permission:ai_node.manage');
 
     // COM-03 allowlisted remote operations (RESYNC_CONFIG, RESTART_SERVICE)
     Route::get('/ai-nodes/{aiNode}/commands', [AiNodeCommandController::class, 'index'])->middleware('permission:ai_node.view');

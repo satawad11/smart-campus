@@ -31,6 +31,7 @@ ai-node-kit-<version>/
 ├── start.sh                 # Service startup script
 ├── stop.sh                  # Graceful shutdown script
 ├── restart.sh               # Graceful restart script
+├── enroll.sh                # One-time enrollment code -> UUID + token in .env (COM-03e)
 ├── update.sh                # Zero-downtime update script (preserves buffer)
 ├── healthcheck.sh           # Comprehensive 11-point diagnostic script
 └── README.md                # This operational guide
@@ -55,14 +56,16 @@ cd ai-node-kit-<version>
 ```
 This generates a local `.env` file with restrictive permissions (`chmod 600`).
 
-### Step 3: Configure Node Credentials
-Edit `.env` and set:
+### Step 3: Enroll the Node (one-time code)
+Set `BACKEND_BASE_URL` (and `MODEL_CODE` / `MODEL_VERSION`) in `.env`. In the web
+console open the AI node -> credentials tab -> **Create enrollment code**, then on the node:
 ```bash
-BACKEND_BASE_URL=https://campus-backend.example.edu
-AI_NODE_UUID=11111111-2222-3333-4444-555555555555
-AI_NODE_TOKEN=sc_node_xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+./enroll.sh ABCD-EFGH-JKMN
 ```
-*(Node credentials are created in the backend administrative interface under AI Nodes -> Manage Credentials).*
+`enroll.sh` exchanges the code (single use, valid 30 minutes) for the node UUID and
+token and writes both into `.env` (mode 600); the token is never displayed. Enrolling
+revokes any earlier token of that node. Manual alternative: issue a credential in the
+console and set `AI_NODE_UUID` / `AI_NODE_TOKEN` in `.env` yourself.
 
 ### Step 4: Start Services
 ```bash
