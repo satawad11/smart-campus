@@ -19,6 +19,7 @@ owner can override any item. Items that need physical resources, legal judgement
 | D10 | Licence enforcement mode | `warn` on the existing pilot; `enforce` on commercial installs | Documented | — |
 | D11 | **B5 production biometric models** | **Do not select a production model yet.** Run the pilot non-biometrically (monitoring, manual events, reports) until a model passes evaluation on consented data. Shortlist below | Recorded | Licence confirmation, evaluation with consented data (FACE-021 metrics), ACR if the embedding dimension changes |
 | D12 | PDPA documents | Draft privacy notice, DPA outline and DSR procedure | Drafts in `docs/legal/` (marked DRAFT) | Review and adoption by qualified Thai PDPA counsel and the institution (controller) |
+| D13 | Sales / hosting model (ACR-COM-01) | **Both**: customer on-premises and vendor-hosted (cloud), each a dedicated single-tenant instance under Option B (owner, explicit chat instruction 2026-10-15, not delegated) | ACR hosting section added | Vendor-hosted needs DPA legal review, internet-facing security baseline and HTTPS (task 4) before the first hosted customer |
 
 ## B5 model shortlist (facts checked 2026-10-14 in the official repositories)
 

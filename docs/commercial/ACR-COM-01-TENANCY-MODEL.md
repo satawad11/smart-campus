@@ -2,6 +2,7 @@
 
 **Status:** DECIDED — **Option B** (owner delegation, 2026-10-14; see docs/decisions/OWNER-DECISIONS-2026-10-14.md D2) · **Raised:** 2026-10-13 · **Raised by:** AI coding agent
 The central management plane is a separate later project; the campus instance stays single-tenant.
+**Hosting:** DECIDED — **both** customer on-premises and vendor-hosted (cloud) instances (owner, explicit chat instruction 2026-10-15; see D13).
 
 ```text
 ARCHITECTURE_CHANGE_REQUEST
@@ -74,3 +75,23 @@ diagnostics (COM-05), installer/updater (COM-04), security/PDPA and packaging do
 ## What stays on hold
 Organization/tenant tables, tenant context resolution, cross-tenant tests and super-admin cross-tenant access
 (COM-01), the customer portal (COM-06), and central fleet aggregation.
+
+## Hosting decision (2026-10-15)
+
+The owner asked for both sales models. Under Option B, both use **the same single-tenant campus build**;
+only where it runs and who operates it differ. No shared multi-tenant database is introduced.
+
+| | On-premises | Vendor-hosted (cloud) |
+|---|---|---|
+| Where the instance runs | Institution server room | One dedicated VM per institution, in a Thailand region where available |
+| Who operates it | Institution IT (vendor support) | Vendor |
+| AI nodes | On campus LAN | On campus, outbound HTTPS to the instance over the Internet |
+| Biometric / student data | Never leave the institution | Stored by the vendor as **data processor** (PDPA s.40): DPA required, encryption at rest, access logging, data-location statement |
+| TLS | Institution certificate or internal CA | Public certificate per instance domain |
+| Backups | Institution storage (encrypted archives) | Vendor storage in another zone (encrypted archives) |
+| Licence | Offline signed file | Same signed file; vendor issues and installs it |
+
+Consequences: vendor-hosted instances need a security baseline for internet-facing hosts (firewall, TLS only,
+admin MFA on, patching), a legal review of the DPA and the cross-border/data-location wording, and per-customer
+cost in pricing. A shared multi-tenant SaaS (Option A) remains rejected: it would concentrate every customer's
+biometric data in one database.
