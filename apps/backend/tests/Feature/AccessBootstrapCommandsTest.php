@@ -113,6 +113,55 @@ class AccessBootstrapCommandsTest extends TestCase
         $this->assertSame(0, UserRole::count());
     }
 
+    public function test_reset_password_recovers_a_locked_out_admin_from_the_shell(): void
+    {
+        Artisan::call('access:bootstrap-admin', ['username' => 'pilot.admin']);
+        $admin = User::where('username', 'pilot.admin')->firstOrFail();
+        $admin->forceFill([
+            'must_change_password' => false,
+            'failed_login_count' => 5,
+            'locked_until' => now()->addHour(),
+        ])->save();
+        $oldHash = $admin->fresh()->password;
+
+        $this->assertSame(0, Artisan::call('access:reset-password', ['username' => 'pilot.admin', '--yes' => true]));
+        $lines = array_values(array_filter(array_map('trim', explode("\n", Artisan::output()))));
+        $password = end($lines);
+
+        $admin->refresh();
+        $this->assertNotSame($oldHash, $admin->password);
+        $this->assertTrue(Hash::check($password, $admin->password));
+        $this->assertTrue($admin->must_change_password);
+        $this->assertSame(0, $admin->failed_login_count);
+        $this->assertNull($admin->locked_until);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'USER_PASSWORD_RESET', 'entity_id' => $admin->uuid]);
+        foreach (AuditLog::all() as $log) {
+            $this->assertStringNotContainsString($password, json_encode($log->getAttributes()));
+        }
+
+        // The one-time password logs in (and the account must change it next)
+        $this->postJson('/api/v1/auth/login', ['username' => 'pilot.admin', 'password' => $password])
+            ->assertOk();
+    }
+
+    public function test_reset_password_refuses_unknown_or_inactive_users_and_needs_confirmation(): void
+    {
+        $this->assertSame(1, Artisan::call('access:reset-password', ['username' => 'nobody', '--yes' => true]));
+
+        $inactive = User::factory()->create(['username' => 'gone', 'status' => UserStatus::DISABLED]);
+        $hash = $inactive->password;
+        $this->assertSame(1, Artisan::call('access:reset-password', ['username' => 'gone', '--yes' => true]));
+        $this->assertSame($hash, $inactive->fresh()->password);
+
+        // Without --yes a non-interactive run is cancelled, not applied
+        $active = User::factory()->create(['username' => 'active.user']);
+        $hash = $active->password;
+        $this->artisan('access:reset-password', ['username' => 'active.user'])
+            ->expectsConfirmation('Reset the password of active.user and sign out all of its sessions?', 'no')
+            ->assertExitCode(1);
+        $this->assertSame($hash, $active->fresh()->password);
+    }
+
     public function test_login_is_throttled_per_ip(): void
     {
         config(['auth_security.login_throttle_per_ip' => 3, 'auth_security.login_throttle_per_account_ip' => 100]);

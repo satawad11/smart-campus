@@ -7,6 +7,7 @@ For day-to-day operator tasks see [PILOT-004 operator onboarding](../pilot/PILOT
 |---|---|
 | First administrator | `php artisan access:bootstrap-admin <username>` (once; one-time password, forced change) |
 | Create users | UI → Users → New (forced password change at first login) |
+| Forgotten password / locked-out admin | Another admin: UI → Users → Reset password. No admin can log in: on the server `php artisan access:reset-password <username>` (one-time password printed once, forced change, all sessions revoked, lockout cleared, audited) |
 | Assign a role with scope | `php artisan access:assign-role <username> <ROLE>` (GLOBAL), add `--site=<code>` (SITE) or `--site=<code> --zone=<code>` (ZONE); `--until=`, `--revoke` (CLI only, A-01) |
 | Enrol MFA (own account) | header link **ตั้งค่า MFA** → Account security; strongly recommended. To make it **required** for SUPER_ADMIN/SYSTEM_ADMIN: System Settings → Security → `security.admin_mfa_enforced` = on (off by default). Enrol your own MFA first |
 | Sites and gates | `php artisan locations:provision <SITE_CODE> "<Site name>" --zone="GATE-1:Main Gate:GATE"` (idempotent) |
