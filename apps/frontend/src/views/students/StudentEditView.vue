@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { studentsService } from '@/services/students'
 import AcademicStatusBadge from '@/components/students/AcademicStatusBadge.vue'
 import EducationLevelBadge from '@/components/students/EducationLevelBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -50,7 +51,7 @@ async function fetchStudent() {
     form.graduation_year = data.graduation_year || ''
   } catch (err) {
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'ไม่สามารถโหลดข้อมูลนักเรียนได้'
+      errorTranslations[err.code] || apiErrorText(err, 'ไม่สามารถโหลดข้อมูลนักเรียนได้')
   } finally {
     loadingStudent.value = false
   }
@@ -106,7 +107,7 @@ async function handleSubmit() {
     if (err.fields) {
       fieldErrors.value = err.fields
     }
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการอัปเดตข้อมูลนักเรียน'
+    errorMessage.value = apiErrorText(err, 'เกิดข้อผิดพลาดในการอัปเดตข้อมูลนักเรียน')
   } finally {
     loading.value = false
   }

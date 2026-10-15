@@ -49,10 +49,10 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Face Biometric Enrollment')
+    expect(wrapper.text()).toContain('ลงทะเบียนใบหน้า')
     expect(wrapper.find('input[type="text"]').exists()).toBe(true)
     expect(wrapper.find('input[type="file"]').exists()).toBe(true)
-    expect(wrapper.text()).toContain('Submit Biometric Enrollment')
+    expect(wrapper.text()).toContain('บุคคลและภาพตัวอย่าง')
   })
 
   it('renders FaceProfileListView with status filter and table headers', async () => {
@@ -82,7 +82,7 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Face Biometric Profiles')
+    expect(wrapper.text()).toContain('ข้อมูลใบหน้า')
     expect(wrapper.find('select').exists()).toBe(true)
   })
 
@@ -96,7 +96,7 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
       },
     })
 
-    expect(wrapper.text()).toContain('Recognition Diagnostic Test')
+    expect(wrapper.text()).toContain('ทดสอบการจดจำใบหน้า')
     expect(wrapper.find('input[type="file"]').exists()).toBe(true)
     expect(wrapper.find('input[type="number"]').exists()).toBe(true)
   })

@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const activeTab = ref('generator') // 'generator' | 'exports'
 
@@ -54,7 +55,7 @@ async function generateReport() {
     const res = await api.get(endpoint, { params })
     reportData.value = res.data.data
   } catch (err) {
-    reportError.value = err.message || 'ไม่สามารถสร้างรายงานได้'
+    reportError.value = apiErrorText(err, 'ไม่สามารถสร้างรายงานได้')
   } finally {
     reportLoading.value = false
   }
@@ -84,7 +85,7 @@ async function triggerExport(format) {
     exportSuccess.value = `ส่งออกรายงาน (${format}) สำเร็จ! กำลังประมวลผลในระบบ`
     fetchExports()
   } catch (err) {
-    reportError.value = err.message || 'ไม่สามารถส่งออกรายงานได้'
+    reportError.value = apiErrorText(err, 'ไม่สามารถส่งออกรายงานได้')
   } finally {
     exporting.value = false
   }
@@ -154,7 +155,7 @@ onMounted(() => {
               : 'text-gray-600 hover:text-gray-900'
           "
         >
-          ประวัติการส่งออก (Exports)
+          ประวัติการส่งออก
         </button>
       </div>
     </div>
@@ -171,15 +172,15 @@ onMounted(() => {
               v-model="reportType"
               class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
             >
-              <option value="daily">รายงานประจำวัน (Daily)</option>
-              <option value="weekly">รายงานประจำสัปดาห์ (Weekly)</option>
-              <option value="monthly">รายงานประจำเดือน (Monthly)</option>
-              <option value="yearly">รายงานประจำปี (Yearly)</option>
-              <option value="custom">รายงานกำหนดช่วงเวลา (Custom)</option>
-              <option value="review">รายงานคิวตรวจสอบ (Review)</option>
-              <option value="unknown">รายงานบุคคลไม่ทราบตัวตน (Unknown)</option>
-              <option value="camera">รายงานสถิติแยกตามกล้อง (Camera)</option>
-              <option value="ai-node">รายงานสถานะ AI Node</option>
+              <option value="daily">รายงานประจำวัน</option>
+              <option value="weekly">รายงานประจำสัปดาห์</option>
+              <option value="monthly">รายงานประจำเดือน</option>
+              <option value="yearly">รายงานประจำปี</option>
+              <option value="custom">รายงานกำหนดช่วงเวลา</option>
+              <option value="review">รายงานคิวตรวจสอบ</option>
+              <option value="unknown">รายงานบุคคลไม่ทราบตัวตน</option>
+              <option value="camera">รายงานสถิติแยกตามกล้อง</option>
+              <option value="ai-node">รายงานสถานะหน่วยประมวลผล</option>
             </select>
           </div>
 
@@ -308,27 +309,25 @@ onMounted(() => {
             </div>
           </div>
           <div class="bg-white p-3 rounded-lg border border-gray-200">
-            <span class="text-[10px] text-green-600 uppercase font-semibold">อนุญาต (ALLOW)</span>
+            <span class="text-[10px] text-green-600 uppercase font-semibold">อนุญาต</span>
             <div class="text-xl font-bold text-green-700 mt-1">
               {{ reportData.totals.allow.toLocaleString() }}
             </div>
           </div>
           <div class="bg-white p-3 rounded-lg border border-gray-200">
-            <span class="text-[10px] text-red-600 uppercase font-semibold">ปฏิเสธ (DENY)</span>
+            <span class="text-[10px] text-red-600 uppercase font-semibold">ปฏิเสธ</span>
             <div class="text-xl font-bold text-red-700 mt-1">
               {{ reportData.totals.deny.toLocaleString() }}
             </div>
           </div>
           <div class="bg-white p-3 rounded-lg border border-gray-200">
-            <span class="text-[10px] text-amber-600 uppercase font-semibold">ตรวจสอบ (REVIEW)</span>
+            <span class="text-[10px] text-amber-600 uppercase font-semibold">รอตรวจสอบ</span>
             <div class="text-xl font-bold text-amber-700 mt-1">
               {{ reportData.totals.review.toLocaleString() }}
             </div>
           </div>
           <div class="bg-white p-3 rounded-lg border border-gray-200">
-            <span class="text-[10px] text-gray-600 uppercase font-semibold"
-              >ไม่รู้จัก (UNKNOWN)</span
-            >
+            <span class="text-[10px] text-gray-600 uppercase font-semibold">ไม่ทราบตัวตน</span>
             <div class="text-xl font-bold text-gray-700 mt-1">
               {{ reportData.totals.unknown.toLocaleString() }}
             </div>
@@ -413,7 +412,7 @@ onMounted(() => {
                           : 'bg-gray-100 text-gray-800'
                       "
                     >
-                      {{ c.status }}
+                      {{ statusLabel(c.status) }}
                     </span>
                   </td>
                   <td class="p-2 text-right font-medium">
@@ -433,16 +432,16 @@ onMounted(() => {
 
         <!-- AI Nodes (for ai-node report) -->
         <div v-if="reportData.nodes" class="bg-white p-5 rounded-lg border border-gray-200">
-          <h3 class="text-sm font-bold text-gray-900 mb-3">สถานะ AI Node ทั้งหมด</h3>
+          <h3 class="text-sm font-bold text-gray-900 mb-3">สถานะหน่วยประมวลผลทั้งหมด</h3>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
               <thead class="bg-gray-50 text-left font-semibold text-gray-500 uppercase">
                 <tr>
-                  <th class="p-2">Node Code</th>
+                  <th class="p-2">รหัสหน่วย</th>
                   <th class="p-2">ชื่อ</th>
                   <th class="p-2">ไซต์</th>
-                  <th class="p-2">IP Address</th>
-                  <th class="p-2">GPU Model</th>
+                  <th class="p-2">ที่อยู่ไอพี</th>
+                  <th class="p-2">รุ่น GPU</th>
                   <th class="p-2">กล้องที่เชื่อม</th>
                   <th class="p-2">สถานะ</th>
                 </tr>
@@ -464,7 +463,7 @@ onMounted(() => {
                           : 'bg-gray-100 text-gray-800'
                       "
                     >
-                      {{ n.status }}
+                      {{ statusLabel(n.status) }}
                     </span>
                   </td>
                 </tr>
@@ -523,7 +522,7 @@ onMounted(() => {
                       'bg-gray-100 text-gray-600': item.status === 'EXPIRED',
                     }"
                   >
-                    {{ item.status }}
+                    {{ statusLabel(item.status) }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-xs text-gray-500 font-mono">

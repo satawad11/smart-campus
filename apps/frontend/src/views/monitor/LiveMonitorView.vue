@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import camerasService from '@/services/cameras'
 import { getEcho, disconnectEcho } from '@/services/echo'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -49,7 +50,7 @@ async function loadCameras() {
       selectedSiteUuid.value = sites.value[0].uuid
     }
   } catch (err) {
-    errorMessage.value = err.message || 'โหลดรายชื่อกล้องไม่สำเร็จ'
+    errorMessage.value = apiErrorText(err, 'โหลดรายชื่อกล้องไม่สำเร็จ')
   } finally {
     camerasLoading.value = false
   }
@@ -107,7 +108,7 @@ async function loadRecentEvents(siteUuid) {
       _receivedAt: Date.now(),
     }))
   } catch (err) {
-    errorMessage.value = err.message || 'โหลดเหตุการณ์ล่าสุดไม่สำเร็จ'
+    errorMessage.value = apiErrorText(err, 'โหลดเหตุการณ์ล่าสุดไม่สำเร็จ')
   }
 }
 

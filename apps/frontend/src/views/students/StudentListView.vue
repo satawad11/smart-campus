@@ -5,6 +5,7 @@ import { studentsService } from '@/services/students'
 import { academicsService } from '@/services/academics'
 import AcademicStatusBadge from '@/components/students/AcademicStatusBadge.vue'
 import EducationLevelBadge from '@/components/students/EducationLevelBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const authStore = useAuthStore()
 
@@ -148,7 +149,7 @@ async function fetchStudents() {
     }
   } catch (err) {
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'ไม่สามารถโหลดข้อมูลนักเรียนได้'
+      errorTranslations[err.code] || apiErrorText(err, 'ไม่สามารถโหลดข้อมูลนักเรียนได้')
   } finally {
     loading.value = false
   }

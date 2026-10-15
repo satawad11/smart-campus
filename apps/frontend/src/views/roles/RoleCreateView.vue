@@ -2,6 +2,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { rolesService } from '@/services/roles'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 
@@ -61,7 +62,7 @@ async function handleSubmit() {
     if (err.fields) {
       fieldErrors.value = err.fields
     }
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการสร้างบทบาท กรุณาลองใหม่อีกครั้ง'
+    errorMessage.value = apiErrorText(err, 'เกิดข้อผิดพลาดในการสร้างบทบาท กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
   }

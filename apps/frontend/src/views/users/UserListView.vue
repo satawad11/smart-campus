@@ -5,6 +5,7 @@ import { usersService } from '@/services/users'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
 import ResetPasswordModal from '@/components/users/ResetPasswordModal.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const authStore = useAuthStore()
 
@@ -84,7 +85,7 @@ async function fetchUsers() {
     }
   } catch (err) {
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้'
+      errorTranslations[err.code] || apiErrorText(err, 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้')
   } finally {
     loading.value = false
   }
@@ -170,7 +171,7 @@ async function executeStatusChange() {
   } catch (err) {
     confirmModal.show = false
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้'
+      errorTranslations[err.code] || apiErrorText(err, 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะผู้ใช้')
   } finally {
     confirmModal.loading = false
   }

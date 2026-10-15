@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,7 +21,7 @@ async function fetchTimeline() {
     person.value = res.data.data?.person || null
     events.value = res.data.data?.events || []
   } catch (err) {
-    error.value = err.message || 'ไม่สามารถโหลดข้อมูลไทม์ไลน์บุคคลได้'
+    error.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลไทม์ไลน์บุคคลได้')
   } finally {
     loading.value = false
   }

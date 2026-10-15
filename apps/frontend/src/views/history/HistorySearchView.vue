@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 
@@ -40,7 +41,7 @@ async function fetchEvents(page = 1) {
     events.value = res.data.data || []
     meta.value = res.data.meta || { current_page: 1, last_page: 1, total: events.value.length }
   } catch (err) {
-    error.value = err.message || 'ไม่สามารถค้นหาข้อมูลเหตุการณ์ได้'
+    error.value = apiErrorText(err, 'ไม่สามารถค้นหาข้อมูลเหตุการณ์ได้')
   } finally {
     loading.value = false
   }

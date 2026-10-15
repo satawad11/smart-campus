@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { usersService } from '@/services/users'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   show: {
@@ -66,7 +67,7 @@ async function handleSubmit() {
     if (err.fields) {
       fieldErrors.value = err.fields
     }
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน กรุณาลองใหม่อีกครั้ง'
+    errorMessage.value = apiErrorText(err, 'เกิดข้อผิดพลาดในการรีเซ็ตรหัสผ่าน กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
   }

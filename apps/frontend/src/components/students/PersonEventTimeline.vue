@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   personUuid: {
@@ -57,7 +58,7 @@ async function fetchTimeline(page = 1) {
       }
     }
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดประวัติเหตุการณ์การเข้าออกได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดประวัติเหตุการณ์การเข้าออกได้')
   } finally {
     loading.value = false
   }

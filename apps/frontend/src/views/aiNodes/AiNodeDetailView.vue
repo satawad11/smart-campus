@@ -4,6 +4,14 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import aiNodesService from '@/services/aiNodes'
 import NodeOperationsPanel from '@/components/aiNodes/NodeOperationsPanel.vue'
+import { apiErrorText, statusLabel } from '@/constants/labels'
+
+const tabLabels = {
+  overview: 'ภาพรวม',
+  credentials: 'กุญแจเชื่อมต่อ',
+  health: 'สุขภาพระบบ',
+  operations: 'การควบคุม',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -34,7 +42,7 @@ async function fetchNode() {
     const res = await aiNodesService.getNode(route.params.uuid)
     node.value = res.data
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load AI node.'
+    errorMessage.value = apiErrorText(err, 'โหลดข้อมูลหน่วยประมวลผลไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -61,7 +69,7 @@ async function issueCredential() {
     issuedToken.value = res.data.token
     await fetchCredentials()
   } catch (err) {
-    issueError.value = err.message || 'Failed to issue credential.'
+    issueError.value = apiErrorText(err, 'ออกกุญแจเชื่อมต่อไม่สำเร็จ')
   } finally {
     issueLoading.value = false
   }
@@ -94,7 +102,7 @@ async function revokeCredential(credential) {
     await aiNodesService.revokeCredential(node.value.uuid, credential.uuid)
     await fetchCredentials()
   } catch (err) {
-    issueError.value = err.message || 'Failed to revoke credential.'
+    issueError.value = apiErrorText(err, 'เพิกถอนกุญแจเชื่อมต่อไม่สำเร็จ')
   }
 }
 
@@ -141,7 +149,7 @@ onMounted(() => {
       @click="router.push({ name: 'ai-nodes.index' })"
       class="text-sm text-blue-600 hover:underline"
     >
-      &larr; Back to AI Nodes
+      &larr; กลับไปหน้าหน่วยประมวลผล
     </button>
 
     <div
@@ -151,7 +159,9 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading AI node...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-500">
+      กำลังโหลดข้อมูลหน่วยประมวลผล...
+    </div>
 
     <template v-else-if="node">
       <div class="border-b pb-4">
@@ -171,7 +181,7 @@ onMounted(() => {
               : 'text-gray-500 hover:text-gray-700'
           "
         >
-          {{ tab }}
+          {{ tabLabels[tab] }}
         </button>
       </div>
 
@@ -181,16 +191,18 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
-          <div><span class="text-gray-500">Status:</span> {{ node.status }}</div>
-          <div><span class="text-gray-500">Site:</span> {{ node.site?.name || 'Unassigned' }}</div>
-          <div><span class="text-gray-500">Hostname:</span> {{ node.hostname || '-' }}</div>
-          <div><span class="text-gray-500">IP Address:</span> {{ node.ip_address || '-' }}</div>
-          <div><span class="text-gray-500">API URL:</span> {{ node.api_url || '-' }}</div>
+          <div><span class="text-gray-500">สถานะ:</span> {{ statusLabel(node.status) }}</div>
           <div>
-            <span class="text-gray-500">Software Version:</span> {{ node.software_version || '-' }}
+            <span class="text-gray-500">พื้นที่:</span> {{ node.site?.name || 'ยังไม่กำหนด' }}
+          </div>
+          <div><span class="text-gray-500">ชื่อเครื่อง:</span> {{ node.hostname || '-' }}</div>
+          <div><span class="text-gray-500">ที่อยู่ไอพี:</span> {{ node.ip_address || '-' }}</div>
+          <div><span class="text-gray-500">ที่อยู่ API:</span> {{ node.api_url || '-' }}</div>
+          <div>
+            <span class="text-gray-500">รุ่นซอฟต์แวร์:</span> {{ node.software_version || '-' }}
           </div>
           <div data-test="node-model">
-            <span class="text-gray-500">Model:</span>
+            <span class="text-gray-500">โมเดล:</span>
             {{ node.model_code ? `${node.model_code} ${node.model_version}` : '-' }}
             <span
               v-if="node.model_compatible === false"
@@ -204,18 +216,22 @@ onMounted(() => {
             >
           </div>
           <div>
-            <span class="text-gray-500">Hardware Type:</span> {{ node.hardware_type || '-' }}
+            <span class="text-gray-500">ประเภทฮาร์ดแวร์:</span> {{ node.hardware_type || '-' }}
           </div>
-          <div><span class="text-gray-500">CPU Model:</span> {{ node.cpu_model || '-' }}</div>
-          <div><span class="text-gray-500">GPU:</span> {{ node.gpu_name || '-' }}</div>
+          <div><span class="text-gray-500">รุ่นซีพียู:</span> {{ node.cpu_model || '-' }}</div>
+          <div><span class="text-gray-500">การ์ดจอ (GPU):</span> {{ node.gpu_name || '-' }}</div>
           <div>
-            <span class="text-gray-500">GPU Memory:</span>
+            <span class="text-gray-500">หน่วยความจำ GPU:</span>
             {{ node.gpu_memory_mb ? `${node.gpu_memory_mb} MB` : '-' }}
           </div>
-          <div><span class="text-gray-500">Max Cameras:</span> {{ node.max_camera ?? '-' }}</div>
           <div>
-            <span class="text-gray-500">Last Seen:</span>
-            {{ node.last_seen_at ? new Date(node.last_seen_at).toLocaleString() : 'Never' }}
+            <span class="text-gray-500">จำนวนกล้องสูงสุด:</span> {{ node.max_camera ?? '-' }}
+          </div>
+          <div>
+            <span class="text-gray-500">ติดต่อล่าสุด:</span>
+            {{
+              node.last_seen_at ? new Date(node.last_seen_at).toLocaleString('th-TH') : 'ยังไม่เคย'
+            }}
           </div>
         </div>
       </div>
@@ -260,8 +276,8 @@ onMounted(() => {
         </div>
 
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Per-node bearer credentials used by the machine-to-machine /internal/v1 surface (CAM-004).
-          A newly issued token is shown once and cannot be retrieved again.
+          กุญแจเชื่อมต่อเฉพาะของหน่วยประมวลผลนี้ ใช้ยืนยันตัวตนเมื่อหน่วยประมวลผลติดต่อเซิร์ฟเวอร์
+          กุญแจใหม่จะแสดงเพียงครั้งเดียวและเรียกดูซ้ำไม่ได้
         </p>
 
         <button
@@ -270,7 +286,7 @@ onMounted(() => {
           :disabled="issueLoading"
           class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {{ issueLoading ? 'Issuing...' : 'Issue New Credential' }}
+          {{ issueLoading ? 'กำลังออกกุญแจ...' : 'ออกกุญแจเชื่อมต่อใหม่' }}
         </button>
 
         <p v-if="issueError" class="text-sm text-red-600">{{ issueError }}</p>
@@ -279,12 +295,12 @@ onMounted(() => {
           v-if="issuedToken"
           class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm space-y-1"
         >
-          <p class="font-semibold text-yellow-800">New credential token (shown once):</p>
+          <p class="font-semibold text-yellow-800">กุญแจเชื่อมต่อใหม่ (แสดงครั้งเดียว):</p>
           <code class="block break-all bg-white p-2 rounded border text-xs">{{ issuedToken }}</code>
         </div>
 
         <div v-if="credentialsLoading" class="text-center py-6 text-gray-500">
-          Loading credentials...
+          กำลังโหลดกุญแจเชื่อมต่อ...
         </div>
         <table
           v-else-if="credentials.length > 0"
@@ -292,11 +308,11 @@ onMounted(() => {
         >
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Status</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Issued</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Last Used</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Revoked</th>
-              <th class="px-4 py-2 text-right font-medium text-gray-500 uppercase">Actions</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">ออกเมื่อ</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">ใช้ล่าสุด</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">เพิกถอนเมื่อ</th>
+              <th class="px-4 py-2 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -305,17 +321,21 @@ onMounted(() => {
                 <span
                   class="px-2 py-0.5 rounded-full text-xs font-semibold"
                   :class="credentialBadgeClass(cred.status)"
-                  >{{ cred.status }}</span
+                  >{{ statusLabel(cred.status) }}</span
                 >
               </td>
               <td class="px-4 py-2 text-xs text-gray-500">
-                {{ cred.created_at ? new Date(cred.created_at).toLocaleString() : '-' }}
+                {{ cred.created_at ? new Date(cred.created_at).toLocaleString('th-TH') : '-' }}
               </td>
               <td class="px-4 py-2 text-xs text-gray-500">
-                {{ cred.last_used_at ? new Date(cred.last_used_at).toLocaleString() : 'Never' }}
+                {{
+                  cred.last_used_at
+                    ? new Date(cred.last_used_at).toLocaleString('th-TH')
+                    : 'ยังไม่เคย'
+                }}
               </td>
               <td class="px-4 py-2 text-xs text-gray-500">
-                {{ cred.revoked_at ? new Date(cred.revoked_at).toLocaleString() : '-' }}
+                {{ cred.revoked_at ? new Date(cred.revoked_at).toLocaleString('th-TH') : '-' }}
               </td>
               <td class="px-4 py-2 text-right">
                 <button
@@ -323,13 +343,13 @@ onMounted(() => {
                   @click="revokeCredential(cred)"
                   class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded text-xs"
                 >
-                  Revoke
+                  เพิกถอน
                 </button>
               </td>
             </tr>
           </tbody>
         </table>
-        <p v-else class="text-center py-6 text-gray-400 text-sm">No credentials issued yet.</p>
+        <p v-else class="text-center py-6 text-gray-400 text-sm">ยังไม่มีกุญแจเชื่อมต่อ</p>
       </div>
 
       <!-- Health -->
@@ -338,20 +358,20 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         <div v-if="healthLoading" class="text-center py-8 text-gray-500">
-          Loading health history...
+          กำลังโหลดประวัติสุขภาพระบบ...
         </div>
         <div v-else-if="healthLogs.length === 0" class="text-center py-8 text-gray-400">
-          No health telemetry recorded yet.
+          ยังไม่มีข้อมูลสุขภาพระบบ
         </div>
         <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Status</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">CPU</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">RAM</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">GPU</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Queue Depth</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Recorded At</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">งานค้างในคิว</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">บันทึกเมื่อ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -360,7 +380,7 @@ onMounted(() => {
                 <span
                   class="px-2 py-0.5 rounded-full text-xs font-semibold"
                   :class="healthBadgeClass(log.status)"
-                  >{{ log.status }}</span
+                  >{{ statusLabel(log.status) }}</span
                 >
               </td>
               <td class="px-4 py-2">{{ log.cpu_usage != null ? `${log.cpu_usage}%` : '-' }}</td>
@@ -368,7 +388,7 @@ onMounted(() => {
               <td class="px-4 py-2">{{ log.gpu_usage != null ? `${log.gpu_usage}%` : '-' }}</td>
               <td class="px-4 py-2">{{ log.queue_depth ?? '-' }}</td>
               <td class="px-4 py-2 text-xs text-gray-500">
-                {{ log.recorded_at ? new Date(log.recorded_at).toLocaleString() : '-' }}
+                {{ log.recorded_at ? new Date(log.recorded_at).toLocaleString('th-TH') : '-' }}
               </td>
             </tr>
           </tbody>

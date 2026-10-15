@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { studentImportService } from '@/services/students'
+import { apiErrorText } from '@/constants/labels'
 
 const emit = defineEmits(['uploaded'])
 
@@ -119,8 +120,10 @@ async function handleUpload() {
     if (err.errors) {
       validationErrors.value = err.errors
     }
-    errorMessage.value =
-      err.message || 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ กรุณาตรวจสอบความถูกต้องของไฟล์'
+    errorMessage.value = apiErrorText(
+      err,
+      'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ กรุณาตรวจสอบความถูกต้องของไฟล์',
+    )
   } finally {
     loading.value = false
   }

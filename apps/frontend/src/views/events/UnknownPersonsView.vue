@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -48,7 +49,7 @@ async function fetchUnknownPersons() {
       pagination.total = res.meta.pagination.total
     }
   } catch (err) {
-    errorMessage.value = err.message || 'โหลดรายการบุคคลไม่ทราบตัวตนไม่สำเร็จ'
+    errorMessage.value = apiErrorText(err, 'โหลดรายการบุคคลไม่ทราบตัวตนไม่สำเร็จ')
   } finally {
     loading.value = false
   }

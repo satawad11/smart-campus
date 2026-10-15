@@ -8,6 +8,7 @@ import EducationLevelBadge from '@/components/students/EducationLevelBadge.vue'
 import ChangeStatusModal from '@/components/students/ChangeStatusModal.vue'
 import StatusHistoryTimeline from '@/components/students/StatusHistoryTimeline.vue'
 import PersonEventTimeline from '@/components/students/PersonEventTimeline.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -35,7 +36,7 @@ async function fetchStudentDetail() {
     student.value = data
   } catch (err) {
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'ไม่สามารถโหลดข้อมูลนักเรียนได้'
+      errorTranslations[err.code] || apiErrorText(err, 'ไม่สามารถโหลดข้อมูลนักเรียนได้')
   } finally {
     loading.value = false
   }

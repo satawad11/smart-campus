@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -58,7 +59,7 @@ async function handleChangePassword() {
     }
     const mapped = errorMap[err.code]
     errorMessage.value =
-      mapped || err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน กรุณาลองใหม่อีกครั้ง'
+      mapped || apiErrorText(err, 'เกิดข้อผิดพลาดในการเปลี่ยนรหัสผ่าน กรุณาลองใหม่อีกครั้ง')
   }
 }
 

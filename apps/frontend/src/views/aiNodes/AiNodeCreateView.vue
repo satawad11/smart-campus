@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import aiNodesService from '@/services/aiNodes'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 
@@ -46,7 +47,7 @@ async function submit() {
     const res = await aiNodesService.createNode(payload)
     router.push({ name: 'ai-nodes.show', params: { uuid: res.data.uuid } })
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to register AI node.'
+    errorMessage.value = apiErrorText(err, 'เพิ่มหน่วยประมวลผลไม่สำเร็จ')
     fieldErrors.value = err.fields || {}
   } finally {
     loading.value = false
@@ -57,10 +58,10 @@ async function submit() {
 <template>
   <div class="ai-node-create-view max-w-2xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Register AI Node</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">เพิ่มหน่วยประมวลผล</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        The physical node confirms itself later via check-in/heartbeat, using a credential you issue
-        from its detail page (CAM-004).
+        เครื่องหน่วยประมวลผลจะยืนยันตัวตนภายหลังด้วยรหัสลงทะเบียนหรือกุญแจเชื่อมต่อ
+        ที่ออกจากหน้ารายละเอียดของหน่วยนี้
       </p>
     </div>
 
@@ -76,12 +77,12 @@ async function submit() {
     >
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >Node Code *</label
+          >รหัสหน่วย *</label
         >
         <input
           v-model="form.node_code"
           type="text"
-          placeholder="e.g. NODE-01"
+          placeholder="เช่น NODE-01"
           class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
         <p v-if="fieldErrors.node_code" class="text-xs text-red-600 mt-1">
@@ -90,24 +91,24 @@ async function submit() {
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >Name *</label
+          >ชื่อ *</label
         >
         <input
           v-model="form.name"
           type="text"
-          placeholder="e.g. Edge Box - Main Gate"
+          placeholder="เช่น เครื่องประมวลผลประตูหน้า"
           class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
         <p v-if="fieldErrors.name" class="text-xs text-red-600 mt-1">{{ fieldErrors.name[0] }}</p>
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >Site UUID</label
+          >รหัสพื้นที่ (UUID)</label
         >
         <input
           v-model="form.site_uuid"
           type="text"
-          placeholder="Site UUID (optional)"
+          placeholder="รหัสพื้นที่ (ไม่บังคับ)"
           class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
         />
         <p v-if="fieldErrors.site_uuid" class="text-xs text-red-600 mt-1">
@@ -117,7 +118,7 @@ async function submit() {
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Hostname</label
+            >ชื่อเครื่อง</label
           >
           <input
             v-model="form.hostname"
@@ -127,7 +128,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >IP Address</label
+            >ที่อยู่ไอพี</label
           >
           <input
             v-model="form.ip_address"
@@ -138,7 +139,7 @@ async function submit() {
       </div>
       <div>
         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >API URL</label
+          >ที่อยู่ API</label
         >
         <input
           v-model="form.api_url"
@@ -149,18 +150,18 @@ async function submit() {
       <div class="grid grid-cols-2 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Hardware Type</label
+            >ประเภทฮาร์ดแวร์</label
           >
           <input
             v-model="form.hardware_type"
             type="text"
-            placeholder="e.g. Jetson Orin"
+            placeholder="เช่น Raspberry Pi 5, Jetson Orin"
             class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >CPU Model</label
+            >รุ่นซีพียู</label
           >
           <input
             v-model="form.cpu_model"
@@ -172,7 +173,7 @@ async function submit() {
       <div class="grid grid-cols-3 gap-4">
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >GPU Name</label
+            >รุ่น GPU</label
           >
           <input
             v-model="form.gpu_name"
@@ -182,7 +183,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >GPU Memory (MB)</label
+            >หน่วยความจำ GPU (MB)</label
           >
           <input
             v-model="form.gpu_memory_mb"
@@ -193,7 +194,7 @@ async function submit() {
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Max Cameras</label
+            >จำนวนกล้องสูงสุด</label
           >
           <input
             v-model="form.max_camera"
@@ -210,7 +211,7 @@ async function submit() {
           :disabled="loading"
           class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {{ loading ? 'Saving...' : 'Register Node' }}
+          {{ loading ? 'กำลังบันทึก...' : 'บันทึกหน่วยประมวลผล' }}
         </button>
       </div>
     </div>

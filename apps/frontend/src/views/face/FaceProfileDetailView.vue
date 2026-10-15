@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import facesService from '@/services/faces'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -21,7 +22,7 @@ async function fetchProfile() {
     const res = await facesService.getProfile(uuid)
     profile.value = res.data
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load face profile details.'
+    errorMessage.value = apiErrorText(err, 'โหลดรายละเอียดข้อมูลใบหน้าไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -40,10 +41,10 @@ onMounted(() => {
           @click="router.back()"
           class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg text-sm"
         >
-          ← Back
+          ← ย้อนกลับ
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Profile Details</h1>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">รายละเอียดข้อมูลใบหน้า</h1>
           <p class="text-xs font-mono text-gray-500">
             {{ profile?.face_profile_uuid || route.params.uuid }}
           </p>
@@ -51,7 +52,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading details...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดรายละเอียด...</div>
 
     <div v-else-if="errorMessage" class="p-4 bg-red-50 text-red-700 rounded-lg text-sm">
       {{ errorMessage }}
@@ -63,48 +64,48 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <div>
-          <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">Identity Root</h2>
+          <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">ข้อมูลตัวตน</h2>
           <div class="space-y-2 text-sm">
             <div>
-              <span class="text-gray-500">Person UUID:</span>
+              <span class="text-gray-500">รหัสบุคคล:</span>
               <span class="font-mono font-medium ml-2">{{ profile.person_uuid }}</span>
             </div>
             <div>
-              <span class="text-gray-500">Face Profile UUID:</span>
+              <span class="text-gray-500">รหัสโปรไฟล์ใบหน้า:</span>
               <span class="font-mono font-medium ml-2">{{ profile.face_profile_uuid }}</span>
             </div>
             <div>
-              <span class="text-gray-500">Status:</span>
+              <span class="text-gray-500">สถานะ:</span>
               <span
                 class="ml-2 px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-100 text-blue-800"
               >
-                {{ profile.status }}
+                {{ statusLabel(profile.status) }}
               </span>
             </div>
           </div>
         </div>
 
         <div>
-          <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">AI Perception Metadata</h2>
+          <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">ข้อมูลการประมวลผล</h2>
           <div class="space-y-2 text-sm">
             <div>
-              <span class="text-gray-500">Model:</span>
+              <span class="text-gray-500">โมเดล:</span>
               <span class="font-medium ml-2"
-                >{{ profile.model?.code || 'Default' }} (v{{
+                >{{ profile.model?.code || 'ค่าเริ่มต้น' }} (v{{
                   profile.model?.version || '1.0'
                 }})</span
               >
             </div>
             <div>
-              <span class="text-gray-500">Quality Score:</span>
+              <span class="text-gray-500">คะแนนคุณภาพ:</span>
               <span class="font-bold text-blue-600 ml-2">
                 {{ profile.quality_score ? (profile.quality_score * 100).toFixed(1) + '%' : 'N/A' }}
               </span>
             </div>
             <div>
-              <span class="text-gray-500">Enrolled At:</span>
+              <span class="text-gray-500">ลงทะเบียนเมื่อ:</span>
               <span class="ml-2">{{
-                profile.enrolled_at ? new Date(profile.enrolled_at).toLocaleString() : '-'
+                profile.enrolled_at ? new Date(profile.enrolled_at).toLocaleString('th-TH') : '-'
               }}</span>
             </div>
           </div>
@@ -115,11 +116,11 @@ onMounted(() => {
           v-if="profile.status === 'REVOKED'"
           class="col-span-1 md:col-span-2 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg text-sm"
         >
-          <p class="font-bold">Profile Revoked</p>
+          <p class="font-bold">ข้อมูลใบหน้าถูกเพิกถอนแล้ว</p>
           <p class="text-xs mt-1">
-            Revoked at: {{ new Date(profile.revoked_at).toLocaleString() }}
+            เพิกถอนเมื่อ: {{ new Date(profile.revoked_at).toLocaleString('th-TH') }}
           </p>
-          <p class="text-xs mt-1">Reason: {{ profile.revocation_reason }}</p>
+          <p class="text-xs mt-1">เหตุผล: {{ profile.revocation_reason }}</p>
         </div>
       </div>
 
@@ -128,7 +129,7 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
       >
         <h2 class="text-base font-bold text-gray-900 dark:text-white mb-4">
-          Biometric Sample History ({{ profile.samples_count || 1 }})
+          ประวัติภาพตัวอย่าง ({{ profile.samples_count || 1 }})
         </h2>
 
         <div
@@ -136,26 +137,26 @@ onMounted(() => {
           class="p-4 border rounded-lg bg-gray-50 dark:bg-gray-700/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
         >
           <div>
-            <div class="text-gray-400">Sample UUID</div>
+            <div class="text-gray-400">รหัสภาพตัวอย่าง</div>
             <div class="font-mono font-medium">{{ profile.sample.uuid }}</div>
           </div>
           <div>
-            <div class="text-gray-400">Pose / Source</div>
+            <div class="text-gray-400">ท่าทาง / แหล่งที่มา</div>
             <div class="font-semibold">{{ profile.sample.pose }} / {{ profile.sample.source }}</div>
           </div>
           <div>
-            <div class="text-gray-400">Quality / Blur</div>
+            <div class="text-gray-400">คุณภาพ / ความคมชัด</div>
             <div class="font-semibold">
               {{ (profile.sample.quality_score * 100).toFixed(0) }}% /
               {{ (profile.sample.blur_score * 100).toFixed(0) }}%
             </div>
           </div>
           <div>
-            <div class="text-gray-400">Captured At</div>
+            <div class="text-gray-400">ถ่ายเมื่อ</div>
             <div>
               {{
                 profile.sample.captured_at
-                  ? new Date(profile.sample.captured_at).toLocaleDateString()
+                  ? new Date(profile.sample.captured_at).toLocaleDateString('th-TH')
                   : '-'
               }}
             </div>

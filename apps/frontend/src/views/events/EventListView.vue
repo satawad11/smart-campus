@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -58,7 +59,7 @@ async function fetchEvents() {
       pagination.total = res.meta.pagination.total
     }
   } catch (err) {
-    errorMessage.value = err.message || 'โหลดรายการเหตุการณ์ไม่สำเร็จ'
+    errorMessage.value = apiErrorText(err, 'โหลดรายการเหตุการณ์ไม่สำเร็จ')
   } finally {
     loading.value = false
   }

@@ -8,6 +8,7 @@ import ImportPreviewStep from '@/components/students/import/ImportPreviewStep.vu
 import ImportErrorsTable from '@/components/students/import/ImportErrorsTable.vue'
 import ImportProcessingStep from '@/components/students/import/ImportProcessingStep.vue'
 import ImportSummaryStep from '@/components/students/import/ImportSummaryStep.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -36,7 +37,7 @@ async function handleUploaded(job) {
     previewData.value = data
     currentStep.value = 'preview'
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดข้อมูลตัวอย่างได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลตัวอย่างได้')
     currentStep.value = 'preview'
   } finally {
     loading.value = false

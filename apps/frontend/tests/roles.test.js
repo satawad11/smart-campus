@@ -270,7 +270,9 @@ describe('AUTH-017: Role & Permission Matrix UI', () => {
 
       await flushPromises()
 
-      expect(wrapper.text()).toContain('This action is unauthorized.')
+      // 403 is shown as the Thai permission message, never the raw English one
+      expect(wrapper.text()).toContain('คุณไม่มีสิทธิ์ดูข้อมูลส่วนนี้')
+      expect(wrapper.text()).not.toContain('This action is unauthorized.')
       expect(authStore.user).not.toBeNull()
     })
   })

@@ -30,7 +30,7 @@ describe('COM-03e: one-time node enrollment code', () => {
       global: { plugins: [pinia], stubs: { NodeOperationsPanel: true } },
     })
     await flushPromises()
-    const tab = wrapper.findAll('button').find((b) => b.text() === 'credentials')
+    const tab = wrapper.findAll('button').find((b) => b.text() === 'กุญแจเชื่อมต่อ')
     await tab.trigger('click')
     await flushPromises()
     return wrapper

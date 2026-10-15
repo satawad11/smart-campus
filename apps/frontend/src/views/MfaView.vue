@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -56,7 +57,8 @@ async function handleVerify() {
     }
 
     const mapped = errorMap[err.code]
-    errorMessage.value = mapped || err.message || 'รหัสความปลอดภัยไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง'
+    errorMessage.value =
+      mapped || apiErrorText(err, 'รหัสความปลอดภัยไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง')
   }
 }
 

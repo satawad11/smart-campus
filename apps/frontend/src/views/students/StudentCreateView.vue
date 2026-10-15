@@ -3,6 +3,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { studentsService } from '@/services/students'
 import { academicsService } from '@/services/academics'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 
@@ -183,7 +184,7 @@ async function handleSubmit() {
     if (err.fields) {
       fieldErrors.value = err.fields
     }
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลนักเรียน'
+    errorMessage.value = apiErrorText(err, 'เกิดข้อผิดพลาดในการบันทึกข้อมูลนักเรียน')
   } finally {
     loading.value = false
   }

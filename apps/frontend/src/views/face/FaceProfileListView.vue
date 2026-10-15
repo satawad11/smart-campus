@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -64,7 +65,7 @@ async function fetchProfiles() {
       pagination.total = res.meta.total
     }
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load face profiles.'
+    errorMessage.value = apiErrorText(err, 'โหลดข้อมูลใบหน้าไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -79,7 +80,7 @@ function openRevokeModal(profile) {
 
 async function submitRevoke() {
   if (!revokeReason.value.trim()) {
-    revokeError.value = 'Revocation reason is required.'
+    revokeError.value = 'กรุณาระบุเหตุผลการเพิกถอน'
     return
   }
 
@@ -94,7 +95,7 @@ async function submitRevoke() {
     showRevokeModal.value = false
     await fetchProfiles()
   } catch (err) {
-    revokeError.value = err.message || 'Revocation failed.'
+    revokeError.value = apiErrorText(err, 'เพิกถอนไม่สำเร็จ')
   } finally {
     revokeLoading.value = false
   }
@@ -114,11 +115,11 @@ function onReenrollFileSelected(event) {
 
 async function submitReenroll() {
   if (!reenrollFile.value) {
-    reenrollError.value = 'New face photo is required.'
+    reenrollError.value = 'กรุณาเลือกรูปใบหน้าใหม่'
     return
   }
   if (!reenrollReason.value.trim()) {
-    reenrollError.value = 'Re-enrollment reason is required.'
+    reenrollError.value = 'กรุณาระบุเหตุผลการลงทะเบียนใหม่'
     return
   }
 
@@ -134,7 +135,7 @@ async function submitReenroll() {
     showReenrollModal.value = false
     await fetchProfiles()
   } catch (err) {
-    reenrollError.value = err.message || 'Re-enrollment failed.'
+    reenrollError.value = apiErrorText(err, 'ลงทะเบียนใหม่ไม่สำเร็จ')
   } finally {
     reenrollLoading.value = false
   }
@@ -167,9 +168,9 @@ onMounted(() => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Biometric Profiles</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ข้อมูลใบหน้า</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Manage enrolled biometrics, revocation lifecycle, and sample history (FACE-017).
+          จัดการข้อมูลใบหน้าที่ลงทะเบียน การเพิกถอน และประวัติภาพตัวอย่าง
         </p>
       </div>
       <div class="flex space-x-3">
@@ -178,7 +179,7 @@ onMounted(() => {
           @click="router.push({ name: 'faces.enroll' })"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
         >
-          + New Enrollment
+          + ลงทะเบียนใบหน้า
         </button>
       </div>
     </div>
@@ -191,7 +192,7 @@ onMounted(() => {
         v-model="filters.search"
         @keyup.enter="fetchProfiles"
         type="text"
-        placeholder="Search Person UUID, Profile UUID, or Name..."
+        placeholder="ค้นหาด้วยรหัสบุคคล รหัสโปรไฟล์ หรือชื่อ..."
         class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
       />
 
@@ -200,18 +201,18 @@ onMounted(() => {
         @change="fetchProfiles"
         class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
       >
-        <option value="">All Statuses</option>
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="PENDING">PENDING</option>
-        <option value="REVOKED">REVOKED</option>
-        <option value="RE_ENROLL_REQUIRED">RE_ENROLL_REQUIRED</option>
+        <option value="">ทุกสถานะ</option>
+        <option value="ACTIVE">ใช้งาน</option>
+        <option value="PENDING">รอดำเนินการ</option>
+        <option value="REVOKED">ถูกเพิกถอน</option>
+        <option value="RE_ENROLL_REQUIRED">ต้องลงทะเบียนใหม่</option>
       </select>
 
       <button
         @click="fetchProfiles"
         class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"
       >
-        Search
+        ค้นหา
       </button>
     </div>
 
@@ -227,25 +228,21 @@ onMounted(() => {
     <div
       class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div v-if="loading" class="text-center py-12 text-gray-500">Loading face profiles...</div>
+      <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดข้อมูลใบหน้า...</div>
 
       <div v-else-if="profiles.length === 0" class="text-center py-12 text-gray-400">
-        No face profiles found matching criteria.
+        ไม่พบข้อมูลใบหน้าตามเงื่อนไข
       </div>
 
       <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
         <thead class="bg-gray-50 dark:bg-gray-700/50">
           <tr>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">
-              Person / Profile
-            </th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">
-              Model Provenance
-            </th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Quality</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Enrolled At</th>
-            <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">Actions</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">บุคคล / โปรไฟล์</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สถานะ</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">โมเดลที่ใช้</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">คุณภาพ</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ลงทะเบียนเมื่อ</th>
+            <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -258,19 +255,19 @@ onMounted(() => {
               <div class="font-mono text-xs font-semibold text-gray-900 dark:text-white">
                 {{ profile.face_profile_uuid }}
               </div>
-              <div class="text-xs text-gray-500">Person: {{ profile.person_uuid }}</div>
+              <div class="text-xs text-gray-500">บุคคล: {{ profile.person_uuid }}</div>
             </td>
             <td class="px-6 py-4">
               <span
                 class="px-2.5 py-1 rounded-full text-xs font-semibold"
                 :class="getStatusBadgeClass(profile.status)"
               >
-                {{ profile.status }}
+                {{ statusLabel(profile.status) }}
               </span>
             </td>
             <td class="px-6 py-4 text-xs">
               <div class="font-medium text-gray-800 dark:text-gray-200">
-                {{ profile.model?.code || 'N/A' }}
+                {{ profile.model?.code || 'ไม่ระบุ' }}
               </div>
               <div class="text-gray-400">v{{ profile.model?.version || '1.0' }}</div>
             </td>
@@ -281,7 +278,11 @@ onMounted(() => {
               <span v-else class="text-gray-400">-</span>
             </td>
             <td class="px-6 py-4 text-xs text-gray-500">
-              {{ profile.enrolled_at ? new Date(profile.enrolled_at).toLocaleDateString() : '-' }}
+              {{
+                profile.enrolled_at
+                  ? new Date(profile.enrolled_at).toLocaleDateString('th-TH')
+                  : '-'
+              }}
             </td>
             <td class="px-6 py-4 text-right space-x-2">
               <button
@@ -290,21 +291,21 @@ onMounted(() => {
                 "
                 class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs"
               >
-                Detail
+                ดูรายละเอียด
               </button>
               <button
                 v-if="canReenroll"
                 @click="openReenrollModal(profile)"
                 class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs"
               >
-                Re-enroll
+                ลงทะเบียนใหม่
               </button>
               <button
                 v-if="canRevoke && profile.status !== 'REVOKED'"
                 @click="openRevokeModal(profile)"
                 class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded text-xs"
               >
-                Revoke
+                เพิกถอน
               </button>
             </td>
           </tr>
@@ -318,21 +319,19 @@ onMounted(() => {
       class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
     >
       <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-          Revoke Biometric Face Profile
-        </h3>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">เพิกถอนข้อมูลใบหน้า</h3>
         <p class="text-sm text-gray-500">
-          Revoking will exclude this face profile from active recognition and door access policies.
+          เมื่อเพิกถอนแล้ว ระบบจะไม่ใช้ข้อมูลใบหน้านี้ในการจดจำและนโยบายการเข้าออกอีก
         </p>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Revocation Reason <span class="text-red-500">*</span>
+            เหตุผลการเพิกถอน <span class="text-red-500">*</span>
           </label>
           <input
             v-model="revokeReason"
             type="text"
-            placeholder="e.g. Consent withdrawn, student graduated"
+            placeholder="เช่น ถอนความยินยอม นักเรียนจบการศึกษา"
             class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
@@ -346,15 +345,15 @@ onMounted(() => {
             @click="showRevokeModal = false"
             class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
           >
-            Cancel
+            ยกเลิก
           </button>
           <button
             @click="submitRevoke"
             :disabled="revokeLoading || !revokeReason"
             class="px-4 py-2 text-sm text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
           >
-            <span v-if="revokeLoading">Revoking...</span>
-            <span v-else>Confirm Revocation</span>
+            <span v-if="revokeLoading">กำลังเพิกถอน...</span>
+            <span v-else>ยืนยันการเพิกถอน</span>
           </button>
         </div>
       </div>
@@ -366,16 +365,14 @@ onMounted(() => {
       class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
     >
       <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">
-          Re-enroll Biometric Face Profile
-        </h3>
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white">ลงทะเบียนใบหน้าใหม่</h3>
         <p class="text-sm text-gray-500">
-          Upload a new face photo to reactivate or update baseline biometrics for this Person.
+          อัปโหลดรูปใบหน้าใหม่เพื่อเปิดใช้งานหรือปรับปรุงข้อมูลใบหน้าของบุคคลนี้
         </p>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            New Face Photo <span class="text-red-500">*</span>
+            รูปใบหน้าใหม่ <span class="text-red-500">*</span>
           </label>
           <input
             type="file"
@@ -387,12 +384,12 @@ onMounted(() => {
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Re-enrollment Reason <span class="text-red-500">*</span>
+            เหตุผลการลงทะเบียนใหม่ <span class="text-red-500">*</span>
           </label>
           <input
             v-model="reenrollReason"
             type="text"
-            placeholder="e.g. Updated photo for new academic term"
+            placeholder="เช่น ปรับรูปสำหรับภาคเรียนใหม่"
             class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
           />
         </div>
@@ -406,15 +403,15 @@ onMounted(() => {
             @click="showReenrollModal = false"
             class="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
           >
-            Cancel
+            ยกเลิก
           </button>
           <button
             @click="submitReenroll"
             :disabled="reenrollLoading || !reenrollFile || !reenrollReason"
             class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            <span v-if="reenrollLoading">Processing...</span>
-            <span v-else>Submit Re-enrollment</span>
+            <span v-if="reenrollLoading">กำลังดำเนินการ...</span>
+            <span v-else>ยืนยันการลงทะเบียนใหม่</span>
           </button>
         </div>
       </div>

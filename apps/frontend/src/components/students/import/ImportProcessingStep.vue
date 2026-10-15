@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { studentImportService } from '@/services/students'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   job: {
@@ -43,7 +44,7 @@ async function startProcess() {
     currentJob.value = updated
     startPolling()
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถเริ่มการประมวลผลได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถเริ่มการประมวลผลได้')
     processing.value = false
   }
 }

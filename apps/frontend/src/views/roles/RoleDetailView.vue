@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { rolesService } from '@/services/roles'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import RoleTypeBadge from '@/components/roles/RoleTypeBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -23,7 +24,7 @@ async function fetchRoleDetail() {
     const data = await rolesService.get(uuid)
     role.value = data
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลบทบาทได้')
   } finally {
     loading.value = false
   }

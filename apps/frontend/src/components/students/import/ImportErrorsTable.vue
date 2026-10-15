@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { studentImportService } from '@/services/students'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   jobUuid: {
@@ -59,7 +60,7 @@ async function fetchErrors(page = 1) {
       }
     }
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดรายการข้อผิดพลาดได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดรายการข้อผิดพลาดได้')
   } finally {
     loading.value = false
   }

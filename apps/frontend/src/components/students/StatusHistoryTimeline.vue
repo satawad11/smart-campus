@@ -2,6 +2,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { studentsService } from '@/services/students'
 import AcademicStatusBadge from './AcademicStatusBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   studentUuid: {
@@ -47,7 +48,7 @@ async function fetchHistory(page = 1) {
       }
     }
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดประวัติการเปลี่ยนสถานะได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดประวัติการเปลี่ยนสถานะได้')
   } finally {
     loading.value = false
   }

@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usersService } from '@/services/users'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,7 +29,7 @@ async function fetchUser() {
     form.username = data.username || ''
     form.email = data.email || ''
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลผู้ใช้งานได้')
   } finally {
     initialLoading.value = false
   }
@@ -62,7 +63,7 @@ async function handleSubmit() {
     if (err.fields) {
       fieldErrors.value = err.fields
     }
-    errorMessage.value = err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง'
+    errorMessage.value = apiErrorText(err, 'เกิดข้อผิดพลาดในการบันทึกข้อมูล กรุณาลองใหม่อีกครั้ง')
   } finally {
     loading.value = false
   }

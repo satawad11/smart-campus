@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import { studentsService } from '@/services/students'
 import AcademicStatusBadge from './AcademicStatusBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const props = defineProps({
   show: {
@@ -126,7 +127,7 @@ async function handleSubmit() {
       }
     }
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะการศึกษา'
+      errorTranslations[err.code] || apiErrorText(err, 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะการศึกษา')
   } finally {
     loading.value = false
   }

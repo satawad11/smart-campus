@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import { rolesService } from '@/services/roles'
 import StatusBadge from '@/components/common/StatusBadge.vue'
 import RoleTypeBadge from '@/components/roles/RoleTypeBadge.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -97,7 +98,7 @@ async function loadData() {
       selectedCodes.value = new Set(currentPerms)
     }
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดข้อมูลตารางสิทธิ์ได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลตารางสิทธิ์ได้')
   } finally {
     initialLoading.value = false
   }
@@ -155,7 +156,7 @@ async function handleSave() {
     successMessage.value = `บันทึกตารางสิทธิ์สำหรับบทบาท ${updated.name} สำเร็จ (${payloadCodes.length} สิทธิ์)`
   } catch (err) {
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'เกิดข้อผิดพลาดในการบันทึกตารางสิทธิ์'
+      errorTranslations[err.code] || apiErrorText(err, 'เกิดข้อผิดพลาดในการบันทึกตารางสิทธิ์')
   } finally {
     saving.value = false
   }

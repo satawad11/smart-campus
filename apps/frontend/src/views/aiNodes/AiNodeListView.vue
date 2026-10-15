@@ -3,6 +3,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import aiNodesService from '@/services/aiNodes'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -49,7 +50,7 @@ async function fetchNodes() {
       pagination.total = res.meta.pagination.total
     }
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load AI nodes.'
+    errorMessage.value = apiErrorText(err, 'โหลดรายการหน่วยประมวลผลไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -61,7 +62,7 @@ async function toggleStatus(node) {
     await aiNodesService.updateStatus(node.uuid, nextStatus)
     await fetchNodes()
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to change AI node status.'
+    errorMessage.value = apiErrorText(err, 'เปลี่ยนสถานะหน่วยประมวลผลไม่สำเร็จ')
   }
 }
 
@@ -88,9 +89,9 @@ onMounted(() => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">AI Nodes</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">หน่วยประมวลผลปัญญาประดิษฐ์</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Manage perception-processing nodes and their per-node credentials (CAM-018).
+          จัดการหน่วยประมวลผลภาพจากกล้องและกุญแจเชื่อมต่อของแต่ละหน่วย
         </p>
       </div>
       <div class="flex space-x-3">
@@ -99,7 +100,7 @@ onMounted(() => {
           @click="router.push({ name: 'ai-nodes.create' })"
           class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition"
         >
-          + Register AI Node
+          + เพิ่มหน่วยประมวลผล
         </button>
       </div>
     </div>
@@ -111,7 +112,7 @@ onMounted(() => {
         v-model="filters.keyword"
         @keyup.enter="fetchNodes"
         type="text"
-        placeholder="Search node code or name..."
+        placeholder="ค้นหารหัสหรือชื่อหน่วยประมวลผล..."
         class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
       />
 
@@ -120,16 +121,16 @@ onMounted(() => {
         @change="fetchNodes"
         class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
       >
-        <option value="">All Statuses</option>
-        <option value="ACTIVE">ACTIVE</option>
-        <option value="INACTIVE">INACTIVE</option>
+        <option value="">ทุกสถานะ</option>
+        <option value="ACTIVE">ใช้งาน</option>
+        <option value="INACTIVE">ปิดใช้งาน</option>
       </select>
 
       <button
         @click="fetchNodes"
         class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium"
       >
-        Search
+        ค้นหา
       </button>
     </div>
 
@@ -143,21 +144,23 @@ onMounted(() => {
     <div
       class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
     >
-      <div v-if="loading" class="text-center py-12 text-gray-500">Loading AI nodes...</div>
+      <div v-if="loading" class="text-center py-12 text-gray-500">
+        กำลังโหลดรายการหน่วยประมวลผล...
+      </div>
 
       <div v-else-if="nodes.length === 0" class="text-center py-12 text-gray-400">
-        No AI nodes found matching criteria.
+        ไม่พบหน่วยประมวลผลตามเงื่อนไข
       </div>
 
       <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
         <thead class="bg-gray-50 dark:bg-gray-700/50">
           <tr>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Node</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Site</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Hardware</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Status</th>
-            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Last Seen</th>
-            <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">Actions</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">หน่วยประมวลผล</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ฮาร์ดแวร์</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สถานะ</th>
+            <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ติดต่อล่าสุด</th>
+            <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -171,7 +174,7 @@ onMounted(() => {
               <div class="text-xs text-gray-500 font-mono">{{ node.node_code }}</div>
             </td>
             <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
-              {{ node.site?.name || 'Unassigned' }}
+              {{ node.site?.name || 'ยังไม่กำหนด' }}
             </td>
             <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
               {{ node.hardware_type || '-' }}
@@ -182,18 +185,22 @@ onMounted(() => {
                 class="px-2.5 py-1 rounded-full text-xs font-semibold"
                 :class="statusBadgeClass(node.status)"
               >
-                {{ node.status }}
+                {{ statusLabel(node.status) }}
               </span>
             </td>
             <td class="px-6 py-4 text-xs text-gray-500">
-              {{ node.last_seen_at ? new Date(node.last_seen_at).toLocaleString() : 'Never' }}
+              {{
+                node.last_seen_at
+                  ? new Date(node.last_seen_at).toLocaleString('th-TH')
+                  : 'ยังไม่เคย'
+              }}
             </td>
             <td class="px-6 py-4 text-right space-x-2">
               <button
                 @click="router.push({ name: 'ai-nodes.show', params: { uuid: node.uuid } })"
                 class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs"
               >
-                Detail
+                ดูรายละเอียด
               </button>
               <button
                 v-if="canManage"
@@ -205,7 +212,7 @@ onMounted(() => {
                     : 'bg-green-50 hover:bg-green-100 text-green-700'
                 "
               >
-                {{ node.status === 'ACTIVE' ? 'Disable' : 'Enable' }}
+                {{ node.status === 'ACTIVE' ? 'ปิดใช้งาน' : 'เปิดใช้งาน' }}
               </button>
             </td>
           </tr>
@@ -216,14 +223,14 @@ onMounted(() => {
         v-if="pagination.last_page > 1"
         class="flex justify-between items-center px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-sm"
       >
-        <span class="text-gray-500">{{ pagination.total }} total AI nodes</span>
+        <span class="text-gray-500">ทั้งหมด {{ pagination.total }} หน่วย</span>
         <div class="space-x-2">
           <button
             @click="goToPage(pagination.current_page - 1)"
             :disabled="pagination.current_page <= 1"
             class="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
           >
-            Prev
+            ก่อนหน้า
           </button>
           <span>{{ pagination.current_page }} / {{ pagination.last_page }}</span>
           <button
@@ -231,7 +238,7 @@ onMounted(() => {
             :disabled="pagination.current_page >= pagination.last_page"
             class="px-3 py-1 bg-gray-100 rounded disabled:opacity-50"
           >
-            Next
+            ถัดไป
           </button>
         </div>
       </div>

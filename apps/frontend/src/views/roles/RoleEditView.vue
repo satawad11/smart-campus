@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { rolesService } from '@/services/roles'
 import RoleTypeBadge from '@/components/roles/RoleTypeBadge.vue'
 import ConfirmModal from '@/components/common/ConfirmModal.vue'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -43,7 +44,7 @@ async function fetchRole() {
     form.description = data.description || ''
     form.status = data.status || 'ACTIVE'
   } catch (err) {
-    errorMessage.value = err.message || 'ไม่สามารถโหลดข้อมูลบทบาทได้'
+    errorMessage.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลบทบาทได้')
   } finally {
     initialLoading.value = false
   }
@@ -72,7 +73,7 @@ async function executeSubmit() {
       fieldErrors.value = err.fields
     }
     errorMessage.value =
-      errorTranslations[err.code] || err.message || 'เกิดข้อผิดพลาดในการบันทึกข้อมูลบทบาท'
+      errorTranslations[err.code] || apiErrorText(err, 'เกิดข้อผิดพลาดในการบันทึกข้อมูลบทบาท')
   } finally {
     loading.value = false
     confirmModal.show = false

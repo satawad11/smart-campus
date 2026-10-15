@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -33,12 +34,12 @@ function onFileSelected(event) {
 
 async function handleEnroll() {
   if (!personUuid.value.trim()) {
-    errorMessage.value = 'Target Person UUID is required.'
+    errorMessage.value = 'กรุณาระบุรหัสบุคคล'
     return
   }
 
   if (!selectedFile.value) {
-    errorMessage.value = 'Please select or capture a face image.'
+    errorMessage.value = 'กรุณาเลือกหรือถ่ายภาพใบหน้า'
     return
   }
 
@@ -67,8 +68,10 @@ async function handleEnroll() {
       // Duplicate review check failure is non-fatal to completed enrollment
     }
   } catch (err) {
-    errorMessage.value =
-      err.message || 'Face enrollment failed. Please check image quality and try again.'
+    errorMessage.value = apiErrorText(
+      err,
+      'ลงทะเบียนใบหน้าไม่สำเร็จ กรุณาตรวจสอบคุณภาพภาพแล้วลองใหม่',
+    )
   } finally {
     loading.value = false
   }
@@ -87,23 +90,22 @@ function resetForm() {
   <div class="face-enrollment-container max-w-4xl mx-auto p-6 space-y-6">
     <div class="flex items-center justify-between border-b pb-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Face Biometric Enrollment</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ลงทะเบียนใบหน้า</h1>
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Enroll official facial biometrics directly to Person identity root (FACE-016).
+          ลงทะเบียนข้อมูลใบหน้าให้กับบุคคลในระบบ
         </p>
       </div>
       <button
         @click="router.push({ name: 'faces.index' })"
         class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
       >
-        View All Profiles
+        ดูข้อมูลใบหน้าทั้งหมด
       </button>
     </div>
 
     <!-- Permission Guard Warning -->
     <div v-if="!canEnroll" class="p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-      You do not have permission (<code class="font-semibold">face.enroll</code>) to perform face
-      enrollment.
+      คุณไม่มีสิทธิ์ลงทะเบียนใบหน้า
     </div>
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -112,12 +114,12 @@ function resetForm() {
         class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
       >
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          1. Target Person & Sample
+          1. บุคคลและภาพตัวอย่าง
         </h2>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Person UUID <span class="text-red-500">*</span>
+            รหัสบุคคล (UUID) <span class="text-red-500">*</span>
           </label>
           <input
             v-model="personUuid"
@@ -129,21 +131,21 @@ function resetForm() {
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Pose</label
+            >ท่าทางใบหน้า</label
           >
           <select
             v-model="pose"
             class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
           >
-            <option value="FRONT">Front Face</option>
-            <option value="LEFT">Left Profile</option>
-            <option value="RIGHT">Right Profile</option>
+            <option value="FRONT">หน้าตรง</option>
+            <option value="LEFT">หันซ้าย</option>
+            <option value="RIGHT">หันขวา</option>
           </select>
         </div>
 
         <div>
           <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Capture Image</label
+            >ภาพใบหน้า</label
           >
           <input
             type="file"
@@ -154,7 +156,7 @@ function resetForm() {
         </div>
 
         <div v-if="previewUrl" class="mt-4">
-          <p class="text-xs font-medium text-gray-500 mb-2">Image Preview</p>
+          <p class="text-xs font-medium text-gray-500 mb-2">ตัวอย่างภาพ</p>
           <img
             :src="previewUrl"
             alt="Face Preview"
@@ -167,8 +169,8 @@ function resetForm() {
           :disabled="loading || !selectedFile || !personUuid"
           class="w-full py-2.5 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center justify-center space-x-2"
         >
-          <span v-if="loading">Processing Perception Pipeline...</span>
-          <span v-else>Submit Biometric Enrollment</span>
+          <span v-if="loading">กำลังประมวลผลภาพ...</span>
+          <span v-else>ลงทะเบียนใบหน้า</span>
         </button>
 
         <div
@@ -184,47 +186,44 @@ function resetForm() {
         class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
       >
         <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          2. Verification & Quality Feedback
+          2. ผลการตรวจสอบและคุณภาพภาพ
         </h2>
 
         <div v-if="!successData && !loading" class="text-center py-12 text-gray-400 text-sm">
-          Enrollment results, quality evaluation metrics, and model provenance will appear here upon
-          submission.
+          ผลการลงทะเบียน ค่าคุณภาพภาพ และโมเดลที่ใช้จะแสดงที่นี่หลังส่งข้อมูล
         </div>
 
         <div v-if="loading" class="flex flex-col items-center justify-center py-12 space-y-3">
           <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
-          <p class="text-sm text-gray-500">
-            Evaluating quality, generating embedding vector, and persisting profile...
-          </p>
+          <p class="text-sm text-gray-500">กำลังตรวจคุณภาพภาพ สร้างข้อมูลใบหน้า และบันทึก...</p>
         </div>
 
         <div v-if="successData" class="space-y-4">
           <div class="p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg">
-            <p class="font-bold">✓ Biometric Enrollment Complete</p>
-            <p class="text-xs text-green-700">Face profile successfully created and activated.</p>
+            <p class="font-bold">✓ ลงทะเบียนใบหน้าสำเร็จ</p>
+            <p class="text-xs text-green-700">สร้างและเปิดใช้งานข้อมูลใบหน้าเรียบร้อยแล้ว</p>
           </div>
 
           <!-- Profile Details -->
           <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm">
             <div class="flex justify-between">
-              <span class="text-gray-500">Profile UUID:</span>
+              <span class="text-gray-500">รหัสโปรไฟล์:</span>
               <span class="font-mono font-medium">{{ successData.face_profile_uuid }}</span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Status:</span>
+              <span class="text-gray-500">สถานะ:</span>
               <span class="px-2 py-0.5 rounded text-xs font-bold bg-green-100 text-green-800">
-                {{ successData.status }}
+                {{ statusLabel(successData.status) }}
               </span>
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Model Provenance:</span>
+              <span class="text-gray-500">โมเดลที่ใช้:</span>
               <span class="font-medium"
                 >{{ successData.model?.code }} v{{ successData.model?.version }}</span
               >
             </div>
             <div class="flex justify-between">
-              <span class="text-gray-500">Quality Score:</span>
+              <span class="text-gray-500">คะแนนคุณภาพ:</span>
               <span class="font-bold text-blue-600"
                 >{{ (successData.quality_score * 100).toFixed(1) }}%</span
               >
@@ -234,19 +233,19 @@ function resetForm() {
           <!-- Quality Metrics -->
           <div v-if="successData.sample" class="grid grid-cols-3 gap-2 text-center text-xs">
             <div class="p-2 bg-gray-100 rounded">
-              <div class="text-gray-500">Blur Score</div>
+              <div class="text-gray-500">ความคมชัด</div>
               <div class="font-bold text-gray-800">
                 {{ (successData.sample.blur_score * 100).toFixed(0) }}%
               </div>
             </div>
             <div class="p-2 bg-gray-100 rounded">
-              <div class="text-gray-500">Brightness</div>
+              <div class="text-gray-500">ความสว่าง</div>
               <div class="font-bold text-gray-800">
                 {{ (successData.sample.brightness_score * 100).toFixed(0) }}%
               </div>
             </div>
             <div class="p-2 bg-gray-100 rounded">
-              <div class="text-gray-500">Pose</div>
+              <div class="text-gray-500">ท่าทาง</div>
               <div class="font-bold text-gray-800">{{ successData.sample.pose }}</div>
             </div>
           </div>
@@ -256,11 +255,11 @@ function resetForm() {
             v-if="duplicateReviewData"
             class="p-4 bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-lg"
           >
-            <p class="font-bold text-sm">⚠️ Possible Duplicate Face Detected</p>
+            <p class="font-bold text-sm">⚠️ พบใบหน้าที่อาจซ้ำกับบุคคลอื่น</p>
             <p class="text-xs mt-1">
-              Top candidate match found with similarity
-              {{ (duplicateReviewData.top_candidate?.similarity * 100).toFixed(1) }}%. Review record
-              created for administrative resolution.
+              พบบุคคลที่ใบหน้าคล้ายกัน
+              {{ (duplicateReviewData.top_candidate?.similarity * 100).toFixed(1) }}%
+              ระบบสร้างรายการ ให้ผู้ดูแลตรวจสอบแล้ว
             </p>
           </div>
 
@@ -268,7 +267,7 @@ function resetForm() {
             @click="resetForm"
             class="w-full py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 text-sm"
           >
-            Enroll Another Person
+            ลงทะเบียนบุคคลถัดไป
           </button>
         </div>
       </div>

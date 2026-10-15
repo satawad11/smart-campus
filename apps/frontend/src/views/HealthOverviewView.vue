@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import camerasService from '@/services/cameras'
 import aiNodesService from '@/services/aiNodes'
+import { apiErrorText, statusLabel } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -62,7 +63,7 @@ async function fetchAll() {
     if (canViewNodes.value) tasks.push(fetchNodeHealth())
     await Promise.all(tasks)
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load health overview.'
+    errorMessage.value = apiErrorText(err, 'โหลดภาพรวมสุขภาพอุปกรณ์ไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -77,10 +78,9 @@ onMounted(() => {
 <template>
   <div class="health-overview-view max-w-7xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Health Overview</h1>
+      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ภาพรวมสุขภาพอุปกรณ์</h1>
       <p class="text-sm text-gray-500 dark:text-gray-400">
-        Fleet-wide camera and AI node health at a glance (CAM-019). Click through to a device for
-        full history.
+        สถานะกล้องและหน่วยประมวลผลทั้งหมดในหน้าเดียว คลิกที่อุปกรณ์เพื่อดูประวัติทั้งหมด
       </p>
     </div>
 
@@ -95,7 +95,7 @@ onMounted(() => {
             : 'text-gray-500 hover:text-gray-700'
         "
       >
-        Cameras
+        กล้อง
       </button>
       <button
         v-if="canViewNodes"
@@ -107,10 +107,10 @@ onMounted(() => {
             : 'text-gray-500 hover:text-gray-700'
         "
       >
-        AI Nodes
+        หน่วยประมวลผล
       </button>
       <button @click="fetchAll" class="ml-auto px-3 py-2 text-xs text-gray-500 hover:text-gray-700">
-        Refresh
+        รีเฟรช
       </button>
     </div>
 
@@ -121,23 +121,21 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading health overview...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดภาพรวม...</div>
 
     <template v-else>
       <div
         v-if="activeSection === 'cameras'"
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
-        <div v-if="cameras.length === 0" class="text-center py-12 text-gray-400">
-          No cameras found.
-        </div>
+        <div v-if="cameras.length === 0" class="text-center py-12 text-gray-400">ไม่พบกล้อง</div>
         <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Camera</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Site / Zone</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Health</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Last Seen</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">กล้อง</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่ / โซน</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สุขภาพ</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ติดต่อล่าสุด</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -159,11 +157,15 @@ onMounted(() => {
                   class="px-2.5 py-1 rounded-full text-xs font-semibold"
                   :class="healthBadgeClass(camera.health_status)"
                 >
-                  {{ camera.health_status || 'No Data' }}
+                  {{ camera.health_status ? statusLabel(camera.health_status) : 'ไม่มีข้อมูล' }}
                 </span>
               </td>
               <td class="px-6 py-4 text-xs text-gray-500">
-                {{ camera.last_seen_at ? new Date(camera.last_seen_at).toLocaleString() : 'Never' }}
+                {{
+                  camera.last_seen_at
+                    ? new Date(camera.last_seen_at).toLocaleString('th-TH')
+                    : 'ยังไม่เคย'
+                }}
               </td>
             </tr>
           </tbody>
@@ -175,15 +177,15 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         <div v-if="nodes.length === 0" class="text-center py-12 text-gray-400">
-          No AI nodes found.
+          ไม่พบหน่วยประมวลผล
         </div>
         <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Node</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Site</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Health</th>
-              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">Last Seen</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">หน่วยประมวลผล</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สุขภาพ</th>
+              <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ติดต่อล่าสุด</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -198,18 +200,22 @@ onMounted(() => {
                 <div class="text-xs text-gray-500 font-mono">{{ node.node_code }}</div>
               </td>
               <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
-                {{ node.site?.name || 'Unassigned' }}
+                {{ node.site?.name || 'ยังไม่กำหนด' }}
               </td>
               <td class="px-6 py-4">
                 <span
                   class="px-2.5 py-1 rounded-full text-xs font-semibold"
                   :class="healthBadgeClass(node.health_status)"
                 >
-                  {{ node.health_status || 'No Data' }}
+                  {{ node.health_status ? statusLabel(node.health_status) : 'ไม่มีข้อมูล' }}
                 </span>
               </td>
               <td class="px-6 py-4 text-xs text-gray-500">
-                {{ node.last_seen_at ? new Date(node.last_seen_at).toLocaleString() : 'Never' }}
+                {{
+                  node.last_seen_at
+                    ? new Date(node.last_seen_at).toLocaleString('th-TH')
+                    : 'ยังไม่เคย'
+                }}
               </td>
             </tr>
           </tbody>

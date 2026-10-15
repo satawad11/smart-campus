@@ -3,6 +3,15 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import camerasService from '@/services/cameras'
+import { apiErrorText, statusLabel } from '@/constants/labels'
+
+const tabLabels = {
+  overview: 'ภาพรวม',
+  preview: 'ภาพตัวอย่าง',
+  ai: 'ตั้งค่าปัญญาประดิษฐ์',
+  roi: 'พื้นที่ตรวจจับ',
+  health: 'สุขภาพกล้อง',
+}
 
 const route = useRoute()
 const router = useRouter()
@@ -58,7 +67,7 @@ async function fetchCamera() {
     aiForm.snapshot_enabled = camera.value.snapshot_enabled
     roiPoints.value = (camera.value.roi || []).map((p) => ({ x: p.x, y: p.y }))
   } catch (err) {
-    errorMessage.value = err.message || 'Failed to load camera.'
+    errorMessage.value = apiErrorText(err, 'โหลดข้อมูลกล้องไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -71,7 +80,7 @@ async function saveAiSettings() {
     const res = await camerasService.updateCamera(camera.value.uuid, { ...aiForm })
     camera.value = res.data
   } catch (err) {
-    aiError.value = err.message || 'Failed to update AI settings.'
+    aiError.value = apiErrorText(err, 'บันทึกการตั้งค่าไม่สำเร็จ')
   } finally {
     aiSaving.value = false
   }
@@ -98,7 +107,7 @@ async function captureSnapshot() {
     const res = await camerasService.captureSnapshot(camera.value.uuid)
     snapshot.value = `data:${res.data.content_type};base64,${res.data.image_base64}`
   } catch (err) {
-    snapshotError.value = err.message || 'Snapshot capture failed.'
+    snapshotError.value = apiErrorText(err, 'บันทึกภาพนิ่งไม่สำเร็จ')
   } finally {
     snapshotLoading.value = false
   }
@@ -126,7 +135,7 @@ const roiPolygonSvgPoints = computed(() =>
 async function saveRoi() {
   roiError.value = ''
   if (roiPoints.value.length > 0 && roiPoints.value.length < 3) {
-    roiError.value = 'An ROI polygon needs at least 3 points, or clear it entirely.'
+    roiError.value = 'พื้นที่ตรวจจับต้องมีอย่างน้อย 3 จุด หรือล้างออกทั้งหมด'
     return
   }
 
@@ -138,7 +147,7 @@ async function saveRoi() {
     )
     camera.value = res.data
   } catch (err) {
-    roiError.value = err.message || 'Failed to update ROI.'
+    roiError.value = apiErrorText(err, 'บันทึกพื้นที่ตรวจจับไม่สำเร็จ')
   } finally {
     roiSaving.value = false
   }
@@ -180,7 +189,7 @@ onMounted(() => {
       @click="router.push({ name: 'cameras.index' })"
       class="text-sm text-blue-600 hover:underline"
     >
-      &larr; Back to Cameras
+      &larr; กลับไปหน้ากล้อง
     </button>
 
     <div
@@ -190,7 +199,7 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div v-if="loading" class="text-center py-12 text-gray-500">Loading camera...</div>
+    <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดข้อมูลกล้อง...</div>
 
     <template v-else-if="camera">
       <div class="border-b pb-4">
@@ -210,7 +219,7 @@ onMounted(() => {
               : 'text-gray-500 hover:text-gray-700'
           "
         >
-          {{ tab === 'ai' ? 'AI Settings' : tab === 'roi' ? 'ROI' : tab }}
+          {{ tabLabels[tab] }}
         </button>
       </div>
 
@@ -220,28 +229,33 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
-          <div><span class="text-gray-500">Status:</span> {{ camera.status }}</div>
-          <div><span class="text-gray-500">Camera Type:</span> {{ camera.camera_type || '-' }}</div>
-          <div><span class="text-gray-500">IP Address:</span> {{ camera.ip_address || '-' }}</div>
+          <div><span class="text-gray-500">สถานะ:</span> {{ statusLabel(camera.status) }}</div>
+          <div><span class="text-gray-500">ประเภทกล้อง:</span> {{ camera.camera_type || '-' }}</div>
+          <div><span class="text-gray-500">ที่อยู่ไอพี:</span> {{ camera.ip_address || '-' }}</div>
           <div>
-            <span class="text-gray-500">Stream Protocol:</span> {{ camera.stream_protocol || '-' }}
+            <span class="text-gray-500">โปรโตคอลสตรีม:</span> {{ camera.stream_protocol || '-' }}
           </div>
           <div>
-            <span class="text-gray-500">Has RTSP URL:</span>
-            {{ camera.has_rtsp_url ? 'Yes' : 'No' }}
+            <span class="text-gray-500">มีที่อยู่ RTSP:</span>
+            {{ camera.has_rtsp_url ? 'มี' : 'ไม่มี' }}
           </div>
           <div>
-            <span class="text-gray-500">Has Credentials:</span>
-            {{ camera.has_credentials ? 'Yes' : 'No' }}
+            <span class="text-gray-500">มีบัญชีเข้ากล้อง:</span>
+            {{ camera.has_credentials ? 'มี' : 'ไม่มี' }}
           </div>
-          <div><span class="text-gray-500">Site:</span> {{ camera.site?.name || '-' }}</div>
-          <div><span class="text-gray-500">Zone:</span> {{ camera.zone?.name || '-' }}</div>
+          <div><span class="text-gray-500">พื้นที่:</span> {{ camera.site?.name || '-' }}</div>
+          <div><span class="text-gray-500">โซน:</span> {{ camera.zone?.name || '-' }}</div>
           <div>
-            <span class="text-gray-500">AI Node:</span> {{ camera.ai_node?.name || 'Unassigned' }}
+            <span class="text-gray-500">หน่วยประมวลผล:</span>
+            {{ camera.ai_node?.name || 'ยังไม่กำหนด' }}
           </div>
           <div>
-            <span class="text-gray-500">Last Seen:</span>
-            {{ camera.last_seen_at ? new Date(camera.last_seen_at).toLocaleString() : 'Never' }}
+            <span class="text-gray-500">ติดต่อล่าสุด:</span>
+            {{
+              camera.last_seen_at
+                ? new Date(camera.last_seen_at).toLocaleString('th-TH')
+                : 'ยังไม่เคย'
+            }}
           </div>
         </div>
 
@@ -251,7 +265,7 @@ onMounted(() => {
             :disabled="testLoading"
             class="px-4 py-2 text-sm text-white bg-gray-700 rounded-lg hover:bg-gray-800 disabled:opacity-50"
           >
-            {{ testLoading ? 'Testing...' : 'Test Connection' }}
+            {{ testLoading ? 'กำลังทดสอบ...' : 'ทดสอบการเชื่อมต่อ' }}
           </button>
           <p
             v-if="testResult"
@@ -276,13 +290,13 @@ onMounted(() => {
           :disabled="snapshotLoading"
           class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {{ snapshotLoading ? 'Capturing...' : 'Capture Snapshot' }}
+          {{ snapshotLoading ? 'กำลังบันทึกภาพ...' : 'บันทึกภาพนิ่ง' }}
         </button>
         <p v-if="snapshotError" class="text-sm text-red-600">{{ snapshotError }}</p>
         <img
           v-if="snapshot"
           :src="snapshot"
-          alt="Camera snapshot"
+          alt="ภาพนิ่งจากกล้อง"
           class="max-w-full rounded-lg border"
         />
       </div>
@@ -294,19 +308,19 @@ onMounted(() => {
       >
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.face_detection_enabled" type="checkbox" :disabled="!canUpdate" />
-          Face detection enabled
+          เปิดการตรวจจับใบหน้า
         </label>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.face_recognition_enabled" type="checkbox" :disabled="!canUpdate" />
-          Face recognition enabled
+          เปิดการจดจำใบหน้า
         </label>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.liveness_enabled" type="checkbox" :disabled="!canUpdate" />
-          Liveness detection enabled
+          เปิดการตรวจสอบใบหน้าจริง
         </label>
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.snapshot_enabled" type="checkbox" :disabled="!canUpdate" />
-          Snapshot capture enabled
+          เปิดการบันทึกภาพนิ่ง
         </label>
 
         <p v-if="aiError" class="text-sm text-red-600">{{ aiError }}</p>
@@ -317,7 +331,7 @@ onMounted(() => {
           :disabled="aiSaving"
           class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {{ aiSaving ? 'Saving...' : 'Save AI Settings' }}
+          {{ aiSaving ? 'กำลังบันทึก...' : 'บันทึกการตั้งค่า' }}
         </button>
       </div>
 
@@ -327,8 +341,8 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
       >
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Click inside the frame to add polygon vertices (at least 3). Recognition only runs on
-          detections whose center falls inside this region.
+          คลิกในภาพเพื่อเพิ่มจุดของพื้นที่ (อย่างน้อย 3 จุด) ระบบจะจดจำใบหน้าเฉพาะที่จุดกึ่งกลาง
+          อยู่ในพื้นที่นี้เท่านั้น
         </p>
 
         <svg
@@ -361,20 +375,20 @@ onMounted(() => {
             @click="undoRoiPoint"
             class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200"
           >
-            Undo Point
+            ย้อนจุดล่าสุด
           </button>
           <button
             @click="clearRoi"
             class="px-3 py-1.5 text-sm bg-gray-100 rounded-lg hover:bg-gray-200"
           >
-            Clear ROI
+            ล้างพื้นที่
           </button>
           <button
             @click="saveRoi"
             :disabled="roiSaving"
             class="px-4 py-1.5 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {{ roiSaving ? 'Saving...' : 'Save ROI' }}
+            {{ roiSaving ? 'กำลังบันทึก...' : 'บันทึกพื้นที่ตรวจจับ' }}
           </button>
         </div>
       </div>
@@ -385,20 +399,20 @@ onMounted(() => {
         class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
       >
         <div v-if="healthLoading" class="text-center py-8 text-gray-500">
-          Loading health history...
+          กำลังโหลดประวัติสุขภาพกล้อง...
         </div>
         <div v-else-if="healthLogs.length === 0" class="text-center py-8 text-gray-400">
-          No health telemetry recorded yet.
+          ยังไม่มีข้อมูลสุขภาพกล้อง
         </div>
         <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
           <thead class="bg-gray-50 dark:bg-gray-700/50">
             <tr>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Status</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">FPS</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Latency</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Dropped</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Reconnects</th>
-              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">Recorded At</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">ความหน่วง</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">เฟรมตก</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">เชื่อมต่อใหม่</th>
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">บันทึกเมื่อ</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
@@ -407,7 +421,7 @@ onMounted(() => {
                 <span
                   class="px-2 py-0.5 rounded-full text-xs font-semibold"
                   :class="healthBadgeClass(log.status)"
-                  >{{ log.status }}</span
+                  >{{ statusLabel(log.status) }}</span
                 >
               </td>
               <td class="px-4 py-2">{{ log.fps ?? '-' }}</td>
@@ -415,7 +429,7 @@ onMounted(() => {
               <td class="px-4 py-2">{{ log.dropped_frames ?? '-' }}</td>
               <td class="px-4 py-2">{{ log.reconnect_count ?? '-' }}</td>
               <td class="px-4 py-2 text-xs text-gray-500">
-                {{ log.recorded_at ? new Date(log.recorded_at).toLocaleString() : '-' }}
+                {{ log.recorded_at ? new Date(log.recorded_at).toLocaleString('th-TH') : '-' }}
               </td>
             </tr>
           </tbody>

@@ -69,9 +69,10 @@ describe('SEC-011 / SEC-012: System Health and Alert Triage UI', () => {
     await wrapper.vm.$nextTick()
     await new Promise((resolve) => setTimeout(resolve, 50))
 
-    expect(wrapper.text()).toContain('System Health & Operations')
-    expect(wrapper.text()).toContain('HEALTHY')
-    expect(wrapper.text()).toContain('Camera 1 FPS drop')
-    expect(wrapper.find('button').text()).toContain('Refresh')
+    expect(wrapper.text()).toContain('สุขภาพระบบและการแจ้งเตือน')
+    expect(wrapper.text()).toContain('ปกติ')
+    // CAMERA_DOWN alerts show their Thai title
+    expect(wrapper.text()).toContain('กล้องขาดการติดต่อ')
+    expect(wrapper.find('button').text()).toContain('รีเฟรช')
   })
 })

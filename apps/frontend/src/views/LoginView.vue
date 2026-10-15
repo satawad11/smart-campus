@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { apiErrorText } from '@/constants/labels'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -60,7 +61,7 @@ async function handleLogin() {
     }
     const mapped = errorMap[err.code]
     errorMessage.value =
-      mapped || err.message || 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง'
+      mapped || apiErrorText(err, 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง')
   }
 }
 </script>

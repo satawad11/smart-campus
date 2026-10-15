@@ -3,6 +3,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
+import { apiErrorText } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,7 +34,7 @@ async function fetchEvent() {
     const res = await eventsService.getEvent(route.params.uuid)
     event.value = res.data
   } catch (err) {
-    errorMessage.value = err.message || 'โหลดรายละเอียดเหตุการณ์ไม่สำเร็จ'
+    errorMessage.value = apiErrorText(err, 'โหลดรายละเอียดเหตุการณ์ไม่สำเร็จ')
   } finally {
     loading.value = false
   }
@@ -70,7 +71,7 @@ async function submitReview() {
         'เหตุการณ์นี้ถูกตรวจสอบโดยผู้อื่นไปแล้วนับตั้งแต่คุณเปิดหน้านี้ กำลังโหลดข้อมูลล่าสุด...'
       await fetchEvent()
     } else {
-      reviewError.value = err.message || 'บันทึกผลการตรวจสอบไม่สำเร็จ'
+      reviewError.value = apiErrorText(err, 'บันทึกผลการตรวจสอบไม่สำเร็จ')
     }
   } finally {
     reviewSubmitting.value = false
