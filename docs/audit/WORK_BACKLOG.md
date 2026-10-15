@@ -20,8 +20,8 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | P1-10 | 1 | A-18 server-side MATCH consistency check | DONE | `ca4a3d1` (owner-delegated decision) |
 | P1-11 | 2 | A-14 SECURITY_OFFICER dashboard permission | DONE | `144164d` (owner-delegated decision) |
 | P1-12 | 4 | A-21 real camera snapshot | HUMAN | accept mock or implement |
-| P1-13 | 6 | A-22 summary refresh from ~1M raw events | TODO | needs PostgreSQL scale run |
-| P1-14 | 7 | P08-24 Prettier drift (71 files) | TODO (low) | not a CI gate |
+| P1-13 | 6 | A-22 summary refresh from ~1M raw events | DONE `3f81d0c` | 1M events / 30 days on PostgreSQL: backfill 445 s, routine 2 h refresh 4.5 s, totals exact (RawEventSummaryRefreshScaleTest, opt-in) |
+| P1-14 | 7 | P08-24 Prettier drift (71 files) | DONE `003ffa3` | real drift was 10 files; the rest was Windows line endings |
 | P1-15 | — | B5 production biometric models | BLOCKED | [project owner: model choice + licence] |
 | P1-16 | — | B-RET retention + RPO approval | BLOCKED | [project owner] |
 | P1-17 | — | Pilot host H1/H2/H10/H11, PILOT-001..011 | BLOCKED | [pilot host + site team] |
@@ -30,7 +30,7 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 
 | ID | Item | State | Notes |
 |---|---|---|---|
-| COM-00 | ACR-COM-01 tenancy model | HUMAN | [project owner] |
+| COM-00 | ACR-COM-01 tenancy model | DONE (decision) | Option B; hosting both on-premises and vendor-hosted (D13, 2026-10-15) |
 | COM-02a | License domain: installation identity, signed payload (Ed25519), offline verification, grace, revocation list, audit | DONE | `0f0f78d` |
 | COM-02b | Entitlement enforcement (camera/node limits, features can only narrow flags) — modes `off`/`warn`/`enforce` | DONE | `0f0f78d`; default `warn` |
 | COM-02c | License issuer CLI (private key from outside the repo), license status API + UI, expiry alerts | DONE | `0f0f78d`, UI `c030ec7`; production key = human |
@@ -38,9 +38,9 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | COM-03b | Versioned node configuration with validation and rollback | DONE | `b116095` backend, node apply/ack (this commit) |
 | COM-03c | Allowlisted remote commands (restart service, resync config) with audit, timeout, result; no shell | DONE | `aa75f9a` backend, `8e48806` node |
 | COM-03d | Model compatibility check (node model vs registry) | DONE | `model_compatible` on node API + `AI_NODE_MODEL_MISMATCH` alert; real models BLOCKED by B5 |
-| COM-03e | One-time enrollment code flow | TODO | |
+| COM-03e | One-time enrollment code flow | DONE `b474eee` | console code + `enroll.sh`; not yet run on a physical node |
 | COM-04a | Generic installer + preflight, env separation, release versioning, upgrade with pre-upgrade backup | PARTIAL | `scripts/upgrade-campus.sh` (backup first, rollback tags; dry-run verified); host run BLOCKED (no host); release tagging = human |
-| COM-05a | Alerts: queue backlog, disk threshold, license expiry | DONE | queue backlog existed; node disk + model mismatch `fc641e4`; licence `0f0f78d`. Central-server disk alert: TODO |
+| COM-05a | Alerts: queue backlog, disk threshold, license expiry | DONE | queue backlog existed; node disk + model mismatch `fc641e4`; licence `0f0f78d`. Central-server disk alert: DONE `1db3ee6` |
 | COM-05b | Redacted support diagnostics bundle | DONE | `4ee13ef` |
 | COM-06a | Institution data export + offboarding guide | DONE | OFFBOARDING_GUIDE (full SQL + object archive); student CSV export: optional |
 | COM-01 / COM-06 portal | Tenant model, central plane, portal | BLOCKED | ACR-COM-01 |
@@ -52,7 +52,7 @@ State: `DONE` (committed, tests pass) · `DOING` · `TODO` · `BLOCKED` (owner i
 | SEC-G7 | Node health check fails on plain HTTP to a remote backend | DONE `f6699a6` |
 | SEC-RL | General `/api/v1` rate limit | DONE `ff1da95` |
 | SEC-G4 | Opt-in backup encryption + `backup:decrypt` | DONE `49d70e0` |
-| SEC-NEXT | MFA enforcement for admin roles (DONE `f4a4bce`); dependency licence audit (DONE, counsel review of Redis/MinIO); threat model (DONE); upload malware scan (TODO) | PARTIAL |
+| SEC-NEXT | MFA enforcement for admin roles (DONE `f4a4bce`); dependency licence audit (DONE, counsel review of Redis/MinIO); threat model (DONE); upload malware scan (DONE `e2adb81`, ClamAV, verified with EICAR); TLS tooling (DONE `c5f6017`); admin recovery `access:reset-password` (DONE) | DONE (legal review of Redis/MinIO still HUMAN) |
 
 ## Phase 4 / 5 / 7 — Documents
 
