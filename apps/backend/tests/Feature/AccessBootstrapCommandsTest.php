@@ -15,6 +15,7 @@ use Database\Seeders\RolePermissionSeeder;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
@@ -142,6 +143,37 @@ class AccessBootstrapCommandsTest extends TestCase
         // The one-time password logs in (and the account must change it next)
         $this->postJson('/api/v1/auth/login', ['username' => 'pilot.admin', 'password' => $password])
             ->assertOk();
+    }
+
+    public function test_reset_password_with_reset_mfa_removes_a_lost_authenticator(): void
+    {
+        $admin = User::factory()->create([
+            'username' => 'mfa.admin',
+            'mfa_enabled' => true,
+            'mfa_secret_encrypted' => Crypt::encryptString('JBSWY3DPEHPK3PXP'),
+        ]);
+
+        // Without --reset-mfa the TOTP secret is kept
+        $this->assertSame(0, Artisan::call('access:reset-password', ['username' => 'mfa.admin', '--yes' => true]));
+        $this->assertTrue($admin->fresh()->mfa_enabled);
+        $this->assertDatabaseMissing('audit_logs', ['action' => 'MFA_DISABLED']);
+
+        $this->assertSame(0, Artisan::call('access:reset-password', [
+            'username' => 'mfa.admin', '--reset-mfa' => true, '--yes' => true,
+        ]));
+        $lines = array_values(array_filter(array_map('trim', explode("\n", Artisan::output()))));
+        $password = end($lines);
+
+        $admin->refresh();
+        $this->assertFalse($admin->mfa_enabled);
+        $this->assertNull($admin->mfa_secret_encrypted);
+        $this->assertDatabaseHas('audit_logs', ['action' => 'MFA_DISABLED', 'entity_id' => $admin->uuid]);
+
+        // Logs in with the one-time password alone: no MFA challenge left
+        $this->postJson('/api/v1/auth/login', ['username' => 'mfa.admin', 'password' => $password])
+            ->assertOk()
+            ->assertJsonMissingPath('data.status')
+            ->assertJsonPath('data.user.username', 'mfa.admin');
     }
 
     public function test_reset_password_refuses_unknown_or_inactive_users_and_needs_confirmation(): void

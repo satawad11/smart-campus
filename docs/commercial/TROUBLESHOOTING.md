@@ -11,7 +11,7 @@
 | `/health/redis` 503, REDIS_HEALTH alert | Redis down | `docker compose ps redis`; scheduler keeps running (A-11) |
 | `/health/database` slow then 503 | PostgreSQL down (≈16 s to fail, A-23) | `docker compose ps postgres`; disk space |
 | User gets 403 `PASSWORD_CHANGE_REQUIRED` | Forced password change pending | User changes password at `/change-password` |
-| Administrator forgot the password and no other admin can log in | No UI path left | On the backend host: `docker compose exec backend php artisan access:reset-password <username>`; log in with the printed one-time password and change it |
+| Administrator forgot the password and no other admin can log in | No UI path left | On the backend host: `docker compose exec backend php artisan access:reset-password <username>` (add `--reset-mfa` if the authenticator device is lost); log in with the printed one-time password and change it |
 | SITE/ZONE officer can't see an event (404) | Event outside the officer's scope | Correct the role scope with `access:assign-role` |
 | Admin gets 403 `MFA_ENROLLMENT_REQUIRED` | `security.admin_mfa_enforced` is on and the SUPER_ADMIN/SYSTEM_ADMIN has no MFA | Enrol on Account security (the app redirects there); another admin with MFA can switch the setting off |
 | 429 Too Many Requests | `/api/v1` rate limit (`API_RATE_LIMIT_PER_MINUTE`, default 300/min per user) | Wait for `Retry-After`; raise the limit only with a reason |
