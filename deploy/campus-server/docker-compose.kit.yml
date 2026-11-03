@@ -1,0 +1,42 @@
+# Offline install kit overlay (deploy/campus-server). Applied after
+# docker-compose.yml and docker-compose.pilot.yml on a host installed from
+# the kit: every image comes from the kit (docker load), nothing is built or
+# pulled. Digest-pinned third-party images are re-tagged by the packager
+# (scripts/package-campus-server.sh) because `docker load` does not restore
+# repository digests.
+
+x-kit: &kit
+  build: !reset null
+  pull_policy: never
+
+services:
+  nginx:
+    pull_policy: never
+  frontend:
+    <<: *kit
+  backend:
+    <<: *kit
+  queue:
+    <<: *kit
+  scheduler:
+    <<: *kit
+  websocket:
+    <<: *kit
+  ai-service:
+    <<: *kit
+    image: smart-campus/ai-service:pilot
+  postgres:
+    pull_policy: never
+  redis:
+    pull_policy: never
+  minio:
+    image: smart-campus/vendor-minio:kit
+    pull_policy: never
+  minio-init:
+    image: smart-campus/vendor-mc:kit
+    pull_policy: never
+  clamav:
+    image: smart-campus/vendor-clamav:kit
+    pull_policy: never
+  db-roles:
+    pull_policy: never

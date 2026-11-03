@@ -22,6 +22,25 @@ Let's Encrypt; vendor-hosted instances also open port 80 for renewal).
 Run `scripts/pilot-host-preflight.sh` (H1–H14) and fix every FAIL.
 
 ## 3. Install
+
+### 3a. Offline install kit (recommended)
+The vendor builds `dist/campus-server-kit-<version>-amd64.tar.gz` with `scripts/package-campus-server.sh` from an
+approved tag. On the campus server (Linux, Docker, or Ubuntu where the installer offers `apt install docker.io`):
+```bash
+tar -xzf campus-server-kit-<version>-amd64.tar.gz && cd campus-server-kit-<version>-amd64
+sudo ./install.sh          # 4 questions with defaults; --yes for none
+```
+It automates §3b steps 2–3 and the first verified backup: random secrets in `/opt/smart-campus/campus.env`
+(mode 600), images from the kit (no Internet, no source), internal-CA HTTPS, MinIO and least-privilege DB roles,
+migrations and approved seed, site `MAIN` with zone `GATE-1`, first SUPER_ADMIN (one-time password shown once),
+health check and `pilot:preflight` summary. It refuses to run when a database volume exists without its
+`campus.env` (never overwrites data). Running a newer kit's `install.sh` on an installed host is the update path:
+verified backup, rollback image tags, maintenance mode, migrations, restart; existing `campus.env` values are kept.
+Still manual: license (step 4 below), trusting `infrastructure/pilot/ca/ca.crt` on clients and nodes (or
+`smart-campus tls import`), `LICENSE_ENFORCEMENT=enforce`, `AI_MODE` (B5), off-host backup mount, and keeping a copy
+of `campus.env` off the host. Day-to-day: `smart-campus status|logs|backup|preflight|artisan`.
+
+### 3b. Manual install (from the repository)
 1. Check out the **approved release tag** (never a branch). See [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md).
 2. Create the env file from `infrastructure/pilot/pilot.env.example` outside the repository; fill every secret.
    Set `LICENSE_ENFORCEMENT=enforce` for commercial installations.
