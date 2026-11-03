@@ -8,7 +8,7 @@ document "RMS API Center v1" (2026). Read-only JSON over HTTPS.
 | Stage | What | State |
 |---|---|---|
 | 1 | Read-only client + `php artisan rms:preview` (counts and field values to map; writes nothing, prints no personal data) | DONE, tested with fixtures |
-| — | Live call from the platform server | BLOCKED: RMS answers `403 ip` until the RMS administrator allows the server's public IP |
+| — | Live call from the platform server | WORKS (2026-11-03, dev server IP allowed); findings below |
 | 2 | Sync into Person / StudentProfile (+ staff as Person TEACHER/STAFF) | NOT STARTED: needs ACR-INT-01 approval and a mapping confirmed against real data |
 
 ## Access rules (from the vendor document)
@@ -44,6 +44,21 @@ and must not request it (`person_code` stays empty or keeps its current value).
 6. Staff `position` → TEACHER vs STAFF.
 7. Students present here but no longer returned by RMS (graduated, withdrawn): flag for
    review; never change `academic_status` or delete automatically.
+
+## First live preview (2026-11-03, counts only)
+
+- Term 2/2569. Staff 184, groups 149, students 1300 (3 pages, no duplicates, all in a known group).
+  1300 looks low for the whole college: confirm with the RMS administrator that the key sees every student.
+- `groups.department` is **empty for all 149 groups**: departments must come from `major`
+  (or a hand-made major → department table), not from RMS directly.
+- `grade` is text such as `ปวช.1`, `ปวส.2` (level + year), not a number: parse the trailing digit.
+- `level`: only `ปวช.` (72 groups) and `ปวส.` (77).
+- Group `year` spans 2563-2569: older groups still hold enrolled (over-term) students.
+- 31 majors with naming that differs by level (e.g. `ไฟฟ้า`, `ช่างไฟฟ้า`, `ช่างไฟฟ้ากำลัง`):
+  needs a hand-confirmed major → Program/Department table.
+- Staff `position`: ครู 62, ครูผู้ช่วย 22, ผู้บริหาร 3, **ไม่มี 97**. TEACHER vs STAFF cannot rely on
+  position alone; staff `departments` mix teaching departments (`แผนกวิชา...`) and work units (`งาน...`).
+- Nothing matches this dev database yet (0 student codes, 0 classrooms, 0 programs), as expected.
 
 ## Run the preview
 
