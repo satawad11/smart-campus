@@ -90,6 +90,12 @@ class PermissionSeeder extends Seeder
                 'name' => 'Archive Student',
                 'description' => 'Archive inactive or graduated student profiles',
             ],
+            [
+                'code' => 'student.sync',
+                'module' => 'student',
+                'name' => 'Sync Students from RMS',
+                'description' => 'Run and review the RMS student and staff sync',
+            ],
 
             // academic
             [

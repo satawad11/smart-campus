@@ -36,7 +36,7 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 
 | Data | Category | Where | Retention today | Status |
 |---|---|---|---|---|
-| Student and staff names, student code, class group, staff position/department (from RMS API Center) | personal (students mostly minors) | RMS → backend (HTTPS, read-only); stored as Person / StudentProfile only after ACR-INT-01 sync is approved | as the Person record | PREVIEW ONLY (`rms:preview` stores nothing); no national ID, birth date, address, phone or photo requested |
+| Student and staff names, student code, class group, staff position/department (from RMS API Center) | personal (students mostly minors) | RMS → backend (HTTPS, read-only); stored as Person / StudentProfile (students) and Person TEACHER/STAFF (staff) by the ACR-INT-01 sync; `rms_links` keeps RMS ids and a payload hash | as the Person record; records missing from RMS are flagged, never auto-deleted | ACR-INT-01 APPROVED 2026-11-03; sync reports hold counts and student codes, no names; no national ID, birth date, address, phone or photo requested |
 | Camera video frames | biometric source | camera → node memory | not stored | VERIFIED (no frame persistence in ai-service) |
 | Probe embeddings (live) | biometric | node memory → backend request | not stored by the node; backend matches and discards | VERIFIED |
 | Enrolled face embeddings (512-d) | **sensitive** | PostgreSQL `face_profiles.embedding` | until revoked **and** purged (`face:purge`) | G-1 closed technically; when to purge is G-2 |

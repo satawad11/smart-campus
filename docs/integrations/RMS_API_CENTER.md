@@ -9,7 +9,7 @@ document "RMS API Center v1" (2026). Read-only JSON over HTTPS.
 |---|---|---|
 | 1 | Read-only client + `php artisan rms:preview` (counts and field values to map; writes nothing, prints no personal data) | DONE, tested with fixtures |
 | — | Live call from the platform server | WORKS (2026-11-03, dev server IP allowed); findings below |
-| 2 | Sync into Person / StudentProfile (+ staff as Person TEACHER/STAFF) | NOT STARTED: needs ACR-INT-01 approval and a mapping confirmed against real data |
+| 2 | Sync into Person / StudentProfile (+ staff as Person TEACHER/STAFF): `rms:sync`, UI page, daily schedule | IMPLEMENTED (ACR-INT-01 approved 2026-11-03); daily schedule off until a dry run is reviewed |
 
 ## Access rules (from the vendor document)
 
@@ -59,6 +59,17 @@ and must not request it (`person_code` stays empty or keeps its current value).
 - Staff `position`: ครู 62, ครูผู้ช่วย 22, ผู้บริหาร 3, **ไม่มี 97**. TEACHER vs STAFF cannot rely on
   position alone; staff `departments` mix teaching departments (`แผนกวิชา...`) and work units (`งาน...`).
 - Nothing matches this dev database yet (0 student codes, 0 classrooms, 0 programs), as expected.
+
+## Run the sync
+
+```bash
+docker compose exec backend php artisan rms:sync --dry-run   # report only, writes nothing
+docker compose exec backend php artisan rms:sync             # real run
+```
+
+Or Students -> "ซิงก์จาก RMS" in the web UI (permission `student.sync`). Review the dry-run
+report (unmapped majors, new departments, students missing from RMS) before the first real run,
+then set `RMS_SYNC_ENABLED=true` for the daily run.
 
 ## Run the preview
 

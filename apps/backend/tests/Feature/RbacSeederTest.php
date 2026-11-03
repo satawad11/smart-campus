@@ -89,6 +89,7 @@ class RbacSeederTest extends TestCase
                 'student.import',
                 'student.export',
                 'student.archive',
+                'student.sync',
             ],
             'academic' => [
                 'academic.view',
@@ -159,14 +160,14 @@ class RbacSeederTest extends TestCase
             }
         }
 
-        $this->assertSame(44, $totalExpected);
-        $this->assertCount(44, Permission::all());
+        $this->assertSame(45, $totalExpected);
+        $this->assertCount(45, Permission::all());
     }
 
     public function test_permission_codes_are_unique(): void
     {
         $codes = Permission::pluck('code')->all();
-        $this->assertCount(44, $codes);
+        $this->assertCount(45, $codes);
         $this->assertSame($codes, array_unique($codes));
     }
 
@@ -175,7 +176,7 @@ class RbacSeederTest extends TestCase
         $superAdmin = Role::where('code', 'SUPER_ADMIN')->firstOrFail();
         $permissions = $superAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(44, $permissions);
+        $this->assertCount(45, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -185,7 +186,7 @@ class RbacSeederTest extends TestCase
         $systemAdmin = Role::where('code', 'SYSTEM_ADMIN')->firstOrFail();
         $permissions = $systemAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(44, $permissions);
+        $this->assertCount(45, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -352,8 +353,8 @@ class RbacSeederTest extends TestCase
         $initialRoleUuids = Role::pluck('uuid', 'code')->all();
 
         $this->assertSame(5, $initialRoleCount);
-        $this->assertSame(44, $initialPermCount);
-        $this->assertSame(44 + 44 + 13 + 6 + 3, $initialPivotCount); // 110 assignments
+        $this->assertSame(45, $initialPermCount);
+        $this->assertSame(45 + 45 + 13 + 6 + 3, $initialPivotCount); // 112 assignments
 
         // Run seeders again
         $this->seed(DatabaseSeeder::class);

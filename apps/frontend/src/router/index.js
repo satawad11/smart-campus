@@ -100,6 +100,12 @@ const routes = [
         meta: { requiresAuth: true, permission: 'student.import' },
       },
       {
+        path: 'students/rms-sync',
+        name: 'students.rmsSync',
+        component: () => import('@/views/students/RmsSyncView.vue'),
+        meta: { requiresAuth: true, permission: 'student.sync' },
+      },
+      {
         path: 'students/:uuid',
         name: 'students.show',
         component: () => import('@/views/students/StudentDetailView.vue'),

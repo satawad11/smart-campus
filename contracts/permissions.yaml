@@ -9,6 +9,7 @@ permissions:
     - student.import
     - student.export
     - student.archive
+    - student.sync
   academic:
     - academic.view
     - academic.manage

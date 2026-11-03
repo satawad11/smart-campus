@@ -49,3 +49,10 @@ if (config('backup.schedule.enabled')) {
     Schedule::command('backup:prune')
         ->cron(config('backup.schedule.prune_cron'))->withoutOverlapping(60);
 }
+
+// ACR-INT-01: daily RMS student/staff sync. Off until the operator has
+// reviewed a dry run (rms:sync --dry-run) and set RMS_SYNC_ENABLED=true.
+if (config('rms.sync.enabled')) {
+    Schedule::command('rms:sync --scheduled')
+        ->cron(config('rms.sync.cron'))->withoutOverlapping(60);
+}

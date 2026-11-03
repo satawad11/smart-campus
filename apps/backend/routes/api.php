@@ -26,6 +26,7 @@ use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
+use App\Http\Controllers\Integration\RmsSyncController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
@@ -190,6 +191,16 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/imports/{importJob}', [StudentImportController::class, 'show'])->middleware('permission:student.import');
     Route::get('/imports/{importJob}/errors', [StudentImportController::class, 'errors'])->middleware('permission:student.import');
     Route::post('/imports/{importJob}/process', [StudentImportController::class, 'process'])->middleware('permission:student.import');
+});
+
+/*
+| RMS API Center sync (ACR-INT-01). Runs are queued; reports carry counts and
+| review items, never names. Requires permission:student.sync.
+*/
+Route::middleware(['auth:web', 'active', 'session.active', 'permission:student.sync'])->group(function () {
+    Route::get('/integrations/rms/sync-runs', [RmsSyncController::class, 'index']);
+    Route::get('/integrations/rms/sync-runs/{rmsSyncRun}', [RmsSyncController::class, 'show']);
+    Route::post('/integrations/rms/sync-runs', [RmsSyncController::class, 'store'])->middleware('throttle:6,1');
 });
 
 /*

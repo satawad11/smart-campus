@@ -183,4 +183,27 @@ export const studentImportService = {
   },
 }
 
+/**
+ * RMS API Center sync runs (ACR-INT-01). Requires student.sync.
+ */
+export const rmsSyncService = {
+  /** @returns {Promise<{ data: Array<object>, meta: object }>} */
+  async list() {
+    const response = await api.get('/integrations/rms/sync-runs')
+    return { data: response.data.data, meta: response.data.meta }
+  },
+
+  /** @param {string} uuid */
+  async show(uuid) {
+    const response = await api.get(`/integrations/rms/sync-runs/${uuid}`)
+    return response.data.data
+  },
+
+  /** @param {boolean} dryRun */
+  async start(dryRun) {
+    const response = await api.post('/integrations/rms/sync-runs', { dry_run: dryRun })
+    return response.data.data
+  },
+}
+
 export default studentsService

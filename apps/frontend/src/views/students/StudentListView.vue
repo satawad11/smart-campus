@@ -224,6 +224,14 @@ onMounted(() => {
       </div>
       <div class="mt-4 sm:mt-0 flex flex-wrap items-center gap-3">
         <router-link
+          v-if="authStore.can('student.sync')"
+          to="/students/rms-sync"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          ซิงก์จาก RMS
+        </router-link>
+
+        <router-link
           v-if="authStore.can('student.import')"
           to="/students/import"
           class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"

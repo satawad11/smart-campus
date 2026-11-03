@@ -1,6 +1,6 @@
 # ARCHITECTURE_CHANGE_REQUEST — ACR-INT-01 RMS student/staff sync
 
-**Status:** PROPOSED (needs project-owner approval and a mapping confirmed on real RMS data)
+**Status:** APPROVED by the project owner (chat, 2026-11-03) · implemented, see the implementation notes below
 · **Raised:** 2026-11-02 · **Requested by:** project owner (chat, 2026-11-02)
 
 ```text
@@ -51,3 +51,25 @@ Alternatives:
 | RMS owns which fields | name, surname, prefix, classroom, department, program, level, year |
 | Staff in scope | All active staff as Person; no login accounts created |
 | Departments/programs missing here | Create automatically, flagged in the sync report |
+
+## Implementation notes (2026-11-03)
+
+- `rms_links` (RMS id -> record, payload hash, `missing_since`) and `rms_sync_runs` (one row per run:
+  counts and review items, no names). The run table is an addition to the proposal: the
+  "sync report in the UI" needs somewhere to live.
+- `RmsSyncService`: one transaction per run; `--dry-run` rolls it back, so the dry-run report is
+  exactly what a real run would do. Departments, programs and classrooms go through
+  `AcademicMasterService`; new students through `StudentService` (source `SIS_SYNC`, status ACTIVE).
+- RMS groups carry no department (live preview), so the department comes from the major through
+  `config/rms.php` `major_departments` (DRAFT, confirm with the registrar); an unmapped major goes
+  to `แผนกวิชา<major>` and is listed in the report.
+- Existing classrooms keep their department and academic year (immutable in V1). A group that moves
+  gets a new classroom; the old one stays.
+- Safety stop: a run that would see fewer than `RMS_SYNC_MIN_STUDENT_RATIO` (default 0.5) of the
+  linked students writes nothing.
+- Staff names: the title is removed from `first_name` (config `name_titles`); `display_name`
+  keeps the full form. Positions ครู, ครูผู้ช่วย, ผู้บริหาร -> TEACHER, all others -> STAFF.
+- Permission `student.sync` (granted to SUPER_ADMIN and SYSTEM_ADMIN by the migration on existing
+  installations). API: `GET/POST /api/v1/integrations/rms/sync-runs`, `GET .../{uuid}`.
+  UI: Students -> "ซิงก์จาก RMS". CLI: `php artisan rms:sync [--dry-run]`.
+- Daily schedule only when `RMS_SYNC_ENABLED=true` (`RMS_SYNC_CRON`, default 05:30).
