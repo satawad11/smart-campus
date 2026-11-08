@@ -37,9 +37,15 @@ done
 say()  { printf '%s\n' "$*"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33m!\033[0m %s\n' "$*"; }
+UPDATE_IN_PROGRESS=0
 die()  {
     printf '\n\033[31mติดตั้งไม่สำเร็จ:\033[0m %s\n' "$*" >&2
     [ -f "${LOG}" ] && printf 'รายละเอียด: %s (20 บรรทัดสุดท้าย)\n' "${LOG}" >&2 && tail -n 20 "${LOG}" >&2
+    if [ "${UPDATE_IN_PROGRESS}" -eq 1 ]; then
+        printf '\nระบบยังอยู่ในโหมดปรับปรุง (ผู้ใช้เข้าเว็บไม่ได้) ข้อมูลถูกสำรองไว้ก่อนอัปเดตแล้ว\n' >&2
+        printf '  ย้อนกลับไปรุ่นเดิม:  sudo smart-campus rollback\n' >&2
+        printf '  หรือแก้สาเหตุแล้วรันตัวติดตั้งนี้ซ้ำ\n' >&2
+    fi
     exit 1
 }
 
@@ -169,13 +175,19 @@ if [ "${MODE}" = update ] && dc ps --status running --services 2>/dev/null | gre
         docker image inspect "smart-campus/${img}:pilot" >/dev/null 2>&1 \
             && docker tag "smart-campus/${img}:pilot" "smart-campus/${img}:rollback-${STAMP}"
     done
+    # Read by `smart-campus rollback`: which images and version to return to.
+    printf 'stamp=%s\nfrom_version=%s\nto_version=%s\nstarted_at=%s\n' "${STAMP}" \
+        "$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo unknown)" "$(cat "${KIT_DIR}/VERSION")" \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${INSTALL_DIR}/.last-rollback"
     ok "เก็บ image เดิมไว้สำหรับย้อนกลับ (rollback-${STAMP})"
     step "เข้าสู่โหมดปรับปรุงระบบ" dc exec -T backend php artisan down --retry=60
+    UPDATE_IN_PROGRESS=1
 fi
 
 copy_runtime() {
     cp "${KIT_DIR}/docker-compose.yml" "${KIT_DIR}/docker-compose.pilot.yml" "${KIT_DIR}/docker-compose.kit.yml" \
         "${KIT_DIR}/campus.sh" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
+    if [ -f "${KIT_DIR}/ARCH" ]; then cp "${KIT_DIR}/ARCH" "${INSTALL_DIR}/"; fi
     mkdir -p "${INSTALL_DIR}/infrastructure/pilot/certs" "${INSTALL_DIR}/scripts" "${INSTALL_DIR}/docs/security"
     cp -r "${KIT_DIR}/infrastructure/minio" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
     rm -rf "${INSTALL_DIR}/infrastructure/pilot/nginx"
@@ -233,6 +245,13 @@ if [ "${MODE}" = install ]; then
     step "สร้างไฟล์ตั้งค่าและรหัสผ่านทั้งหมดแบบสุ่ม (campus.env)" write_env
 else
     step "เพิ่มค่าตั้งใหม่ของรุ่นนี้ใน campus.env (ค่าเดิมไม่เปลี่ยน)" merge_new_env_keys
+    # Every kit build bakes a new public Reverb key into the frontend image.
+    # Keeping the old key in campus.env broke realtime (Live Monitor) after
+    # every update. The per-install REVERB_APP_SECRET is left unchanged.
+    if [ -s "${KIT_DIR}/REVERB_APP_KEY" ]; then
+        set_env REVERB_APP_KEY "$(cat "${KIT_DIR}/REVERB_APP_KEY")"
+        ok "ปรับ REVERB_APP_KEY ให้ตรงกับหน้าเว็บของรุ่นนี้"
+    fi
 fi
 
 BACKUP_DIR="$(env_value BACKUP_OFFHOST_HOST_PATH)"
@@ -281,6 +300,10 @@ step "เตรียม cache ของระบบ" dc exec -T backend sh -c '
 step "เริ่มทุกบริการและรอจนพร้อม (ครั้งแรกอาจใช้หลายนาที)" dc up -d --wait --wait-timeout 900
 if [ "${MODE}" = update ]; then
     step "ออกจากโหมดปรับปรุงระบบ" dc exec -T backend php artisan up
+    UPDATE_IN_PROGRESS=0
+    printf '%s update %s -> %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        "$(sed -n 's/^from_version=//p' "${INSTALL_DIR}/.last-rollback" 2>/dev/null)" \
+        "$(cat "${KIT_DIR}/VERSION")" >> "${INSTALL_DIR}/update-history.log"
 fi
 
 say ""
