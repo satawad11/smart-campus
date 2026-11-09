@@ -54,7 +54,7 @@ jobs:
       - name: Build kit
         env:
           TAG: ${{ github.ref_name }}
-        run: scripts/package-campus-server.sh "${TAG}"
+        run: bash scripts/package-campus-server.sh "${TAG}"
       - name: Checksum
         env:
           TAG: ${{ github.ref_name }}
@@ -87,7 +87,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
           AI_NODE_PLATFORM: linux/${{ matrix.arch }}
-        run: scripts/package-ai-node.sh "${TAG}"
+        run: bash scripts/package-ai-node.sh "${TAG}"
       - name: Checksum
         env:
           TAG: ${{ github.ref_name }}
