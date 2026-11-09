@@ -19,7 +19,7 @@ Route::get('/', function () {
  *   /health            liveness (cheap 200)
  *   /health/database   PostgreSQL connectivity
  *   /health/redis      Redis connectivity
- *   /health/storage    object storage (S3/MinIO) reachability
+ *   /health/storage    object storage (S3/SeaweedFS) reachability
  *   /health/ai         AI service reachability
  *   /health/full       consolidated readiness (200 all-ok, 503 if any down)
  */

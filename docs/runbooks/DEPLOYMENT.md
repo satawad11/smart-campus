@@ -55,8 +55,8 @@ $DC build backend frontend ai-service
 
 ### Step 3.3: Datastores, Object Storage and Database Roles
 ```bash
-$DC up -d --wait postgres redis minio
-$DC up minio-init                 # buckets + least-privilege MinIO app user (idempotent)
+$DC up -d --wait postgres redis objectstore
+$DC run --rm objectstore-init     # buckets (idempotent); least-privilege app identity comes from start.sh
 $DC run --rm db-roles             # extensions + SEC-005 roles (idempotent)
 ```
 

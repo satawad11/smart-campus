@@ -8,7 +8,7 @@ This procedure specifies backup mechanisms for unstructured application data:
 
 ## 2. Backup Strategy
 - **Frequency**: Daily archive creation or real-time S3 bucket replication (versioning + cross-region replication).
-- **Tooling**: Built-in `php artisan backup:run --type=STORAGE`, or AWS CLI / MinIO Client `mc mirror`.
+- **Tooling**: Built-in `php artisan backup:run --type=STORAGE`, or `rclone sync` / AWS CLI against the S3 endpoint.
 - **Integrity**: Standard SHA-256 manifest verification and zip archive structure checks.
 
 ## 3. Storage Backup Execution
@@ -16,7 +16,7 @@ This procedure specifies backup mechanisms for unstructured application data:
 # Automated archive execution
 php artisan backup:run --type=STORAGE --verify
 
-# S3 / MinIO direct bucket synchronization
+# S3 (SeaweedFS) direct bucket synchronization
 aws s3 sync /var/www/smart-campus/storage/app/public s3://smart-campus-backup-vault/storage/public --delete
 ```
 

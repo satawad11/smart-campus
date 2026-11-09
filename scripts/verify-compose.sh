@@ -19,7 +19,7 @@ errors=0
 fail() { echo "  FAIL: $1"; errors=$((errors + 1)); }
 
 # Approved base services (docs/04-development-blueprint.md §3, prompts/FND-002.md).
-expected_services="ai-service backend frontend minio nginx postgres queue redis scheduler websocket"
+expected_services="ai-service backend frontend nginx objectstore objectstore-init postgres queue redis scheduler websocket"
 
 echo "Verifying docker-compose base services at: ${ROOT}"
 

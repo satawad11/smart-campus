@@ -189,7 +189,7 @@ copy_runtime() {
         "${KIT_DIR}/campus.sh" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
     if [ -f "${KIT_DIR}/ARCH" ]; then cp "${KIT_DIR}/ARCH" "${INSTALL_DIR}/"; fi
     mkdir -p "${INSTALL_DIR}/infrastructure/pilot/certs" "${INSTALL_DIR}/scripts" "${INSTALL_DIR}/docs/security"
-    cp -r "${KIT_DIR}/infrastructure/minio" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
+    cp -r "${KIT_DIR}/infrastructure/objectstore""${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
     rm -rf "${INSTALL_DIR}/infrastructure/pilot/nginx"
     cp -r "${KIT_DIR}/infrastructure/pilot/nginx" "${INSTALL_DIR}/infrastructure/pilot/"
     cp "${KIT_DIR}/infrastructure/pilot/pilot.env.example" "${INSTALL_DIR}/infrastructure/pilot/"
@@ -219,8 +219,8 @@ write_env() {
     # Public key baked into the kit's frontend image; the secret is per install.
     set_env REVERB_APP_KEY "$(cat "${KIT_DIR}/REVERB_APP_KEY")"
     set_env REVERB_APP_SECRET "$(secret)"
-    set_env MINIO_ROOT_USER "campus-root"
-    set_env MINIO_ROOT_PASSWORD "$(secret)"
+    set_env OBJECTSTORE_ROOT_USER "campus-root"
+    set_env OBJECTSTORE_ROOT_PASSWORD "$(secret)"
     set_env AWS_ACCESS_KEY_ID "campus-app"
     set_env AWS_SECRET_ACCESS_KEY "$(secret)"
     set_env BACKUP_ENCRYPTION_KEY "$(openssl rand -base64 32)"
@@ -241,6 +241,46 @@ merge_new_env_keys() { # keys added by a newer release, existing values untouche
     done < "${INSTALL_DIR}/infrastructure/pilot/pilot.env.example"
 }
 
+# ---- one-off move of files from MinIO (installs before 2026-11) -------------
+LEGACY_MINIO_VOLUME="smart-campus_minio-data"
+LEGACY_MINIO_CONTAINER="smart-campus-minio-1"
+NEEDS_STORAGE_MIGRATION=0
+
+legacy_minio_up() { # the old MinIO, reachable as "minio" on the app network
+    local envf
+    if docker container inspect "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1; then
+        docker start "${LEGACY_MINIO_CONTAINER}" >/dev/null
+    else
+        docker image inspect smart-campus/vendor-minio:kit >/dev/null 2>&1 \
+            || { echo "legacy MinIO container and image smart-campus/vendor-minio:kit not found"; return 1; }
+        LEGACY_MINIO_CONTAINER="smart-campus-minio-legacy"
+        docker rm -f "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1 || true
+        envf="$(mktemp)"; chmod 600 "${envf}"
+        printf 'MINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\n' \
+            "$(env_value MINIO_ROOT_USER)" "$(env_value MINIO_ROOT_PASSWORD)" > "${envf}"
+        docker run -d --name "${LEGACY_MINIO_CONTAINER}" --network smart-campus_smartcampus \
+            --network-alias minio --env-file "${envf}" -v "${LEGACY_MINIO_VOLUME}:/data" \
+            smart-campus/vendor-minio:kit server /data >/dev/null || { rm -f "${envf}"; return 1; }
+        rm -f "${envf}"
+    fi
+    for _ in $(seq 1 60); do
+        docker exec "${LEGACY_MINIO_CONTAINER}" curl -fsS http://localhost:9000/minio/health/live >/dev/null 2>&1 && return 0
+        sleep 2
+    done
+    echo "legacy MinIO did not become ready"; return 1
+}
+
+migrate_legacy_storage() {
+    step "เปิดที่เก็บไฟล์ MinIO เดิมเพื่อย้ายข้อมูล" legacy_minio_up
+    step "ย้ายไฟล์จาก MinIO ไปที่เก็บไฟล์ใหม่ (ตรวจทุกไบต์)" dc --profile migrate run --rm storage-migrate
+    # Only now does the app switch over; until here a rollback still finds
+    # every file in the old MinIO.
+    set_env AWS_ENDPOINT "http://objectstore:8333"
+    date -u +%Y-%m-%dT%H:%M:%SZ > "${INSTALL_DIR}/.objectstore-migrated"
+    docker rm -f "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1 || true
+    ok "ย้ายไฟล์เสร็จ (volume ${LEGACY_MINIO_VOLUME} เดิมยังเก็บไว้ ลบเองได้เมื่อมั่นใจ)"
+}
+
 if [ "${MODE}" = install ]; then
     step "สร้างไฟล์ตั้งค่าและรหัสผ่านทั้งหมดแบบสุ่ม (campus.env)" write_env
 else
@@ -251,6 +291,18 @@ else
     if [ -s "${KIT_DIR}/REVERB_APP_KEY" ]; then
         set_env REVERB_APP_KEY "$(cat "${KIT_DIR}/REVERB_APP_KEY")"
         ok "ปรับ REVERB_APP_KEY ให้ตรงกับหน้าเว็บของรุ่นนี้"
+    fi
+    # Object storage moved from MinIO to SeaweedFS (MinIO images are no
+    # longer published). The app keys (AWS_*) are reused unchanged.
+    [ -n "$(env_value OBJECTSTORE_ROOT_USER)" ] || set_env OBJECTSTORE_ROOT_USER "campus-root"
+    [ -n "$(env_value OBJECTSTORE_ROOT_PASSWORD)" ] || set_env OBJECTSTORE_ROOT_PASSWORD "$(secret)"
+    if docker volume inspect "${LEGACY_MINIO_VOLUME}" >/dev/null 2>&1 \
+        && [ ! -f "${INSTALL_DIR}/.objectstore-migrated" ]; then
+        NEEDS_STORAGE_MIGRATION=1
+        [ -n "$(env_value MINIO_ROOT_USER)" ] && [ -n "$(env_value MINIO_ROOT_PASSWORD)" ] \
+            || die "พบข้อมูลไฟล์ของ MinIO เดิม แต่ไม่พบ MINIO_ROOT_USER/MINIO_ROOT_PASSWORD ใน ${ENV_FILE}"
+    elif [ "$(env_value AWS_ENDPOINT)" = "http://minio:9000" ]; then
+        set_env AWS_ENDPOINT "http://objectstore:8333"
     fi
 fi
 
@@ -272,8 +324,11 @@ if [ ! -s "${INSTALL_DIR}/infrastructure/pilot/certs/fullchain.pem" ]; then
 fi
 
 step "ตรวจไฟล์ตั้งค่า" dc config --quiet
-step "เริ่มฐานข้อมูล, Redis และที่เก็บไฟล์" dc up -d --wait --wait-timeout 300 postgres redis minio
-step "สร้าง bucket และผู้ใช้ของที่เก็บไฟล์" dc run --rm minio-init
+step "เริ่มฐานข้อมูล, Redis และที่เก็บไฟล์" dc up -d --wait --wait-timeout 300 postgres redis objectstore
+step "สร้าง bucket ของที่เก็บไฟล์" dc run --rm objectstore-init
+if [ "${NEEDS_STORAGE_MIGRATION}" -eq 1 ]; then
+    migrate_legacy_storage
+fi
 step "สร้างบทบาทฐานข้อมูลแบบสิทธิ์ต่ำสุด" dc --profile setup run --rm db-roles
 step "เริ่ม backend" dc up -d --wait --wait-timeout 300 backend
 

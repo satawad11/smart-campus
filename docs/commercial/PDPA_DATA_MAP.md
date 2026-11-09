@@ -21,7 +21,7 @@ Biometric data (face images, face embeddings) is **sensitive personal data** und
    ▼                                                             │
  Campus backend (on campus server or dedicated VM)  ◄────────────┘
    │ PostgreSQL: persons, students, users, face embeddings (pgvector), events, decisions, audit
-   │ MinIO: face-samples, person-photos, event-snapshots, report-exports (private buckets)
+   │ Object storage (SeaweedFS): face-samples, person-photos, event-snapshots, report-exports (private buckets)
    │ Redis: sessions, cache, queue payloads (transient)
    ▼
  Browser (staff)  — sees names, photos, events; never raw embeddings (PROJECT_RULES §9/§10)
@@ -40,15 +40,15 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 | Camera video frames | biometric source | camera → node memory | not stored | VERIFIED (no frame persistence in ai-service) |
 | Probe embeddings (live) | biometric | node memory → backend request | not stored by the node; backend matches and discards | VERIFIED |
 | Enrolled face embeddings (512-d) | **sensitive** | PostgreSQL `face_profiles.embedding` | until revoked **and** purged (`face:purge`) | G-1 closed technically; when to purge is G-2 |
-| Face sample images | **sensitive** | MinIO `face-samples` + `face_samples` rows (SHA-256, path) | until revoked **and** purged (`face:purge`) | G-1 closed technically; G-2 |
-| Person photos | personal | MinIO `person-photos` | until replaced/deleted (STD-010) | VERIFIED |
+| Face sample images | **sensitive** | object storage `face-samples` + `face_samples` rows (SHA-256, path) | until revoked **and** purged (`face:purge`) | G-1 closed technically; G-2 |
+| Person photos | personal | object storage `person-photos` | until replaced/deleted (STD-010) | VERIFIED |
 | Person / student profile (name, codes, class, status history) | personal (minors) | PostgreSQL `persons`, `student_profiles`, `student_status_histories` | indefinite (archive, no delete) | DECISION NEEDED |
 | Access events + decisions (who, where, when, score) | personal (location) | PostgreSQL `access_events`, `access_decisions` | `retention.events_days` = 90 | VERIFIED (setting) |
-| Event snapshots | personal | MinIO `event-snapshots` | `retention.snapshots_days` = 30 | VERIFIED (setting; snapshots not produced yet, A-21) |
+| Event snapshots | personal | object storage `event-snapshots` | `retention.snapshots_days` = 30 | VERIFIED (setting; snapshots not produced yet, A-21) |
 | Offline event buffer on node | personal (person UUID + score) | node disk, SQLite, **unencrypted** | until delivered | VERIFIED; G-3 |
 | Staff accounts, login logs, sessions | personal | PostgreSQL `users`, `login_logs`, `user_sessions` | login logs 365 d | VERIFIED (setting) |
 | Audit logs | personal (staff actions) | PostgreSQL `audit_logs` | `retention.audit_logs_days` | VERIFIED (setting) |
-| Report exports | personal | MinIO `report-exports` | 7 days | VERIFIED (setting) |
+| Report exports | personal | object storage `report-exports` | 7 days | VERIFIED (setting) |
 | Health logs (camera/node) | operational | PostgreSQL | 14 days | VERIFIED |
 | Backups | all of the above | backup volume + off-host copy | proposed 48 h recent / 14 d daily | DECISION NEEDED (B-RET) |
 | Application logs | may contain usernames, IPs | container logs | host log rotation | DECISION NEEDED |

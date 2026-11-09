@@ -1,7 +1,7 @@
 # Threat Model — Campus Instance (STRIDE, 2026-10-14)
 
 **Scope:** one campus instance (ACR-COM-01 option B): browser ↔ nginx TLS ↔ Laravel API/Reverb ↔ PostgreSQL / Redis /
-MinIO; AI node ↔ `/internal/v1`; cameras (RTSP) ↔ AI node; backups → off-host target; vendor licence files.
+object storage (SeaweedFS S3); AI node ↔ `/internal/v1`; cameras (RTSP) ↔ AI node; backups → off-host target; vendor licence files.
 **Assets:** biometric data (embeddings, face images — Highly Sensitive, minors), student records, access events,
 admin accounts, node credentials, licence private key (vendor side), backups.
 
@@ -21,6 +21,6 @@ admin accounts, node credentials, licence private key (vendor side), backups.
 | T12 | **E**levation of privilege: role misassignment | CLI/UI | Role assignment CLI audited; permission codes; forced password change | Periodic access review (organisational) |
 | T13 | **E**levation via remote node commands | admin API | Allowlisted enum only, no shell, `ai_node.manage` + scope, audit, timeout | — |
 | T14 | Licence private key theft (vendor) | vendor workstation | Key outside repo, user-only ACL | **Move offline** (owner task, D8) |
-| T15 | Supply chain (images, dependencies) | build | Lockfiles, `composer/npm audit` advisory in CI | Pin `minio:latest`; add image scanning; licence review (DEPENDENCY_LICENSES) |
+| T15 | Supply chain (images, dependencies) | build | Lockfiles, `composer/npm audit` advisory in CI | Images pinned by digest (MinIO replaced by SeaweedFS 2026-11); add image scanning; licence review (DEPENDENCY_LICENSES) |
 
 Review this model at every release and after any architecture change.

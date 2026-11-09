@@ -41,6 +41,13 @@ The script performs the manual steps below in order, starting with a **verified 
    deliver them idempotently afterwards (CAM-012, A-07).
 
 ## Migration rules
+### Object storage: MinIO → SeaweedFS (releases after 2026-11)
+The first update to a release with SeaweedFS copies every object from the old MinIO store (`storage-migrate`,
+rclone), verifies it byte for byte, and only then points the app at the new store. The `smart-campus_minio-data`
+volume is kept; delete it by hand once the new release is accepted. If the copy fails the update stops with the
+app still on MinIO, so `smart-campus rollback` finds every file. Allow time and disk space for one more copy of
+the object data.
+
 Migrations are additive (PROJECT_RULES §15). A release containing a destructive or data-rewriting migration must say
 so in its notes and requires an explicit human approval plus a verified backup.
 

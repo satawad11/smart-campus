@@ -31,7 +31,7 @@ tar -xzf campus-server-kit-<version>-amd64.tar.gz && cd campus-server-kit-<versi
 sudo ./install.sh          # 4 questions with defaults; --yes for none
 ```
 It automates §3b steps 2–3 and the first verified backup: random secrets in `/opt/smart-campus/campus.env`
-(mode 600), images from the kit (no Internet, no source), internal-CA HTTPS, MinIO and least-privilege DB roles,
+(mode 600), images from the kit (no Internet, no source), internal-CA HTTPS, object storage (SeaweedFS) and least-privilege DB roles,
 migrations and approved seed, site `MAIN` with zone `GATE-1`, first SUPER_ADMIN (one-time password shown once),
 health check and `pilot:preflight` summary. It refuses to run when a database volume exists without its
 `campus.env` (never overwrites data). Running a newer kit's `install.sh` on an installed host is the update path:
@@ -58,5 +58,5 @@ of `campus.env` off the host. Day-to-day: `smart-campus status|logs|backup|prefl
 7. Smoke test: PILOT-HOST-DEPLOYMENT-CHECKLIST §10.
 
 ## 4. Repeatability
-Every step above is idempotent (seeders, `locations:provision`, `minio-init`, `db-roles`); `access:bootstrap-admin`
+Every step above is idempotent (seeders, `locations:provision`, `objectstore-init`, `db-roles`); `access:bootstrap-admin`
 refuses to run twice. Re-running the procedure on a configured host doesn't duplicate data.

@@ -58,14 +58,14 @@ pull_tag pgvector/pgvector:pg16
 pull_tag redis:7-alpine
 # Digest-pinned images get a local tag (docker load does not restore digests);
 # deploy/campus-server/docker-compose.kit.yml uses these tags.
-pull_tag "$(grep -m1 -oE 'minio/minio@sha256:[0-9a-f]+' docker-compose.yml)" smart-campus/vendor-minio:kit
-pull_tag "$(grep -m1 -oE 'quay.io/minio/mc@sha256:[0-9a-f]+' docker-compose.pilot.yml)" smart-campus/vendor-mc:kit
+pull_tag "$(grep -m1 -oE 'chrislusf/seaweedfs:[0-9.]+@sha256:[0-9a-f]+' docker-compose.yml)" smart-campus/vendor-seaweedfs:kit
+pull_tag "$(grep -m1 -oE 'rclone/rclone:[0-9.]+@sha256:[0-9a-f]+' docker-compose.pilot.yml)" smart-campus/vendor-rclone:kit
 pull_tag "$(grep -m1 -oE 'clamav/clamav:[0-9.]+@sha256:[0-9a-f]+' docker-compose.pilot.yml)" smart-campus/vendor-clamav:kit
 
 IMAGES=(
   smart-campus/backend:pilot smart-campus/frontend:pilot smart-campus/ai-service:pilot
   nginx:1.27-alpine pgvector/pgvector:pg16 redis:7-alpine
-  smart-campus/vendor-minio:kit smart-campus/vendor-mc:kit smart-campus/vendor-clamav:kit
+  smart-campus/vendor-seaweedfs:kit smart-campus/vendor-rclone:kit smart-campus/vendor-clamav:kit
 )
 for image in "${IMAGES[@]}"; do
   arch="$(docker image inspect "${image}" --format '{{.Architecture}}')"
@@ -81,7 +81,7 @@ cp docker-compose.yml docker-compose.pilot.yml "${OUT}/"
 cp deploy/campus-server/docker-compose.kit.yml deploy/campus-server/install.sh \
    deploy/campus-server/campus.sh deploy/campus-server/README.md "${OUT}/"
 mkdir -p "${OUT}/infrastructure/pilot" "${OUT}/scripts" "${OUT}/docs/security"
-cp -r infrastructure/minio infrastructure/postgres "${OUT}/infrastructure/"
+cp -r infrastructure/objectstore infrastructure/postgres "${OUT}/infrastructure/"
 cp -r infrastructure/pilot/nginx "${OUT}/infrastructure/pilot/"
 cp infrastructure/pilot/pilot.env.example "${OUT}/infrastructure/pilot/"
 cp scripts/tls-setup.sh "${OUT}/scripts/"
