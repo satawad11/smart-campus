@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\DB;
 class RolePermissionSeeder extends Seeder
 {
     /**
+     * Permissions that a wildcard ('*') grants to SUPER_ADMIN only.
+     * system.update starts a host-level update (ACR-OPS-01).
+     *
+     * @var list<string>
+     */
+    public const SUPER_ADMIN_ONLY = ['system.update'];
+
+    /**
      * Seed canonical role-permission assignment matrix.
      *
      * Non-destructive & Bootstrap-safe:
@@ -39,7 +47,9 @@ class RolePermissionSeeder extends Seeder
                 }
 
                 if ($permissionCodes === ['*']) {
-                    $permissionIds = Permission::pluck('id')->all();
+                    $permissionIds = Permission::query()
+                        ->when($roleCode !== 'SUPER_ADMIN', fn ($q) => $q->whereNotIn('code', self::SUPER_ADMIN_ONLY))
+                        ->pluck('id')->all();
                 } else {
                     $permissionIds = Permission::whereIn('code', $permissionCodes)->pluck('id')->all();
                 }

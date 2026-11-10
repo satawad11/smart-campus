@@ -36,6 +36,7 @@ use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use App\Http\Controllers\System\FeatureFlagController;
 use App\Http\Controllers\System\LicenseController;
+use App\Http\Controllers\System\SystemUpdateController;
 use App\Http\Controllers\System\SystemMonitoringController;
 use App\Http\Controllers\System\SystemSettingController;
 use Illuminate\Support\Facades\Route;
@@ -381,6 +382,11 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/system/license', [LicenseController::class, 'show'])->middleware('permission:system.view');
     Route::post('/system/license', [LicenseController::class, 'install'])->middleware('permission:system.manage');
     Route::post('/system/license/revocations', [LicenseController::class, 'importRevocations'])->middleware('permission:system.manage');
+
+    // ACR-OPS-01 web system update (docs/decisions/ACR-OPS-01-WEB-SYSTEM-UPDATE.md)
+    Route::get('/system/update', [SystemUpdateController::class, 'show'])->middleware('permission:system.update');
+    Route::post('/system/update/check', [SystemUpdateController::class, 'check'])->middleware(['permission:system.update', 'throttle:6,1']);
+    Route::post('/system/update', [SystemUpdateController::class, 'update'])->middleware(['permission:system.update', 'throttle:5,1']);
 });
 
 /*
