@@ -1,8 +1,10 @@
 # ARCHITECTURE_CHANGE_REQUEST — ACR-AI-01 Production face models (YuNet + SFace)
 
-**Status:** DRAFT, awaiting the project owner's approval of the proposed change. The owner approved
-**drafting** this ACR in chat on 2026-11-10 after choosing YuNet + SFace from the B5 shortlist
-([OWNER-DECISIONS-2026-10-14](OWNER-DECISIONS-2026-10-14.md) D11). Nothing below is implemented.
+**Status:** APPROVED by the project owner (chat, 2026-11-10): YuNet + SFace, storage option B.
+The owner chose YuNet + SFace from the B5 shortlist
+([OWNER-DECISIONS-2026-10-14](OWNER-DECISIONS-2026-10-14.md) D11). Liveness: the owner chose to
+find a PAD model with a confirmed licence (not attendance-only without PAD). Thresholds still
+need separate approval after the evaluation. Not yet implemented.
 · **Raised:** 2026-11-10 · **Resolves:** part of B5 (detection + embedding). Liveness/PAD stays open.
 
 ```text
@@ -67,6 +69,22 @@ Alternatives:
      licence terms unknown.
   D. Stay on mock (no biometrics) and run the pilot with manual events (current D11 decision).
 ```
+
+## Licence verification (2026-11-10, upstream repositories checked directly)
+
+| Model | Files and licence as published | Open question upstream |
+|---|---|---|
+| YuNet | opencv_zoo `models/face_detection_yunet`: "All files in this directory are licensed under MIT" | opencv_zoo #320 (open, no answer): training data (WIDER FACE) and commercial use of the weights |
+| SFace | opencv_zoo `models/face_recognition_sface`: directory README states Apache-2.0 for all files | opencv_zoo #313 (open since 2026-07-22, no maintainer answer): the SFace paper names CASIA-WebFace, VGGFace2 and MS1MV2, which carry research-only terms; which data trained this exact weight is undocumented |
+| MiniFASNet (PAD) | minivision-ai/Silent-Face-Anti-Spoofing: repository licence Apache-2.0; the two weights (`2.7_80x80_MiniFASNetV2.pth`, `4_0_0_80x80_MiniFASNetV1SE.pth`) are committed in that repository | #146 and #147 (open, no answer): confirmation that the licence covers the weights, and training-data provenance |
+
+Finding: for all three, the publisher's licence covers the files, and none of the publishers
+documents the training data. That residual risk (dataset terms flowing into the weights) is a
+legal judgement, not an engineering one. Proposal: use them for the college's own consented
+pilot with this risk recorded; before selling or redistributing, get qualified legal review or
+replace them with commercially licensed models. MiniFASNet weights are PyTorch files: export
+them to ONNX ourselves from the upstream commit and verify the export numerically, rather than
+using third-party ONNX re-uploads.
 
 ## Evaluation before go-live (FACE-021 procedure)
 
