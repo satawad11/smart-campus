@@ -111,7 +111,10 @@ class RecognitionWorker:
 
         liveness_status = None
         if self._liveness_detector is not None:
-            liveness = self._liveness_detector.evaluate(sampled_frame.frame.data)
+            box = detection.bbox
+            liveness = self._liveness_detector.evaluate(
+                sampled_frame.frame.data, (box.x1, box.y1, box.x2, box.y2)
+            )
             liveness_status = liveness.status
             if not liveness.is_live:
                 result = RecognitionWorkerResult(

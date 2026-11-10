@@ -2,6 +2,7 @@
 
 from app.core.config import settings
 from app.liveness.base import FaceLivenessDetector
+from app.liveness.minifasnet import MiniFASNetLivenessDetector
 from app.liveness.mock import MockFaceLivenessDetector
 from app.liveness.unavailable import UnavailableFaceLivenessDetector
 
@@ -18,7 +19,12 @@ def get_face_liveness_detector() -> FaceLivenessDetector:
     if settings.ai_mode == "mock":
         _detector_instance = MockFaceLivenessDetector()
     else:
+        detector = MiniFASNetLivenessDetector(
+            model_dir=settings.liveness_model_dir,
+            threshold_real=settings.liveness_threshold_real,
+            threshold_spoof=settings.liveness_threshold_spoof,
+        )
         # Fail closed: never fall back to the always-REAL mock outside mock mode
-        _detector_instance = UnavailableFaceLivenessDetector()
+        _detector_instance = detector if detector.is_ready else UnavailableFaceLivenessDetector()
 
     return _detector_instance

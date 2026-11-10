@@ -5,7 +5,7 @@ from typing import Any
 from app.core.config import settings
 from app.embeddings.base import FaceEmbedder
 from app.embeddings.mock import MockFaceEmbedder
-from app.embeddings.onnx_embedder import ONNXFaceEmbedder
+from app.embeddings.sface import SFaceEmbedder
 
 
 def get_face_embedder(provider: str | None = None, **kwargs: Any) -> FaceEmbedder:
@@ -26,8 +26,9 @@ def get_face_embedder(provider: str | None = None, **kwargs: Any) -> FaceEmbedde
     if resolved_provider in ("mock", "mock_embedder", "mock_face_embedder"):
         return MockFaceEmbedder(**kwargs)
 
-    if resolved_provider in ("onnx", "onnx_embedder", "onnx_face_embedder"):
-        return ONNXFaceEmbedder(**kwargs)
+    if resolved_provider in ("onnx", "onnx_embedder", "onnx_face_embedder", "sface"):
+        kwargs.setdefault("model_path", settings.embedder_model_path)
+        return SFaceEmbedder(**kwargs)
 
     raise ValueError(
         f"Unsupported face embedder provider: '{resolved_provider}'. "

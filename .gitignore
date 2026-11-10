@@ -36,3 +36,6 @@ __pycache__/
 
 # scripts/upgrade-campus.sh run record (host-local)
 .upgrade-state
+
+# Face models fetched by scripts/fetch-face-models.sh (ACR-AI-01); not committed
+apps/ai-service/models/

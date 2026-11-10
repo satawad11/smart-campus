@@ -20,6 +20,7 @@ from app.embeddings import (
     ONNXFaceEmbedder,
     get_face_embedder,
 )
+from app.embeddings.sface import SFaceEmbedder
 
 
 def create_sample_aligned_face(
@@ -196,8 +197,9 @@ class TestEmbedderFactory:
         assert isinstance(embedder, MockFaceEmbedder)
 
     def test_factory_resolves_onnx(self) -> None:
+        # ACR-AI-01: AI_MODE=onnx is the SFace embedder, not the former placeholder.
         embedder = get_face_embedder("onnx")
-        assert isinstance(embedder, ONNXFaceEmbedder)
+        assert isinstance(embedder, SFaceEmbedder)
 
     def test_factory_rejects_unsupported(self) -> None:
         """Requirement 20: Unsupported provider rejected."""

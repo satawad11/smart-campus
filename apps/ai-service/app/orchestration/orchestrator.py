@@ -36,6 +36,7 @@ from app.delivery.buffer import OfflineEventBuffer
 from app.delivery.buffered_service import BufferedEventDeliveryService
 from app.delivery.client import EventDeliveryClient, HttpEventDeliveryClient
 from app.detection.factory import get_face_detector
+from app.detection.schemas import FaceDetection
 from app.embeddings.factory import get_face_embedder
 from app.health.client import CameraHealthClient, HttpCameraHealthClient
 from app.health.collector import CameraHealthCollector
@@ -51,6 +52,7 @@ from app.sampling.sampler import FrameSampler
 from app.streams.base import VideoSource
 from app.streams.mock import MockVideoSource
 from app.streams.rtsp import RTSPVideoSource, mask_rtsp_url
+from app.tracking.schemas import Track
 from app.tracking.tracker import IoUTracker
 
 logger = logging.getLogger("ai_node.orchestrator")
@@ -245,9 +247,8 @@ class CameraPipelineRunner:
                 if tracks and detections:
                     # Submit tracks that are not cached
                     for track in tracks:
-                        if self.worker.should_process(track):
-                            # Find matching detection by IoU / overlap
-                            matched_det = detections[0]
+                        matched_det = detection_for_track(track, detections)
+                        if matched_det is not None and self.worker.should_process(track):
                             self.pool.submit(sampled, matched_det, track)
 
             self._drain_results()
@@ -265,6 +266,18 @@ class CameraPipelineRunner:
             except Exception as exc:
                 logger.error("Unexpected error in deliver on %s: %s", self.camera_code, exc)
         return delivered
+
+
+def detection_for_track(track: Track, detections: list[FaceDetection]) -> FaceDetection | None:
+    """The detection this track was matched to in the current frame, if any.
+
+    The tracker copies the matched detection's box into the track, so a track seen in this
+    frame has a detection with the same box. Tracks missed in this frame get None: they are
+    not recognised again from another person's face.
+    """
+    if track.missed_frames != 0:
+        return None
+    return next((d for d in detections if d.bbox == track.bbox), None)
 
 
 class NodeOrchestrator:
