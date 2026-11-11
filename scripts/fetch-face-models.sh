@@ -53,12 +53,17 @@ cp "${ROOT}/scripts/face-models/export_minifasnet.py" "${WORK}/"
 echo "Exporting MiniFASNet to ONNX in a throwaway container..."
 # Git Bash on Windows: pass a Windows path to docker and keep /work unconverted.
 HOST_WORK="$(cygpath -m "${WORK}" 2>/dev/null || echo "${WORK}")"
-MSYS_NO_PATHCONV=1 docker run --rm -v "${HOST_WORK}:/work" -w /work python:3.12-slim sh -c '
+# The container runs as root: hand everything it wrote in /work back to the
+# calling user, or the EXIT trap cannot delete ${WORK} on a Linux host (CI).
+MSYS_NO_PATHCONV=1 docker run --rm -v "${HOST_WORK}:/work" -w /work \
+  -e PYTHONDONTWRITEBYTECODE=1 -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
+  python:3.12-slim sh -c '
   pip install -q --disable-pip-version-check --root-user-action=ignore \
     torch --index-url https://download.pytorch.org/whl/cpu &&
   pip install -q --disable-pip-version-check --root-user-action=ignore \
     onnx "numpy<3" opencv-python-headless &&
-  python export_minifasnet.py /work/fas /work/onnx'
+  python export_minifasnet.py /work/fas /work/onnx
+  rc=$?; chown -R "${HOST_UID}:${HOST_GID}" /work; exit $rc'
 cp "${WORK}"/onnx/*.onnx "${OUT}/"
 
 cat > "${OUT}/licenses/NOTICE.txt" <<EOF
