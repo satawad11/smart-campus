@@ -27,8 +27,10 @@ def _png_bytes() -> bytes:
 
 
 @pytest.fixture
-def onnx_mode(monkeypatch):
+def onnx_mode(monkeypatch, tmp_path):
     monkeypatch.setattr(settings, "ai_mode", "onnx")
+    # No PAD model: an empty model directory (the real models may exist in models/).
+    monkeypatch.setattr(settings, "liveness_model_dir", str(tmp_path))
     monkeypatch.setattr(factory, "_detector_instance", None)
     yield
     monkeypatch.setattr(factory, "_detector_instance", None)

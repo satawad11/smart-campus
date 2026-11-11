@@ -41,6 +41,9 @@ build() { # build <tag> <context> [docker build args...]
 }
 build smart-campus/backend:pilot apps/backend
 build smart-campus/frontend:pilot apps/frontend -f apps/frontend/Dockerfile.prod --build-arg "VITE_REVERB_APP_KEY=${REVERB_APP_KEY}"
+# shellcheck source=SCRIPTDIR/face-models/ensure.sh
+. "${ROOT}/scripts/face-models/ensure.sh"
+ensure_face_models
 build smart-campus/ai-service:pilot apps/ai-service
 
 # Third-party images exactly as referenced by the compose files.

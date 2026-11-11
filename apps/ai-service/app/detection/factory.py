@@ -5,7 +5,7 @@ from typing import Any
 from app.core.config import settings
 from app.detection.base import FaceDetector
 from app.detection.mock import MockFaceDetector
-from app.detection.onnx_detector import ONNXFaceDetector
+from app.detection.yunet import YuNetFaceDetector
 
 
 def get_face_detector(provider: str | None = None, **kwargs: Any) -> FaceDetector:
@@ -26,8 +26,9 @@ def get_face_detector(provider: str | None = None, **kwargs: Any) -> FaceDetecto
     if resolved_provider in ("mock", "mock_detector"):
         return MockFaceDetector(**kwargs)
 
-    if resolved_provider in ("onnx", "onnx_detector"):
-        return ONNXFaceDetector(**kwargs)
+    if resolved_provider in ("onnx", "onnx_detector", "yunet"):
+        kwargs.setdefault("model_path", settings.detector_model_path)
+        return YuNetFaceDetector(**kwargs)
 
     raise ValueError(
         f"Unsupported face detector provider: '{resolved_provider}'. "

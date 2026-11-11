@@ -113,17 +113,27 @@ The AI Node requires **ZERO public inbound ports**. All network traffic is initi
 
 ---
 
-## 5. Model Management & Blocker B5 Status
+## 5. Face Models (ACR-AI-01)
 
-- **Face Detector:** ONNX Runtime (`ONNXFaceDetector`) or `MockFaceDetector`.
-- **Face Embedder:** ONNX Runtime (`ONNXFaceEmbedder`, 512-d normalized vector) or `MockFaceEmbedder`.
+With `AI_MODE=onnx` (the kit default) the node runs, through OpenCV:
+
+- **Face Detector:** YuNet `face_detection_yunet_2023mar.onnx` (MIT).
+- **Face Embedder:** SFace `face_recognition_sface_2021dec.onnx` (Apache-2.0); 128 values,
+  L2-normalised and zero-padded to the platform's 512-d storage (cosine similarity unchanged).
 - **Face Quality:** Standard sharpness and brightness evaluator (`StandardFaceQualityEvaluator`).
-- **Face Liveness / PAD:** Fail-closed presentation attack detector (`UnavailableFaceLivenessDetector`).
+- **Face Liveness / PAD:** MiniFASNet V2 + V1SE (Apache-2.0), exported to ONNX. Without the
+  models it fails closed (`UnavailableFaceLivenessDetector`).
+
+The models are built into the image under `/app/models` with their licence notices
+(`/app/models/licenses`); the node downloads nothing. `MODEL_CODE=yunet-sface`,
+`MODEL_VERSION=2021dec` must match the model activated on the server
+(`php artisan face:model-activate yunet-sface 2021dec`).
 
 > [!IMPORTANT]
-> **Blocker B5 Status: HUMAN DECISION REQUIRED**
-> In accordance with `TASKS.md` and pre-pilot audit finding `AUDIT-B5`, production model selection, licensing, and weights provisioning remain an unmade human decision. Live biometric access matching is on HOLD until approved model weights are placed in `./models/` and calibrated against `docs/FACE-021-PILOT-THRESHOLDS-REVIEW.md`.
-> For initial network, streaming, and event buffering rehearsal, `AI_MODE=mock` is supported.
+> Recognition thresholds (FACE-021) are not yet calibrated for SFace: evaluate with consenting
+> volunteers before relying on matches. Training-data provenance of the weights is undocumented
+> upstream; see `docs/decisions/ACR-AI-01-FACE-MODELS.md` before any use beyond the institution's
+> own pilot. `AI_MODE=mock` remains available for software rehearsal.
 
 ---
 

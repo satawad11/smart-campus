@@ -17,6 +17,7 @@ from app.detection import (
     ONNXFaceDetector,
     get_face_detector,
 )
+from app.detection.yunet import YuNetFaceDetector
 
 
 class TestBoundingBoxAndLandmarks:
@@ -288,8 +289,9 @@ class TestDetectorFactory:
         assert isinstance(detector, MockFaceDetector)
 
     def test_factory_resolves_onnx(self) -> None:
+        # ACR-AI-01: AI_MODE=onnx is the YuNet detector, not the former placeholder.
         detector = get_face_detector("onnx")
-        assert isinstance(detector, ONNXFaceDetector)
+        assert isinstance(detector, YuNetFaceDetector)
 
     def test_factory_resolves_default(self) -> None:
         detector = get_face_detector()

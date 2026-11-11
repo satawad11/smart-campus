@@ -5,6 +5,9 @@ from typing import Annotated
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from app.api.routes.enrollment import decode_image_bytes
+from app.core.config import settings
+from app.detection.exceptions import DetectorNotReadyError
+from app.detection.factory import get_face_detector
 from app.liveness.factory import get_face_liveness_detector
 from app.liveness.unavailable import LivenessModelUnavailableError
 from app.schemas.liveness import (
@@ -46,8 +49,15 @@ async def check_liveness(
 
     detector = get_face_liveness_detector()
     try:
-        result = detector.evaluate(image)
-    except LivenessModelUnavailableError as e:
+        # MiniFASNet scores a crop around the face, so locate the (largest) face first.
+        bounding_box = None
+        if settings.ai_mode.strip().lower() != "mock":
+            faces = get_face_detector().detect(image)
+            if faces:
+                box = faces[0].bbox
+                bounding_box = (box.x1, box.y1, box.x2, box.y2)
+        result = detector.evaluate(image, bounding_box)
+    except (LivenessModelUnavailableError, DetectorNotReadyError) as e:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail={

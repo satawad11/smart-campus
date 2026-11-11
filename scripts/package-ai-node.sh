@@ -31,6 +31,9 @@ fi
 rm -rf "${OUT}" "${OUT}.tar.gz"
 mkdir -p "${OUT}"
 
+# shellcheck source=SCRIPTDIR/face-models/ensure.sh
+. "${ROOT}/scripts/face-models/ensure.sh"
+ensure_face_models
 echo "Building ${IMAGE} for ${PLATFORM} from apps/ai-service (${VERSION})..."
 docker buildx build -q --platform "${PLATFORM}" --load -t "${IMAGE}" apps/ai-service >/dev/null
 BUILT_ARCH="$(docker image inspect "${IMAGE}" --format '{{.Architecture}}')"

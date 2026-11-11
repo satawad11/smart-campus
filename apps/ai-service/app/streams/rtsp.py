@@ -182,6 +182,10 @@ class RTSPVideoSource(VideoSource):
                     f"RTSP source '{self._name}' ({masked}) failed to read a frame"
                 )
 
+        # OpenCV decodes BGR; the perception pipeline (aligner, quality, models) is RGB.
+        if getattr(data, "ndim", 0) == 3 and data.shape[2] == 3:
+            data = data[:, :, ::-1].copy()
+
         sequence = self._next_sequence
         self._next_sequence += 1
         height, width = data.shape[0], data.shape[1]

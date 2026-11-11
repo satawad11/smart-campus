@@ -33,6 +33,7 @@ from typing import Any
 from app.core.config import settings
 from app.detection.factory import get_face_detector
 from app.embeddings.factory import get_face_embedder
+from app.liveness.minifasnet import MiniFASNetLivenessDetector
 from app.orchestration.node_client import HttpAiNodeClient
 
 
@@ -237,12 +238,13 @@ def check_model_readiness() -> CheckResult:
             model_version=settings.model_version,
             model_path=settings.embedder_model_path,
         )
-        if detector.is_ready and embedder.is_ready:
+        liveness = MiniFASNetLivenessDetector(model_dir=settings.liveness_model_dir)
+        if detector.is_ready and embedder.is_ready and liveness.is_ready:
             return CheckResult(
                 "model_readiness",
                 "PASS",
-                f"ONNX detector and embedder ({settings.model_code} v{settings.model_version}) "
-                "initialized and ready",
+                f"YuNet detector, SFace embedder ({settings.model_code} v{settings.model_version}) "
+                "and MiniFASNet PAD initialized and ready",
             )
 
         reasons = []
@@ -250,10 +252,13 @@ def check_model_readiness() -> CheckResult:
             reasons.append(f"detector uninitialized (path={settings.detector_model_path})")
         if not embedder.is_ready:
             reasons.append(f"embedder uninitialized (path={settings.embedder_model_path})")
+        if not liveness.is_ready:
+            reasons.append(f"PAD models missing (dir={settings.liveness_model_dir})")
         return CheckResult(
             "model_readiness",
             "FAIL",
-            f"ONNX models not ready: {', '.join(reasons)}. Blocked by B5 (Human Decision Required)",
+            f"ONNX models not ready: {', '.join(reasons)}. Run scripts/fetch-face-models.sh "
+            "before building the image (ACR-AI-01)",
         )
 
     return CheckResult("model_readiness", "FAIL", f"Unsupported AI_MODE: {ai_mode}")
