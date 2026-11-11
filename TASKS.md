@@ -224,7 +224,13 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [x] AUDIT-A02..A13 Confirmed defects fixed (forced password change, export IDOR, ingestion race,
     broadcast-in-transaction, Redis-bound scheduler, health/session coupling, DB timeout, PAD preflight,
     login throttle, site/zone provisioning, export serialization)
-[!] AUDIT-B5 No production face/PAD model — live biometric operation HOLD (human decision)
+[~] AUDIT-B5 No production face/PAD model — models shipped by ACR-AI-01 (APPROVED 2026-11-10; v1.1.0-rc12+):
+    YuNet + SFace (zero-padded to 512) + MiniFASNet PAD; `face:model-activate yunet-sface 2021dec`.
+    Live biometric operation still HOLD until: Pi speed measured, FACE-021 volunteer evaluation and
+    human-approved thresholds, PAD accuracy on campus cameras. Training-data provenance accepted for
+    the college pilot only (docs/decisions/ACR-AI-01-FACE-MODELS.md).
+[x] AUDIT-RPT-019 Dashboard read flat fields/arrays while RPT-005/006 return nested `events`/`series`;
+    cards threw and charts were empty on a real server, tests mocked the wrong shape — fixed PR #6
 [ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
 [ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
 [ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
