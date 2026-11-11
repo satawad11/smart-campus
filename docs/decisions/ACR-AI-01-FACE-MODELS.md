@@ -4,7 +4,7 @@
 The owner chose YuNet + SFace from the B5 shortlist
 ([OWNER-DECISIONS-2026-10-14](OWNER-DECISIONS-2026-10-14.md) D11). Liveness: the owner chose to
 find a PAD model with a confirmed licence (not attendance-only without PAD). Thresholds still
-need separate approval after the evaluation. Not yet implemented.
+need separate approval after the evaluation. Implemented, see the notes at the end.
 · **Raised:** 2026-11-10 · **Resolves:** part of B5 (detection + embedding). Liveness/PAD stays open.
 
 ```text
@@ -105,3 +105,26 @@ using third-party ONNX re-uploads.
 | Storage | Option B (zero-pad to 512), no schema change |
 | Thresholds | Unchanged until the evaluation; new values need separate approval |
 | Liveness/PAD | Separate decision; stays fail-closed meanwhile |
+
+## Implementation notes (2026-11-11)
+
+- `scripts/fetch-face-models.sh` pins opencv_zoo `f12e127` and Silent-Face-Anti-Spoofing
+  `b6d5f04`, checks every SHA-256, copies the licences, and exports MiniFASNet to ONNX in a
+  throwaway container (`weights_only` load). The export matched PyTorch through OpenCV DNN
+  within 2e-8. Models live in `apps/ai-service/models/` (not in git); both packaging scripts
+  fetch and verify them, and the image's `COPY . .` puts them in `/app/models`.
+- ai-service: `YuNetFaceDetector`, `SFaceEmbedder` (zero-pad helper `pad_embedding`),
+  `MiniFASNetLivenessDetector` (upstream crop and preprocessing, FACE-021 liveness thresholds,
+  only REAL is live). No new Python dependency: OpenCV runs all three.
+- Defects found while wiring real models, fixed in the same change: RTSP frames were BGR
+  while the pipeline is RGB; every track was recognised from `detections[0]`; liveness got
+  no face box.
+- Backend: migration `2026_11_11_700008` registers `yunet-sface` / `2021dec` as DRAFT;
+  `php artisan face:model-activate yunet-sface 2021dec` makes it the only ACTIVE embedding
+  model (others INACTIVE, audited as `FACE_MODEL_ACTIVATED`), refusing without `--force`
+  when faces enrolled with another model would stop matching. The campus-server installer
+  runs it when `AI_MODE=onnx`, now the kit default; the AI node kit defaults to onnx too.
+- Checked on the upstream sample images: real face REAL (1.00), two photo attacks SPOOF
+  (0.22, 0.00); our aligned SFace vectors match OpenCV's reference pipeline (cosine >= 0.998).
+- Not yet measured: speed on the Raspberry Pi 5, PAD accuracy on 16:9 campus cameras
+  (MiniFASNet was trained on 3:4 crops), and recognition thresholds (FACE-021 evaluation).

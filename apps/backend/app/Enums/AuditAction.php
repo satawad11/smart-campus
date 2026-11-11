@@ -62,6 +62,7 @@ enum AuditAction: string
     case FACE_REVOKED = 'FACE_REVOKED';
     case FACE_REENROLLED = 'FACE_REENROLLED';
     case FACE_BIOMETRICS_PURGED = 'FACE_BIOMETRICS_PURGED';
+    case FACE_MODEL_ACTIVATED = 'FACE_MODEL_ACTIVATED';
 
     // Module 04 — camera management (CAM-002)
     case CAMERA_CREATED = 'CAMERA_CREATED';

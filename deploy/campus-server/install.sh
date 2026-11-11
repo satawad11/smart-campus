@@ -13,8 +13,8 @@
 #
 # Answers can also come from the environment:
 #   SC_SCHOOL_NAME  SC_HOST  SC_ADMIN_USER  SC_BACKUP_DIR  SC_INSTALL_DIR
-#   SC_AI_MODE (default mock: no real face recognition until a model is
-#   approved, PILOT-000 B5)
+#   SC_AI_MODE (default onnx: YuNet + SFace + MiniFASNet, ACR-AI-01;
+#   mock gives synthetic results for demos only)
 # =============================================================================
 set -euo pipefail
 
@@ -152,7 +152,7 @@ if [ "${MODE}" = install ]; then
     ask SC_HOST "ชื่อเครื่องหรือ IP ที่ผู้ใช้จะเปิดเว็บ" "${DEFAULT_HOST:-localhost}"
     ask SC_ADMIN_USER "ชื่อผู้ใช้ของผู้ดูแลระบบคนแรก" "admin"
     ask SC_BACKUP_DIR "โฟลเดอร์เก็บสำรองข้อมูล (ควรเป็นดิสก์อื่นหรือเครื่องอื่น)" "/var/backups/smart-campus"
-    SC_AI_MODE="${SC_AI_MODE:-mock}"
+    SC_AI_MODE="${SC_AI_MODE:-onnx}"
 fi
 
 say ""
@@ -263,6 +263,14 @@ M=(-e DB_USERNAME=campus_migration_user -e "DB_PASSWORD=${MIG_PASS}")
 step "สร้าง/ปรับโครงสร้างฐานข้อมูล" dc exec -T "${M[@]}" backend php artisan migrate --force
 step "ใส่ข้อมูลตั้งต้นและสิทธิ์" dc exec -T "${M[@]}" backend php artisan db:seed --force
 step "ใส่ค่าตั้งระบบเริ่มต้น" dc exec -T "${M[@]}" backend php artisan db:seed --class=SystemSettingSeeder --force
+if [ "$(env_value AI_MODE)" = onnx ]; then
+    # Refuses (without --force) when faces enrolled with another model would stop matching.
+    if ! dc exec -T backend php artisan face:model-activate yunet-sface 2021dec >>"${LOG}" 2>&1; then
+        warn "ยังไม่ได้เปิดใช้โมเดลจดจำใบหน้า: มีใบหน้าที่ลงทะเบียนด้วยโมเดลอื่น ดูวิธีแก้ใน ${LOG}"
+    else
+        ok "เปิดใช้โมเดลจดจำใบหน้า YuNet + SFace"
+    fi
+fi
 
 ADMIN_OUTPUT=""
 if [ "${MODE}" = install ]; then
@@ -321,7 +329,11 @@ say "  1. คัดลอก ${ENV_FILE} ไปเก็บไว้นอกเ
 say "  2. ให้เครื่องผู้ใช้เชื่อถือใบรับรอง: ติดตั้งไฟล์ ${INSTALL_DIR}/infrastructure/pilot/ca/ca.crt"
 say "     (หรือใช้ใบรับรองของสถานศึกษา: ${INSTALL_DIR}/scripts/tls-setup.sh import <fullchain> <privkey>)"
 say "  3. เข้าเว็บ แล้วอัปโหลดไฟล์ license ที่ได้รับจากผู้ขาย"
-say "  4. AI_MODE=$(env_value AI_MODE): ยังไม่จดจำใบหน้าจริงจนกว่าจะอนุมัติโมเดล (PILOT-000 B5)"
+if [ "$(env_value AI_MODE)" = onnx ]; then
+    say "  4. AI_MODE=onnx: ค่าเกณฑ์การจดจำใบหน้ายังต้องทดสอบกับอาสาสมัครที่ยินยอมก่อนใช้จริง (FACE-021)"
+else
+    say "  4. AI_MODE=$(env_value AI_MODE): ผลจดจำใบหน้าเป็นข้อมูลจำลอง ไม่ใช่การจดจำจริง"
+fi
 [ "${BACKUP_SAME_DISK}" -eq 1 ] && say "  5. โฟลเดอร์สำรองข้อมูลอยู่ดิสก์เดียวกับระบบ: ควรย้ายไปดิสก์อื่นหรือเครื่องอื่น"
 say ""
 say " คำสั่งดูแลระบบ: smart-campus status | logs | restart | backup | preflight"
