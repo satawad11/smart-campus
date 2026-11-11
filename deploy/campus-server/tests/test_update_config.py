@@ -77,3 +77,18 @@ class UpdateConfigTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class InstalledAlongsideCampusShTest(unittest.TestCase):
+    """campus.sh runs ${INSTALL_DIR}/update-config.py, so every kit must ship it and
+    install.sh must copy it next to campus.sh; otherwise every later update fails."""
+
+    def test_kit_ships_and_installer_copies_update_config(self):
+        root = HERE.parents[2]
+        campus = (HERE.parent / "campus.sh").read_text(encoding="utf-8")
+        install = (HERE.parent / "install.sh").read_text(encoding="utf-8")
+        package = (root / "scripts" / "package-campus-server.sh").read_text(encoding="utf-8")
+        self.assertIn('"${INSTALL_DIR}/update-config.py"', campus)
+        self.assertIn("deploy/campus-server/update-config.py", package)
+        copy_runtime = install.split("copy_runtime() {", 1)[1].split("\n}", 1)[0]
+        self.assertIn('"${KIT_DIR}/update-config.py"', copy_runtime)

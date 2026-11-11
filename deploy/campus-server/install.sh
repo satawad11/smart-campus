@@ -189,7 +189,7 @@ fi
 
 copy_runtime() {
     cp "${KIT_DIR}/docker-compose.yml" "${KIT_DIR}/docker-compose.pilot.yml" "${KIT_DIR}/docker-compose.kit.yml" \
-        "${KIT_DIR}/campus.sh" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
+        "${KIT_DIR}/campus.sh" "${KIT_DIR}/update-config.py" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
     if [ -f "${KIT_DIR}/ARCH" ]; then cp "${KIT_DIR}/ARCH" "${INSTALL_DIR}/"; fi
     mkdir -p "${INSTALL_DIR}/infrastructure/pilot/certs" "${INSTALL_DIR}/scripts" "${INSTALL_DIR}/docs/security"
     cp -r "${KIT_DIR}/infrastructure/objectstore" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
