@@ -24,10 +24,12 @@ class StoreCameraRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'site_uuid' => ['required', 'string', Rule::exists('sites', 'uuid')],
-            'zone_uuid' => ['required', 'string', Rule::exists('zones', 'uuid')],
+            // Optional: when omitted the server picks (or provisions) the
+            // default site/zone, and generates the next CAM-#### code.
+            'site_uuid' => ['bail', 'nullable', 'string', 'uuid', Rule::exists('sites', 'uuid')],
+            'zone_uuid' => ['bail', 'nullable', 'string', 'uuid', Rule::exists('zones', 'uuid')],
             'ai_node_uuid' => ['nullable', 'string', Rule::exists('ai_nodes', 'uuid')],
-            'camera_code' => ['required', 'string', 'max:255'],
+            'camera_code' => ['nullable', 'string', 'max:255'],
             'name' => ['required', 'string', 'max:255'],
             'camera_type' => ['nullable', 'string', 'max:255'],
             'ip_address' => ['nullable', 'ip'],

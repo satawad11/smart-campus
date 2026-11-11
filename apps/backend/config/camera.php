@@ -17,9 +17,11 @@ return [
     ],
 
     'snapshot' => [
-        // 'mock' (default, safe placeholder) — a real provider is wired in
-        // once CAM-005/006/007 exist.
-        'provider' => env('CAMERA_SNAPSHOT_PROVIDER', 'mock'),
+        // 'auto' (default): real ffmpeg frame grab when the ffmpeg binary is
+        // installed (backend image ships it), otherwise the mock placeholder.
+        // 'ffmpeg' or 'mock' force one provider.
+        'provider' => env('CAMERA_SNAPSHOT_PROVIDER', 'auto'),
+        'ffmpeg_binary' => env('CAMERA_FFMPEG_BINARY', 'ffmpeg'),
         'timeout_seconds' => env('CAMERA_SNAPSHOT_TIMEOUT', 5),
     ],
 

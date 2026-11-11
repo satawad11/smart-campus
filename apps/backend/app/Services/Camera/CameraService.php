@@ -4,6 +4,7 @@ namespace App\Services\Camera;
 
 use App\Enums\AuditAction;
 use App\Enums\DeviceStatus;
+use App\Enums\LocationStatus;
 use App\Exceptions\ApiException;
 use App\Models\AiNode;
 use App\Models\Camera;
@@ -17,6 +18,8 @@ use App\Services\Camera\Connectivity\CameraConnectivityResult;
 use App\Services\Camera\Connectivity\TcpConnectivityProber;
 use App\Services\Camera\Snapshot\CameraSnapshotProviderInterface;
 use App\Services\Camera\Snapshot\CameraSnapshotResult;
+use App\Services\Camera\Snapshot\FfmpegCameraSnapshotProvider;
+use App\Services\Camera\Snapshot\FfmpegFrameGrabber;
 use App\Services\Camera\Snapshot\MockCameraSnapshotProvider;
 use App\Services\License\LicenseService;
 use Illuminate\Support\Facades\Crypt;
@@ -57,7 +60,31 @@ class CameraService
         // provider-resolution pattern — a real snapshot/connectivity provider
         // can be wired in later (CAM-005/006/007) without changing callers.
         $this->prober = $prober ?? new TcpConnectivityProber;
-        $this->snapshotProvider = $snapshotProvider ?? new MockCameraSnapshotProvider;
+        $this->snapshotProvider = $snapshotProvider ?? self::configuredSnapshotProvider();
+    }
+
+    private static function ffmpegBinary(): string
+    {
+        return (string) config('camera.snapshot.ffmpeg_binary', 'ffmpeg');
+    }
+
+    /** @var array<string, bool> ffmpeg presence per binary, probed once per process. */
+    private static array $ffmpegAvailable = [];
+
+    private static function ffmpegEnabled(): bool
+    {
+        return match ((string) config('camera.snapshot.provider', 'auto')) {
+            'ffmpeg' => true,
+            'mock' => false,
+            default => self::$ffmpegAvailable[self::ffmpegBinary()] ??= FfmpegFrameGrabber::isAvailable(self::ffmpegBinary()),
+        };
+    }
+
+    private static function configuredSnapshotProvider(): CameraSnapshotProviderInterface
+    {
+        return self::ffmpegEnabled()
+            ? new FfmpegCameraSnapshotProvider(new FfmpegFrameGrabber(self::ffmpegBinary()))
+            : new MockCameraSnapshotProvider;
     }
 
     /**
@@ -83,6 +110,7 @@ class CameraService
     {
         $site = $this->resolveSite($data['site_uuid']);
         $zone = $this->resolveZoneForSite($data['zone_uuid'], $site);
+        $data['camera_code'] = ($data['camera_code'] ?? '') !== '' ? $data['camera_code'] : $this->nextCameraCode();
         $aiNode = $this->resolveAiNodeForSite($data['ai_node_uuid'] ?? null, $site);
 
         // COM-02: checked before the write transaction so that a refusal's
@@ -293,6 +321,121 @@ class CameraService
                 'camera_code' => $camera->camera_code,
                 'success' => $result->success,
                 'source' => $result->source,
+                'error_code' => $result->errorCode,
+            ],
+            context: $context, module: 'camera',
+        );
+
+        return $result;
+    }
+
+    /**
+     * Site/zone used when the add-camera form leaves them blank: the first
+     * active site and its first active zone. When the install has none yet
+     * (fresh server, nothing provisioned) a default site "MAIN" and zone
+     * "GENERAL" are created and audited, so a camera can always be added.
+     *
+     * $allowedSiteIds: null = GLOBAL caller (may provision defaults); a list
+     * restricts the choice to those sites and never provisions a new site.
+     *
+     * @param  list<int>|null  $allowedSiteIds
+     * @return array{0: Site, 1: Zone}
+     */
+    public function defaultLocation(?User $actor, ?AuditRequestContext $context, ?array $allowedSiteIds = null): array
+    {
+        return DB::transaction(function () use ($actor, $context, $allowedSiteIds) {
+            $site = Site::where('status', LocationStatus::ACTIVE->value)
+                ->when($allowedSiteIds !== null, fn ($q) => $q->whereIn('id', $allowedSiteIds))
+                ->orderBy('id')->first();
+            if ($site === null && $allowedSiteIds !== null) {
+                throw ApiException::unprocessable('SITE_NOT_FOUND', 'No site is available for this account.');
+            }
+            if ($site === null) {
+                $site = Site::create([
+                    'code' => 'MAIN',
+                    'name' => 'พื้นที่หลัก',
+                    'timezone' => config('app.timezone', 'Asia/Bangkok') === 'UTC' ? 'Asia/Bangkok' : config('app.timezone'),
+                    'status' => LocationStatus::ACTIVE,
+                ]);
+                $this->audit->record(
+                    AuditAction::LOCATION_DEFAULT_PROVISIONED, $actor, 'SITE', $site->uuid,
+                    newValues: ['code' => $site->code, 'name' => $site->name],
+                    context: $context, module: 'camera',
+                );
+            }
+
+            $zone = $this->defaultZoneFor($site, $actor, $context);
+
+            return [$site, $zone];
+        });
+    }
+
+    public function defaultZoneFor(Site $site, ?User $actor, ?AuditRequestContext $context): Zone
+    {
+        $zone = Zone::where('site_id', $site->id)->where('status', LocationStatus::ACTIVE->value)->orderBy('id')->first();
+        if ($zone !== null) {
+            return $zone;
+        }
+
+        $zone = Zone::create([
+            'site_id' => $site->id,
+            'code' => 'GENERAL',
+            'name' => 'โซนทั่วไป',
+            'zone_type' => 'GENERAL',
+            'status' => LocationStatus::ACTIVE,
+        ]);
+        $this->audit->record(
+            AuditAction::LOCATION_DEFAULT_PROVISIONED, $actor, 'ZONE', $zone->uuid,
+            newValues: ['site_code' => $site->code, 'code' => $zone->code, 'name' => $zone->name],
+            context: $context, module: 'camera',
+        );
+
+        return $zone;
+    }
+
+    /**
+     * Next free code in the CAM-0001 series. Advisory only: the unique
+     * check inside createCamera() still guards against a race.
+     */
+    public function nextCameraCode(): string
+    {
+        $max = 0;
+        foreach (Camera::where('camera_code', 'like', 'CAM-%')->pluck('camera_code') as $code) {
+            if (preg_match('/^CAM-(\d+)$/', $code, $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+
+        do {
+            $max++;
+            $candidate = sprintf('CAM-%04d', $max);
+        } while (Camera::where('camera_code', $candidate)->exists());
+
+        return $candidate;
+    }
+
+    /**
+     * Grabs one live frame from a stream that is not saved yet, so the
+     * operator can confirm the URL/credentials before creating the camera.
+     * Nothing is persisted except an audit entry (host only, never the URL
+     * or credentials). No enrollment or recognition is triggered.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public function previewStream(array $data, ?User $actor, ?AuditRequestContext $context): CameraSnapshotResult
+    {
+        $timeout = (int) config('camera.snapshot.timeout_seconds', 5);
+        $url = FfmpegFrameGrabber::buildStreamUrl($data['rtsp_url'] ?? null, $data['username'] ?? null, $data['password'] ?? null);
+
+        $result = self::ffmpegEnabled()
+            ? (new FfmpegFrameGrabber(self::ffmpegBinary()))->grab($url, max($timeout, 8))
+            : CameraSnapshotResult::failure('CAMERA_PREVIEW_UNAVAILABLE');
+
+        $this->audit->record(
+            AuditAction::CAMERA_STREAM_PREVIEWED, $actor, 'CAMERA', null,
+            newValues: [
+                'host' => $url !== null ? parse_url($url, PHP_URL_HOST) : null,
+                'success' => $result->success,
                 'error_code' => $result->errorCode,
             ],
             context: $context, module: 'camera',
