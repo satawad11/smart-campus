@@ -125,17 +125,13 @@ function setTab(tab) {
 }
 
 function healthBadgeClass(status) {
-  if (status === 'ONLINE')
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-  if (status === 'DEGRADED')
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-  return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  if (status === 'ONLINE') return 'bg-green-100 text-green-800'
+  if (status === 'DEGRADED') return 'bg-yellow-100 text-yellow-800'
+  return 'bg-red-100 text-red-800'
 }
 
 function credentialBadgeClass(status) {
-  return status === 'ACTIVE'
-    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-    : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  return status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
 }
 
 onMounted(() => {
@@ -165,11 +161,11 @@ onMounted(() => {
 
     <template v-else-if="node">
       <div class="border-b pb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ node.name }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 font-mono">{{ node.node_code }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ node.name }}</h1>
+        <p class="text-sm text-gray-500 font-mono">{{ node.node_code }}</p>
       </div>
 
-      <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700 text-sm">
+      <div class="flex gap-2 border-b border-gray-200 text-sm">
         <button
           v-for="tab in ['overview', 'credentials', 'health', 'operations']"
           :key="tab"
@@ -188,7 +184,7 @@ onMounted(() => {
       <!-- Overview -->
       <div
         v-if="activeTab === 'overview'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-3 text-sm"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
           <div><span class="text-gray-500">สถานะ:</span> {{ statusLabel(node.status) }}</div>
@@ -239,17 +235,15 @@ onMounted(() => {
       <!-- Credentials -->
       <div
         v-if="activeTab === 'credentials'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
       >
         <div
           v-if="canManage"
           data-test="enrollment-code"
-          class="p-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 space-y-2 text-sm"
+          class="p-4 rounded-lg border border-blue-200 bg-blue-50 space-y-2 text-sm"
         >
-          <p class="font-semibold text-blue-900 dark:text-blue-200">
-            ลงทะเบียนหน่วยประมวลผลด้วยรหัสใช้ครั้งเดียว
-          </p>
-          <p class="text-blue-800 dark:text-blue-300">
+          <p class="font-semibold text-blue-900">ลงทะเบียนหน่วยประมวลผลด้วยรหัสใช้ครั้งเดียว</p>
+          <p class="text-blue-800">
             สร้างรหัสแล้วรันคำสั่ง <code>./enroll.sh รหัส</code> บนเครื่องหน่วยประมวลผล
             ระบบจะบันทึกตัวตนและกุญแจลงในไฟล์ตั้งค่าให้เอง รหัสใช้ได้ครั้งเดียวและหมดอายุใน 30 นาที
             การลงทะเบียนจะยกเลิกกุญแจเดิมของหน่วยนี้
@@ -263,19 +257,19 @@ onMounted(() => {
           </button>
           <p v-if="enrollmentError" class="text-red-600">{{ enrollmentError }}</p>
           <div v-if="enrollmentCode" class="space-y-1">
-            <p class="text-blue-900 dark:text-blue-200">รหัสลงทะเบียน (แสดงครั้งเดียว):</p>
+            <p class="text-blue-900">รหัสลงทะเบียน (แสดงครั้งเดียว):</p>
             <code
               data-test="enrollment-code-value"
-              class="block text-2xl font-mono tracking-widest bg-white dark:bg-gray-900 p-3 rounded border text-center"
+              class="block text-2xl font-mono tracking-widest bg-surface p-3 rounded border text-center"
               >{{ enrollmentCode.code }}</code
             >
-            <p class="text-xs text-blue-700 dark:text-blue-300">
+            <p class="text-xs text-blue-700">
               หมดอายุ {{ new Date(enrollmentCode.expires_at).toLocaleString('th-TH') }}
             </p>
           </div>
         </div>
 
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-gray-500">
           กุญแจเชื่อมต่อเฉพาะของหน่วยประมวลผลนี้ ใช้ยืนยันตัวตนเมื่อหน่วยประมวลผลติดต่อเซิร์ฟเวอร์
           กุญแจใหม่จะแสดงเพียงครั้งเดียวและเรียกดูซ้ำไม่ได้
         </p>
@@ -296,7 +290,9 @@ onMounted(() => {
           class="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm space-y-1"
         >
           <p class="font-semibold text-yellow-800">กุญแจเชื่อมต่อใหม่ (แสดงครั้งเดียว):</p>
-          <code class="block break-all bg-white p-2 rounded border text-xs">{{ issuedToken }}</code>
+          <code class="block break-all bg-surface p-2 rounded border text-xs">{{
+            issuedToken
+          }}</code>
         </div>
 
         <div v-if="credentialsLoading" class="text-center py-6 text-gray-500">
@@ -304,9 +300,9 @@ onMounted(() => {
         </div>
         <table
           v-else-if="credentials.length > 0"
-          class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm"
+          class="min-w-full divide-y divide-gray-200 text-sm"
         >
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">ออกเมื่อ</th>
@@ -315,7 +311,7 @@ onMounted(() => {
               <th class="px-4 py-2 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr v-for="cred in credentials" :key="cred.uuid">
               <td class="px-4 py-2">
                 <span
@@ -355,7 +351,7 @@ onMounted(() => {
       <!-- Health -->
       <div
         v-if="activeTab === 'health'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="bg-surface rounded-xl border border-gray-200 overflow-hidden"
       >
         <div v-if="healthLoading" class="text-center py-8 text-gray-500">
           กำลังโหลดประวัติสุขภาพระบบ...
@@ -363,8 +359,8 @@ onMounted(() => {
         <div v-else-if="healthLogs.length === 0" class="text-center py-8 text-gray-400">
           ยังไม่มีข้อมูลสุขภาพระบบ
         </div>
-        <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">CPU</th>
@@ -374,7 +370,7 @@ onMounted(() => {
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">บันทึกเมื่อ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr v-for="(log, i) in healthLogs" :key="i">
               <td class="px-4 py-2">
                 <span

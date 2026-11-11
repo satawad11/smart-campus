@@ -81,7 +81,7 @@ onMounted(() => {
       <div class="flex items-center space-x-3">
         <button
           @click="fetchDashboard"
-          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-surface hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
           :disabled="loading"
         >
           <svg
@@ -111,7 +111,7 @@ onMounted(() => {
     <!-- Metric Cards Grid -->
     <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
       <!-- Detected -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-gray-500 uppercase">ตรวจพบทั้งหมด</span>
         <div class="mt-2 text-2xl font-bold text-gray-900">
           {{ summary.detected.toLocaleString() }}
@@ -120,7 +120,7 @@ onMounted(() => {
       </div>
 
       <!-- Recognized -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-blue-600 uppercase">ยืนยันตัวตนสำเร็จ</span>
         <div class="mt-2 text-2xl font-bold text-blue-700">
           {{ summary.recognized.toLocaleString() }}
@@ -129,7 +129,7 @@ onMounted(() => {
       </div>
 
       <!-- Allow -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-green-600 uppercase">อนุญาตผ่านทาง</span>
         <div class="mt-2 text-2xl font-bold text-green-700">
           {{ summary.allow.toLocaleString() }}
@@ -138,14 +138,14 @@ onMounted(() => {
       </div>
 
       <!-- Deny -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-red-600 uppercase">ปฏิเสธผ่านทาง</span>
         <div class="mt-2 text-2xl font-bold text-red-700">{{ summary.deny.toLocaleString() }}</div>
         <div class="mt-1 text-xs text-red-500">ไม่อนุญาต</div>
       </div>
 
       <!-- Cameras Online -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-gray-500 uppercase">กล้องออนไลน์</span>
         <div class="mt-2 text-2xl font-bold text-gray-900">
           {{ summary.cameras_online }} / {{ summary.cameras_total }}
@@ -165,7 +165,7 @@ onMounted(() => {
       </div>
 
       <!-- AI Nodes Online -->
-      <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-gray-500 uppercase"
           >หน่วยประมวลผลปัญญาประดิษฐ์ออนไลน์</span
         >
@@ -179,7 +179,7 @@ onMounted(() => {
     <!-- Charts / Breakdowns Section -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Hourly Activity Chart (2 Columns) -->
-      <div class="lg:col-span-2 bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div class="lg:col-span-2 bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
         <h2 class="text-base font-semibold text-gray-900 mb-4">
           ปริมาณการเข้า-ออกรายชั่วโมง (วันนี้)
         </h2>
@@ -191,7 +191,7 @@ onMounted(() => {
           >
             <!-- Tooltip -->
             <div
-              class="absolute -top-8 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-10"
+              class="absolute -top-8 bg-gray-900 text-gray-50 shadow-lg text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition pointer-events-none whitespace-nowrap z-10"
             >
               {{ hour.hour }}: {{ hour.count }} ครั้ง
             </div>
@@ -211,7 +211,7 @@ onMounted(() => {
       </div>
 
       <!-- Decision Breakdown (1 Column) -->
-      <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
         <h2 class="text-base font-semibold text-gray-900 mb-4">สัดส่วนผลการตัดสินใจ</h2>
         <div class="space-y-4">
           <div v-for="item in decisionData" :key="item.decision" class="space-y-1">
@@ -259,7 +259,7 @@ onMounted(() => {
     <!-- Secondary Grids: By Camera & By Department -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- By Camera -->
-      <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
         <h2 class="text-base font-semibold text-gray-900 mb-3">
           การเข้า-ออกแยกตามกล้อง (กล้องที่มีการเข้า-ออกมากที่สุด)
         </h2>
@@ -285,7 +285,7 @@ onMounted(() => {
       </div>
 
       <!-- By Department -->
-      <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
         <h2 class="text-base font-semibold text-gray-900 mb-3">การเข้า-ออกแยกตามแผนก/หน่วยงาน</h2>
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-gray-200 text-sm">

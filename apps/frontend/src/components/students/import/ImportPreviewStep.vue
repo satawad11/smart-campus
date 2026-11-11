@@ -76,31 +76,31 @@ function getConflictDisplay(conflictType) {
   <div class="space-y-6">
     <!-- Validation Summary KPI Cards -->
     <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
-      <div class="rounded-lg bg-white p-4 shadow">
+      <div class="rounded-lg bg-surface p-4 shadow">
         <p class="text-xs font-medium text-gray-500">จำนวนแถวทั้งหมด</p>
         <p class="mt-1 text-2xl font-bold text-gray-900 font-mono">{{ summary.total_rows }}</p>
         <p class="mt-1 text-[11px] text-gray-400">ในไฟล์ CSV</p>
       </div>
 
-      <div class="rounded-lg bg-white p-4 shadow">
+      <div class="rounded-lg bg-surface p-4 shadow">
         <p class="text-xs font-medium text-green-600">ผ่านการตรวจสอบ (Valid)</p>
         <p class="mt-1 text-2xl font-bold text-green-700 font-mono">{{ summary.valid_rows }}</p>
         <p class="mt-1 text-[11px] text-green-600">พร้อมนำเข้าข้อมูล</p>
       </div>
 
-      <div class="rounded-lg bg-white p-4 shadow">
+      <div class="rounded-lg bg-surface p-4 shadow">
         <p class="text-xs font-medium text-red-600">ไม่ผ่านการตรวจสอบ (Invalid)</p>
         <p class="mt-1 text-2xl font-bold text-red-700 font-mono">{{ summary.invalid_rows }}</p>
         <p class="mt-1 text-[11px] text-red-600">จะถูกข้าม (ไม่นำเข้า)</p>
       </div>
 
-      <div class="rounded-lg bg-white p-4 shadow">
+      <div class="rounded-lg bg-surface p-4 shadow">
         <p class="text-xs font-medium text-amber-600">ข้อมูลซ้ำ/ขัดแย้ง (Conflicts)</p>
         <p class="mt-1 text-2xl font-bold text-amber-700 font-mono">{{ summary.conflict_rows }}</p>
         <p class="mt-1 text-[11px] text-amber-600">ตามนโยบายจัดการ</p>
       </div>
 
-      <div class="rounded-lg bg-white p-4 shadow">
+      <div class="rounded-lg bg-surface p-4 shadow">
         <p class="text-xs font-medium text-purple-600">Identity Mismatches</p>
         <p class="mt-1 text-2xl font-bold text-purple-700 font-mono">
           {{ summary.identity_mismatches }}
@@ -111,7 +111,7 @@ function getConflictDisplay(conflictType) {
 
     <!-- Conflict Policy Summary Banner -->
     <div
-      class="rounded-lg bg-white p-4 shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+      class="rounded-lg bg-surface p-4 shadow flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
     >
       <div class="flex items-center space-x-3">
         <span class="text-xs font-medium text-gray-500">นโยบายจัดการข้อมูลซ้ำที่เลือก:</span>
@@ -128,7 +128,7 @@ function getConflictDisplay(conflictType) {
     </div>
 
     <!-- Sample Preview Table -->
-    <div class="rounded-lg bg-white shadow overflow-hidden">
+    <div class="rounded-lg bg-surface shadow overflow-hidden">
       <div class="p-6 border-b border-gray-200">
         <div class="sm:flex sm:items-center sm:justify-between">
           <div>
@@ -176,7 +176,7 @@ function getConflictDisplay(conflictType) {
               <th scope="col" class="px-4 py-3">สถานะการตรวจสอบ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody class="divide-y divide-gray-200 bg-surface">
             <tr
               v-for="row in sampleRows"
               :key="row._row_number"
@@ -235,7 +235,7 @@ function getConflictDisplay(conflictType) {
     <div class="flex items-center justify-between">
       <button
         type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         @click="$emit('reset')"
       >
         &larr; ยกเลิก / อัปโหลดไฟล์ใหม่
@@ -245,7 +245,7 @@ function getConflictDisplay(conflictType) {
         <button
           v-if="summary.invalid_rows > 0"
           type="button"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           @click="$emit('reviewErrors')"
         >
           ตรวจสอบข้อผิดพลาด ({{ summary.invalid_rows }})

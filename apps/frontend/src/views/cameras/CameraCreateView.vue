@@ -94,8 +94,8 @@ onMounted(() => {
 <template>
   <div class="camera-create-view max-w-3xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">เพิ่มกล้อง</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <h1 class="text-2xl font-bold text-gray-900">เพิ่มกล้อง</h1>
+      <p class="text-sm text-gray-500">
         ข้อมูลทั่วไป &rarr; การเชื่อมต่อ &rarr; ตั้งค่าปัญญาประดิษฐ์ &rarr; ตรวจทาน
       </p>
     </div>
@@ -105,11 +105,7 @@ onMounted(() => {
         v-for="(label, index) in steps"
         :key="label"
         class="px-3 py-1 rounded-full font-medium"
-        :class="
-          step === index + 1
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
-        "
+        :class="step === index + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500'"
       >
         {{ index + 1 }}. {{ label }}
       </span>
@@ -122,74 +118,62 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div
-      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
-    >
+    <div class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4">
       <!-- Step 1: General -->
       <div v-if="step === 1" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >รหัสพื้นที่ (UUID) *</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพื้นที่ (UUID) *</label>
           <input
             v-model="form.site_uuid"
             type="text"
             placeholder="รหัสพื้นที่"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
           <p v-if="fieldErrors.site_uuid" class="text-xs text-red-600 mt-1">
             {{ fieldErrors.site_uuid[0] }}
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >รหัสโซน (UUID) *</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสโซน (UUID) *</label>
           <input
             v-model="form.zone_uuid"
             type="text"
             placeholder="รหัสโซน"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
           <p v-if="fieldErrors.zone_uuid" class="text-xs text-red-600 mt-1">
             {{ fieldErrors.zone_uuid[0] }}
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >รหัสกล้อง *</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">รหัสกล้อง *</label>
           <input
             v-model="form.camera_code"
             type="text"
             placeholder="เช่น GATE-1"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
           <p v-if="fieldErrors.camera_code" class="text-xs text-red-600 mt-1">
             {{ fieldErrors.camera_code[0] }}
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ชื่อกล้อง *</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อกล้อง *</label>
           <input
             v-model="form.name"
             type="text"
             placeholder="เช่น ประตูหน้า"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
           <p v-if="fieldErrors.name" class="text-xs text-red-600 mt-1">{{ fieldErrors.name[0] }}</p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ประเภทกล้อง</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทกล้อง</label>
           <input
             v-model="form.camera_type"
             type="text"
             placeholder="เช่น fixed, ptz"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
       </div>
@@ -197,71 +181,59 @@ onMounted(() => {
       <!-- Step 2: Connection -->
       <div v-if="step === 2" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ที่อยู่ไอพี</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่ไอพี</label>
           <input
             v-model="form.ip_address"
             type="text"
             placeholder="192.168.1.10"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
           <p v-if="fieldErrors.ip_address" class="text-xs text-red-600 mt-1">
             {{ fieldErrors.ip_address[0] }}
           </p>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >โปรโตคอลสตรีม</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">โปรโตคอลสตรีม</label>
           <input
             v-model="form.stream_protocol"
             type="text"
             placeholder="rtsp"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >RTSP URL</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">RTSP URL</label>
           <input
             v-model="form.rtsp_url"
             type="text"
             placeholder="rtsp://camera-host:554/stream1"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >ชื่อผู้ใช้กล้อง</label
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อผู้ใช้กล้อง</label>
             <input
               v-model="form.username"
               type="text"
-              class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              >รหัสผ่านกล้อง</label
-            >
+            <label class="block text-sm font-medium text-gray-700 mb-1">รหัสผ่านกล้อง</label>
             <input
               v-model="form.password"
               type="password"
-              class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
             />
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ONVIF URL</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ONVIF URL</label>
           <input
             v-model="form.onvif_url"
             type="text"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
       </div>
@@ -269,13 +241,8 @@ onMounted(() => {
       <!-- Step 3: AI Settings -->
       <div v-if="step === 3" class="space-y-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >หน่วยประมวลผลที่ดูแล</label
-          >
-          <select
-            v-model="form.ai_node_uuid"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">หน่วยประมวลผลที่ดูแล</label>
+          <select v-model="form.ai_node_uuid" class="w-full px-3 py-2 border rounded-lg text-sm">
             <option value="">ยังไม่กำหนด</option>
             <option v-for="node in aiNodes" :key="node.uuid" :value="node.uuid">
               {{ node.name }} ({{ node.node_code }})
@@ -319,7 +286,7 @@ onMounted(() => {
         </p>
       </div>
 
-      <div class="flex justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex justify-between pt-4 border-t border-gray-200">
         <button
           v-if="step > 1"
           @click="prevStep"

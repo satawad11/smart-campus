@@ -44,7 +44,7 @@ onMounted(() => {
           ← ย้อนกลับ
         </button>
         <div>
-          <h1 class="text-2xl font-bold text-gray-900 dark:text-white">รายละเอียดข้อมูลใบหน้า</h1>
+          <h1 class="text-2xl font-bold text-gray-900">รายละเอียดข้อมูลใบหน้า</h1>
           <p class="text-xs font-mono text-gray-500">
             {{ profile?.face_profile_uuid || route.params.uuid }}
           </p>
@@ -61,7 +61,7 @@ onMounted(() => {
     <div v-else-if="profile" class="space-y-6">
       <!-- Status & Identity Card -->
       <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-6"
+        class="bg-surface p-6 rounded-xl border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6"
       >
         <div>
           <h2 class="text-sm font-bold uppercase text-gray-400 mb-3">ข้อมูลตัวตน</h2>
@@ -125,16 +125,14 @@ onMounted(() => {
       </div>
 
       <!-- Sample History -->
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700"
-      >
-        <h2 class="text-base font-bold text-gray-900 dark:text-white mb-4">
+      <div class="bg-surface p-6 rounded-xl border border-gray-200">
+        <h2 class="text-base font-bold text-gray-900 mb-4">
           ประวัติภาพตัวอย่าง ({{ profile.samples_count || 1 }})
         </h2>
 
         <div
           v-if="profile.sample"
-          class="p-4 border rounded-lg bg-gray-50 dark:bg-gray-700/30 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
+          class="p-4 border rounded-lg bg-gray-50 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
         >
           <div>
             <div class="text-gray-400">รหัสภาพตัวอย่าง</div>

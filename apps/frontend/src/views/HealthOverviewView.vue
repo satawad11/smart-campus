@@ -19,12 +19,10 @@ const canViewCameras = computed(() => authStore.can('camera.view'))
 const canViewNodes = computed(() => authStore.can('ai_node.view'))
 
 function healthBadgeClass(status) {
-  if (status === 'ONLINE')
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-  if (status === 'DEGRADED')
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-  if (status === 'OFFLINE') return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
-  return 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+  if (status === 'ONLINE') return 'bg-green-100 text-green-800'
+  if (status === 'DEGRADED') return 'bg-yellow-100 text-yellow-800'
+  if (status === 'OFFLINE') return 'bg-red-100 text-red-800'
+  return 'bg-gray-100 text-gray-500'
 }
 
 async function latestHealthStatus(fetchFn, uuid) {
@@ -78,13 +76,13 @@ onMounted(() => {
 <template>
   <div class="health-overview-view max-w-7xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ภาพรวมสุขภาพอุปกรณ์</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <h1 class="text-2xl font-bold text-gray-900">ภาพรวมสุขภาพอุปกรณ์</h1>
+      <p class="text-sm text-gray-500">
         สถานะกล้องและหน่วยประมวลผลทั้งหมดในหน้าเดียว คลิกที่อุปกรณ์เพื่อดูประวัติทั้งหมด
       </p>
     </div>
 
-    <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700 text-sm">
+    <div class="flex gap-2 border-b border-gray-200 text-sm">
       <button
         v-if="canViewCameras"
         @click="activeSection = 'cameras'"
@@ -126,11 +124,11 @@ onMounted(() => {
     <template v-else>
       <div
         v-if="activeSection === 'cameras'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="bg-surface rounded-xl border border-gray-200 overflow-hidden"
       >
         <div v-if="cameras.length === 0" class="text-center py-12 text-gray-400">ไม่พบกล้อง</div>
-        <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">กล้อง</th>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่ / โซน</th>
@@ -138,18 +136,18 @@ onMounted(() => {
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ติดต่อล่าสุด</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="camera in cameras"
               :key="camera.uuid"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+              class="hover:bg-gray-50 cursor-pointer"
               @click="router.push({ name: 'cameras.show', params: { uuid: camera.uuid } })"
             >
               <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900 dark:text-white">{{ camera.name }}</div>
+                <div class="font-semibold text-gray-900">{{ camera.name }}</div>
                 <div class="text-xs text-gray-500 font-mono">{{ camera.camera_code }}</div>
               </td>
-              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+              <td class="px-6 py-4 text-xs text-gray-600">
                 {{ camera.site?.name || '-' }} / {{ camera.zone?.name || '-' }}
               </td>
               <td class="px-6 py-4">
@@ -174,13 +172,13 @@ onMounted(() => {
 
       <div
         v-if="activeSection === 'nodes'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="bg-surface rounded-xl border border-gray-200 overflow-hidden"
       >
         <div v-if="nodes.length === 0" class="text-center py-12 text-gray-400">
           ไม่พบหน่วยประมวลผล
         </div>
-        <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">หน่วยประมวลผล</th>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่</th>
@@ -188,18 +186,18 @@ onMounted(() => {
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ติดต่อล่าสุด</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="node in nodes"
               :key="node.uuid"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+              class="hover:bg-gray-50 cursor-pointer"
               @click="router.push({ name: 'ai-nodes.show', params: { uuid: node.uuid } })"
             >
               <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900 dark:text-white">{{ node.name }}</div>
+                <div class="font-semibold text-gray-900">{{ node.name }}</div>
                 <div class="text-xs text-gray-500 font-mono">{{ node.node_code }}</div>
               </td>
-              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+              <td class="px-6 py-4 text-xs text-gray-600">
                 {{ node.site?.name || 'ยังไม่กำหนด' }}
               </td>
               <td class="px-6 py-4">

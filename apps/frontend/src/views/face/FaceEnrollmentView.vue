@@ -90,14 +90,12 @@ function resetForm() {
   <div class="face-enrollment-container max-w-4xl mx-auto p-6 space-y-6">
     <div class="flex items-center justify-between border-b pb-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ลงทะเบียนใบหน้า</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          ลงทะเบียนข้อมูลใบหน้าให้กับบุคคลในระบบ
-        </p>
+        <h1 class="text-2xl font-bold text-gray-900">ลงทะเบียนใบหน้า</h1>
+        <p class="text-sm text-gray-500">ลงทะเบียนข้อมูลใบหน้าให้กับบุคคลในระบบ</p>
       </div>
       <button
         @click="router.push({ name: 'faces.index' })"
-        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-surface border border-gray-300 rounded-lg hover:bg-gray-50"
       >
         ดูข้อมูลใบหน้าทั้งหมด
       </button>
@@ -110,33 +108,24 @@ function resetForm() {
 
     <div v-else class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <!-- Input Panel -->
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
-      >
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          1. บุคคลและภาพตัวอย่าง
-        </h2>
+      <div class="bg-surface p-6 rounded-xl border border-gray-200 space-y-4">
+        <h2 class="text-lg font-semibold text-gray-800">1. บุคคลและภาพตัวอย่าง</h2>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
             รหัสบุคคล (UUID) <span class="text-red-500">*</span>
           </label>
           <input
             v-model="personUuid"
             type="text"
             placeholder="00000000-0000-0000-0000-000000000000"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white text-sm"
+            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ท่าทางใบหน้า</label
-          >
-          <select
-            v-model="pose"
-            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700 dark:text-white text-sm"
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ท่าทางใบหน้า</label>
+          <select v-model="pose" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
             <option value="FRONT">หน้าตรง</option>
             <option value="LEFT">หันซ้าย</option>
             <option value="RIGHT">หันขวา</option>
@@ -144,9 +133,7 @@ function resetForm() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ภาพใบหน้า</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ภาพใบหน้า</label>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -182,12 +169,8 @@ function resetForm() {
       </div>
 
       <!-- Result Panel -->
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
-      >
-        <h2 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-          2. ผลการตรวจสอบและคุณภาพภาพ
-        </h2>
+      <div class="bg-surface p-6 rounded-xl border border-gray-200 space-y-4">
+        <h2 class="text-lg font-semibold text-gray-800">2. ผลการตรวจสอบและคุณภาพภาพ</h2>
 
         <div v-if="!successData && !loading" class="text-center py-12 text-gray-400 text-sm">
           ผลการลงทะเบียน ค่าคุณภาพภาพ และโมเดลที่ใช้จะแสดงที่นี่หลังส่งข้อมูล
@@ -205,7 +188,7 @@ function resetForm() {
           </div>
 
           <!-- Profile Details -->
-          <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg space-y-2 text-sm">
+          <div class="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
             <div class="flex justify-between">
               <span class="text-gray-500">รหัสโปรไฟล์:</span>
               <span class="font-mono font-medium">{{ successData.face_profile_uuid }}</span>

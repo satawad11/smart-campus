@@ -86,7 +86,7 @@ onMounted(() => {
 
 <template>
   <div class="space-y-6">
-    <div class="rounded-lg bg-white p-6 shadow">
+    <div class="rounded-lg bg-surface p-6 shadow">
       <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
         <div>
           <h3 class="text-base font-semibold text-gray-900">
@@ -163,7 +163,7 @@ onMounted(() => {
               <th scope="col" class="px-4 py-3">รายละเอียด</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody class="divide-y divide-gray-200 bg-surface">
             <tr v-for="(err, idx) in errorItems" :key="idx" class="hover:bg-red-50/30">
               <td class="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium text-gray-900">
                 {{ err.row_number }}
@@ -205,7 +205,7 @@ onMounted(() => {
             <button
               type="button"
               :disabled="pagination.current_page <= 1 || loading"
-              class="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="inline-flex items-center rounded border border-gray-300 bg-surface px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               @click="fetchErrors(pagination.current_page - 1)"
             >
               ย้อนกลับ
@@ -213,7 +213,7 @@ onMounted(() => {
             <button
               type="button"
               :disabled="pagination.current_page >= pagination.last_page || loading"
-              class="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="inline-flex items-center rounded border border-gray-300 bg-surface px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               @click="fetchErrors(pagination.current_page + 1)"
             >
               ถัดไป
@@ -227,7 +227,7 @@ onMounted(() => {
     <div class="flex items-center justify-between">
       <button
         type="button"
-        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         @click="$emit('back')"
       >
         &larr; กลับไปหน้าตรวจสอบ (Back to Preview)

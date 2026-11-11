@@ -236,7 +236,7 @@ onMounted(() => {
 
     <form @submit.prevent="handleSubmit" class="space-y-6" novalidate>
       <!-- Section 1: ข้อมูลส่วนบุคคล (Identity) -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <div class="border-b border-gray-200 pb-4 mb-6">
           <h2 class="text-base font-semibold text-gray-900">1. ข้อมูลส่วนบุคคล (Identity)</h2>
           <p class="mt-1 text-xs text-gray-500">
@@ -369,7 +369,7 @@ onMounted(() => {
       </div>
 
       <!-- Section 2: ข้อมูลการศึกษา (Academic Profile) -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <div class="border-b border-gray-200 pb-4 mb-6">
           <h2 class="text-base font-semibold text-gray-900">
             2. ข้อมูลการศึกษา (Academic Profile)
@@ -630,7 +630,7 @@ onMounted(() => {
       <div class="flex items-center justify-end space-x-3">
         <router-link
           to="/students"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           ยกเลิก
         </router-link>

@@ -306,7 +306,7 @@ onMounted(() => {
 
     <!-- Filters & Search Toolbar -->
     <div
-      class="rounded-lg bg-white p-4 shadow space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4"
+      class="rounded-lg bg-surface p-4 shadow space-y-3 sm:space-y-0 sm:flex sm:items-center sm:gap-4"
     >
       <!-- Search Keyword -->
       <div class="flex-1 relative">
@@ -362,7 +362,7 @@ onMounted(() => {
     </div>
 
     <!-- Users Table (Desktop & Tablet) -->
-    <div class="overflow-hidden rounded-lg bg-white shadow">
+    <div class="overflow-hidden rounded-lg bg-surface shadow">
       <!-- Loading Skeleton / Spinner -->
       <div v-if="loading" class="p-8 text-center text-gray-500">
         <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -472,7 +472,7 @@ onMounted(() => {
               <th scope="col" class="px-4 py-3 text-right">การจัดการ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody class="divide-y divide-gray-200 bg-surface">
             <tr v-for="u in users" :key="u.uuid" class="hover:bg-gray-50 transition">
               <!-- Username -->
               <td class="px-4 py-3 font-medium text-gray-900">
@@ -639,7 +639,7 @@ onMounted(() => {
       <!-- Pagination Footer -->
       <div
         v-if="users.length > 0"
-        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
+        class="flex items-center justify-between border-t border-gray-200 bg-surface px-4 py-3 sm:px-6"
       >
         <div class="text-xs text-gray-700">
           แสดงหน้าที่ <span class="font-medium">{{ pagination.current_page }}</span> จาก
@@ -652,7 +652,7 @@ onMounted(() => {
             type="button"
             :disabled="pagination.current_page <= 1"
             @click="changePage(pagination.current_page - 1)"
-            class="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            class="rounded border border-gray-300 bg-surface px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ก่อนหน้า
           </button>
@@ -660,7 +660,7 @@ onMounted(() => {
             type="button"
             :disabled="pagination.current_page >= pagination.last_page"
             @click="changePage(pagination.current_page + 1)"
-            class="rounded border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+            class="rounded border border-gray-300 bg-surface px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
           >
             ถัดไป
           </button>
