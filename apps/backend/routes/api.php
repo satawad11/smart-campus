@@ -250,6 +250,9 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/cameras', [CameraController::class, 'index'])->middleware('permission:camera.view');
     Route::post('/cameras', [CameraController::class, 'store'])->middleware('permission:camera.create');
+    // Literal paths before /cameras/{camera} so they never bind as a uuid.
+    Route::get('/cameras/form-options', [CameraController::class, 'formOptions'])->middleware('permission:camera.create');
+    Route::post('/cameras/preview', [CameraController::class, 'preview'])->middleware(['permission:camera.create', 'throttle:20,1']);
     Route::get('/cameras/{camera}', [CameraController::class, 'show'])->middleware('permission:camera.view');
     Route::put('/cameras/{camera}', [CameraController::class, 'update'])->middleware('permission:camera.update');
     Route::patch('/cameras/{camera}/status', [CameraController::class, 'updateStatus'])->middleware('permission:camera.enable');

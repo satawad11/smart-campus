@@ -147,6 +147,13 @@ Raw embeddings must never be returned to frontend.
 - PATCH `/cameras/{uuid}/status`
 - POST `/cameras/{uuid}/test`
 - POST `/cameras/{uuid}/snapshot`
+- GET `/cameras/form-options` (add-camera form: scoped sites/zones + suggested camera code)
+- POST `/cameras/preview` (one live frame from an unsaved stream; nothing persisted)
+
+POST `/cameras`: `site_uuid`, `zone_uuid` and `camera_code` are optional. When omitted the
+server uses the first active site/zone in the caller's scope (provisioning a default
+`MAIN` site and `GENERAL` zone for a GLOBAL caller when none exist) and the next free
+`CAM-####` code.
 - POST `/cameras/{uuid}/start`
 - POST `/cameras/{uuid}/stop`
 - GET `/cameras/{uuid}/health`

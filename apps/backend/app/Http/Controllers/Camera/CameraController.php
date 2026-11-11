@@ -6,6 +6,7 @@ use App\Enums\DeviceStatus;
 use App\Exceptions\ApiException;
 use App\Http\Controllers\Concerns\EnforcesScope;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Camera\PreviewCameraStreamRequest;
 use App\Http\Requests\Camera\StoreCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraRequest;
 use App\Http\Requests\Camera\UpdateCameraRoiRequest;
@@ -103,19 +104,103 @@ class CameraController extends Controller
         ]);
     }
 
-    public function store(StoreCameraRequest $request): JsonResponse
+    /**
+     * Data for the add-camera form: the sites/zones the caller may place a
+     * camera in, and the next suggested camera code. Read-only — defaults
+     * are provisioned only when a camera is actually created.
+     */
+    public function formOptions(Request $request): JsonResponse
     {
-        $this->assertInScope(
-            $request,
-            'camera.create',
-            Site::where('uuid', $request->validated('site_uuid'))->value('id'),
-            Zone::where('uuid', $request->validated('zone_uuid'))->value('id'),
-        );
-        $camera = $this->service->createCamera(
+        $zones = $this->scopeQuery(Zone::query(), $request, 'camera.create', 'site_id', 'id')
+            ->where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get(['id', 'uuid', 'site_id', 'code', 'name']);
+
+        $global = $this->scopes()->accessibleSiteIds($request->user(), 'camera.create') === null;
+        $siteQuery = Site::query()->where('status', 'ACTIVE')->orderBy('id');
+        if (! $global) {
+            $siteQuery->whereIn('id', $zones->pluck('site_id')->unique()->all());
+        }
+
+        $sites = $siteQuery->get(['id', 'uuid', 'code', 'name'])->map(fn (Site $site) => [
+            'uuid' => $site->uuid,
+            'code' => $site->code,
+            'name' => $site->name,
+            'zones' => $zones->where('site_id', $site->id)->values()->map(fn (Zone $zone) => [
+                'uuid' => $zone->uuid,
+                'code' => $zone->code,
+                'name' => $zone->name,
+            ])->all(),
+        ])->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => [
+                'sites' => $sites,
+                'suggested_camera_code' => $this->service->nextCameraCode(),
+                'can_provision_default_location' => $global,
+            ],
+            'meta' => null,
+        ]);
+    }
+
+    /**
+     * Grabs one live frame from a not-yet-saved stream (pre-save preview).
+     */
+    public function preview(PreviewCameraStreamRequest $request): JsonResponse
+    {
+        $result = $this->service->previewStream(
             $request->validated(),
             $request->user(),
             AuditRequestContext::fromRequest($request),
         );
+
+        if (! $result->success) {
+            throw ApiException::unprocessable($result->errorCode ?? 'CAMERA_SNAPSHOT_FAILED', 'Could not read a frame from the camera stream.');
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Preview captured',
+            'data' => [
+                'content_type' => $result->contentType,
+                'image_base64' => base64_encode($result->bytes),
+                'source' => $result->source,
+            ],
+            'meta' => null,
+        ]);
+    }
+
+    public function store(StoreCameraRequest $request): JsonResponse
+    {
+        $data = $request->validated();
+        $context = AuditRequestContext::fromRequest($request);
+
+        // Fill a blank site/zone from what was given, else from the defaults.
+        if (empty($data['site_uuid']) && ! empty($data['zone_uuid'])) {
+            $data['site_uuid'] = Zone::where('uuid', $data['zone_uuid'])->first()?->site?->uuid;
+        } elseif (! empty($data['site_uuid']) && empty($data['zone_uuid'])) {
+            $site = Site::where('uuid', $data['site_uuid'])->firstOrFail();
+            $this->assertInScope($request, 'camera.create', $site->id);
+            $data['zone_uuid'] = $this->service->defaultZoneFor($site, $request->user(), $context)->uuid;
+        } elseif (empty($data['site_uuid']) && empty($data['zone_uuid'])) {
+            [$site, $zone] = $this->service->defaultLocation(
+                $request->user(),
+                $context,
+                $this->scopes()->accessibleSiteIds($request->user(), 'camera.create'),
+            );
+            $data['site_uuid'] = $site->uuid;
+            $data['zone_uuid'] = $zone->uuid;
+        }
+
+        $this->assertInScope(
+            $request,
+            'camera.create',
+            Site::where('uuid', $data['site_uuid'])->value('id'),
+            Zone::where('uuid', $data['zone_uuid'])->value('id'),
+        );
+        $camera = $this->service->createCamera($data, $request->user(), $context);
 
         return response()->json([
             'success' => true,

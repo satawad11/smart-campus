@@ -14,6 +14,16 @@ export default {
     return response.data
   },
 
+  async getFormOptions() {
+    const response = await api.get('/cameras/form-options')
+    return response.data
+  },
+
+  async previewStream(payload) {
+    const response = await api.post('/cameras/preview', payload, { timeout: 30000 })
+    return response.data
+  },
+
   async createCamera(payload) {
     const response = await api.post('/cameras', payload)
     return response.data
