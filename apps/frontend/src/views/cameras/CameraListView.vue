@@ -68,9 +68,7 @@ async function toggleStatus(camera) {
 }
 
 function statusBadgeClass(status) {
-  return status === 'ACTIVE'
-    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-    : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+  return status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
 }
 
 function goToPage(page) {
@@ -90,10 +88,8 @@ onMounted(() => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">กล้อง</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          จัดการกล้อง การสตรีมภาพ และการตั้งค่าปัญญาประดิษฐ์
-        </p>
+        <h1 class="text-2xl font-bold text-gray-900">กล้อง</h1>
+        <p class="text-sm text-gray-500">จัดการกล้อง การสตรีมภาพ และการตั้งค่าปัญญาประดิษฐ์</p>
       </div>
       <div class="flex space-x-3">
         <button
@@ -106,21 +102,19 @@ onMounted(() => {
       </div>
     </div>
 
-    <div
-      class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
-    >
+    <div class="bg-surface p-4 rounded-xl border border-gray-200 flex flex-wrap gap-4 items-center">
       <input
         v-model="filters.keyword"
         @keyup.enter="fetchCameras"
         type="text"
         placeholder="ค้นหารหัสหรือชื่อกล้อง..."
-        class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm"
       />
 
       <select
         v-model="filters.status"
         @change="fetchCameras"
-        class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        class="px-3 py-2 border rounded-lg text-sm"
       >
         <option value="">ทุกสถานะ</option>
         <option value="ACTIVE">ใช้งาน</option>
@@ -142,17 +136,15 @@ onMounted(() => {
       {{ errorMessage }}
     </div>
 
-    <div
-      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-    >
+    <div class="bg-surface rounded-xl border border-gray-200 overflow-hidden">
       <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดรายการกล้อง...</div>
 
       <div v-else-if="cameras.length === 0" class="text-center py-12 text-gray-400">
         ไม่พบกล้องตามเงื่อนไข
       </div>
 
-      <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
+      <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">กล้อง</th>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">พื้นที่ / โซน</th>
@@ -162,21 +154,17 @@ onMounted(() => {
             <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr
-            v-for="camera in cameras"
-            :key="camera.uuid"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-          >
+        <tbody class="divide-y divide-gray-200">
+          <tr v-for="camera in cameras" :key="camera.uuid" class="hover:bg-gray-50">
             <td class="px-6 py-4">
-              <div class="font-semibold text-gray-900 dark:text-white">{{ camera.name }}</div>
+              <div class="font-semibold text-gray-900">{{ camera.name }}</div>
               <div class="text-xs text-gray-500 font-mono">{{ camera.camera_code }}</div>
             </td>
             <td class="px-6 py-4 text-xs">
-              <div class="text-gray-800 dark:text-gray-200">{{ camera.site?.name || '-' }}</div>
+              <div class="text-gray-800">{{ camera.site?.name || '-' }}</div>
               <div class="text-gray-400">{{ camera.zone?.name || '-' }}</div>
             </td>
-            <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+            <td class="px-6 py-4 text-xs text-gray-600">
               {{ camera.ai_node?.name || 'ยังไม่กำหนด' }}
             </td>
             <td class="px-6 py-4">
@@ -220,7 +208,7 @@ onMounted(() => {
 
       <div
         v-if="pagination.last_page > 1"
-        class="flex justify-between items-center px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-sm"
+        class="flex justify-between items-center px-6 py-3 border-t border-gray-200 text-sm"
       >
         <span class="text-gray-500">ทั้งหมด {{ pagination.total }} กล้อง</span>
         <div class="space-x-2">

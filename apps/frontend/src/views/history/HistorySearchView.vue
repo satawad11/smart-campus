@@ -93,7 +93,7 @@ onMounted(() => {
     </div>
 
     <!-- Filters Box -->
-    <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+    <div class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
       <form
         @submit.prevent="fetchEvents(1)"
         class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4"
@@ -184,7 +184,7 @@ onMounted(() => {
     </div>
 
     <!-- Results Table -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="bg-surface rounded-lg shadow-sm border border-gray-200 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200 text-sm">
           <thead
@@ -200,7 +200,7 @@ onMounted(() => {
               <th class="px-4 py-3 text-right">การจัดการ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 bg-white">
+          <tbody class="divide-y divide-gray-200 bg-surface">
             <tr v-for="evt in events" :key="evt.uuid" class="hover:bg-gray-50">
               <td class="px-4 py-3 whitespace-nowrap text-gray-700 font-mono text-xs">
                 {{ formatTime(evt.event_time) }}
@@ -270,14 +270,14 @@ onMounted(() => {
           <button
             @click="fetchEvents(meta.current_page - 1)"
             :disabled="meta.current_page <= 1 || loading"
-            class="px-3 py-1 border border-gray-300 rounded text-xs bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            class="px-3 py-1 border border-gray-300 rounded text-xs bg-surface text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             ก่อนหน้า
           </button>
           <button
             @click="fetchEvents(meta.current_page + 1)"
             :disabled="meta.current_page >= meta.last_page || loading"
-            class="px-3 py-1 border border-gray-300 rounded text-xs bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            class="px-3 py-1 border border-gray-300 rounded text-xs bg-surface text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             ถัดไป
           </button>

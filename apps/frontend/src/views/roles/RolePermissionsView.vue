@@ -197,7 +197,7 @@ onMounted(() => {
           type="button"
           :disabled="!isDirty || saving"
           @click="resetChanges"
-          class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           รีเซ็ตการแก้ไข
         </button>
@@ -384,7 +384,7 @@ onMounted(() => {
 
     <!-- Sticky Summary Bar -->
     <div
-      class="rounded-lg bg-white p-4 shadow flex items-center justify-between border-l-4"
+      class="rounded-lg bg-surface p-4 shadow flex items-center justify-between border-l-4"
       :class="isDirty ? 'border-amber-500' : 'border-indigo-500'"
     >
       <div class="text-sm">
@@ -399,7 +399,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="initialLoading" class="rounded-lg bg-white p-12 text-center text-gray-500 shadow">
+    <div v-if="initialLoading" class="rounded-lg bg-surface p-12 text-center text-gray-500 shadow">
       <svg class="mx-auto h-8 w-8 animate-spin text-indigo-600" fill="none" viewBox="0 0 24 24">
         <circle
           class="opacity-25"
@@ -423,7 +423,7 @@ onMounted(() => {
       <div
         v-for="(perms, moduleName) in groupedPermissions"
         :key="moduleName"
-        class="overflow-hidden rounded-lg bg-white shadow"
+        class="overflow-hidden rounded-lg bg-surface shadow"
       >
         <!-- Module Header -->
         <div
@@ -443,14 +443,14 @@ onMounted(() => {
             <button
               type="button"
               @click="selectAllInModule(moduleName)"
-              class="rounded bg-white px-2.5 py-1 font-medium text-indigo-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              class="rounded bg-surface px-2.5 py-1 font-medium text-indigo-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
               เลือกทั้งหมดในกลุ่ม
             </button>
             <button
               type="button"
               @click="clearAllInModule(moduleName)"
-              class="rounded bg-white px-2.5 py-1 font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              class="rounded bg-surface px-2.5 py-1 font-medium text-gray-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
             >
               ยกเลิกทั้งหมด
             </button>
@@ -467,7 +467,7 @@ onMounted(() => {
             :class="[
               selectedCodes.has(p.code)
                 ? 'bg-indigo-50/50 border-indigo-200'
-                : 'bg-white border-gray-200 hover:bg-gray-50',
+                : 'bg-surface border-gray-200 hover:bg-gray-50',
               isReadOnly ? 'cursor-default' : 'cursor-pointer',
             ]"
           >

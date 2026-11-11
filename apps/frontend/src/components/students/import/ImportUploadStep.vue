@@ -133,7 +133,7 @@ async function handleUpload() {
 <template>
   <div class="space-y-6">
     <!-- Card: Select File & Drag/Drop -->
-    <div class="rounded-lg bg-white p-6 shadow">
+    <div class="rounded-lg bg-surface p-6 shadow">
       <h2 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
         1. เลือกไฟล์ข้อมูลนักเรียน (.CSV)
       </h2>
@@ -253,7 +253,7 @@ async function handleUpload() {
     </div>
 
     <!-- Card: Conflict Mode Selection -->
-    <div class="rounded-lg bg-white p-6 shadow">
+    <div class="rounded-lg bg-surface p-6 shadow">
       <h2 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
         2. เลือกรูปแบบการจัดการข้อมูลซ้ำ (Conflict Mode)
       </h2>
@@ -329,7 +329,7 @@ async function handleUpload() {
     <div class="flex justify-end space-x-3">
       <router-link
         to="/students"
-        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         ยกเลิก
       </router-link>

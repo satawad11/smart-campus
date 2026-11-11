@@ -58,8 +58,8 @@ async function submit() {
 <template>
   <div class="ai-node-create-view max-w-2xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">เพิ่มหน่วยประมวลผล</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <h1 class="text-2xl font-bold text-gray-900">เพิ่มหน่วยประมวลผล</h1>
+      <p class="text-sm text-gray-500">
         เครื่องหน่วยประมวลผลจะยืนยันตัวตนภายหลังด้วยรหัสลงทะเบียนหรือกุญแจเชื่อมต่อ
         ที่ออกจากหน้ารายละเอียดของหน่วยนี้
       </p>
@@ -72,44 +72,36 @@ async function submit() {
       {{ errorMessage }}
     </div>
 
-    <div
-      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
-    >
+    <div class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4">
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >รหัสหน่วย *</label
-        >
+        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสหน่วย *</label>
         <input
           v-model="form.node_code"
           type="text"
           placeholder="เช่น NODE-01"
-          class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="w-full px-3 py-2 border rounded-lg text-sm"
         />
         <p v-if="fieldErrors.node_code" class="text-xs text-red-600 mt-1">
           {{ fieldErrors.node_code[0] }}
         </p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >ชื่อ *</label
-        >
+        <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อ *</label>
         <input
           v-model="form.name"
           type="text"
           placeholder="เช่น เครื่องประมวลผลประตูหน้า"
-          class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="w-full px-3 py-2 border rounded-lg text-sm"
         />
         <p v-if="fieldErrors.name" class="text-xs text-red-600 mt-1">{{ fieldErrors.name[0] }}</p>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >รหัสพื้นที่ (UUID)</label
-        >
+        <label class="block text-sm font-medium text-gray-700 mb-1">รหัสพื้นที่ (UUID)</label>
         <input
           v-model="form.site_uuid"
           type="text"
           placeholder="รหัสพื้นที่ (ไม่บังคับ)"
-          class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="w-full px-3 py-2 border rounded-lg text-sm"
         />
         <p v-if="fieldErrors.site_uuid" class="text-xs text-red-600 mt-1">
           {{ fieldErrors.site_uuid[0] }}
@@ -117,95 +109,79 @@ async function submit() {
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ชื่อเครื่อง</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อเครื่อง</label>
           <input
             v-model="form.hostname"
             type="text"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ที่อยู่ไอพี</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่ไอพี</label>
           <input
             v-model="form.ip_address"
             type="text"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
       </div>
       <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >ที่อยู่ API</label
-        >
+        <label class="block text-sm font-medium text-gray-700 mb-1">ที่อยู่ API</label>
         <input
           v-model="form.api_url"
           type="text"
-          class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="w-full px-3 py-2 border rounded-lg text-sm"
         />
       </div>
       <div class="grid grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ประเภทฮาร์ดแวร์</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ประเภทฮาร์ดแวร์</label>
           <input
             v-model="form.hardware_type"
             type="text"
             placeholder="เช่น Raspberry Pi 5, Jetson Orin"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >รุ่นซีพียู</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">รุ่นซีพียู</label>
           <input
             v-model="form.cpu_model"
             type="text"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
       </div>
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >รุ่น GPU</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">รุ่น GPU</label>
           <input
             v-model="form.gpu_name"
             type="text"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >หน่วยความจำ GPU (MB)</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">หน่วยความจำ GPU (MB)</label>
           <input
             v-model="form.gpu_memory_mb"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >จำนวนกล้องสูงสุด</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนกล้องสูงสุด</label>
           <input
             v-model="form.max_camera"
             type="number"
             min="0"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
       </div>
 
-      <div class="flex justify-end pt-4 border-t border-gray-200 dark:border-gray-700">
+      <div class="flex justify-end pt-4 border-t border-gray-200">
         <button
           @click="submit"
           :disabled="loading"

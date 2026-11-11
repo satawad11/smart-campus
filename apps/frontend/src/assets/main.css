@@ -1,1 +1,378 @@
 @import 'tailwindcss';
+
+/*
+ * Theme system (UI-THEME)
+ * -----------------------
+ * Dark mode is class-based: `html.dark` is toggled by the theme store
+ * (src/stores/theme.js) and an inline boot script in index.html (no flash).
+ *
+ * Instead of sprinkling `dark:` variants across every view, the dark theme
+ * re-maps Tailwind palette tokens so existing utilities adapt automatically:
+ *   - `canvas` / `surface` are semantic page and card backgrounds.
+ *   - gray/slate scales are inverted into a soft navy-charcoal ramp.
+ *   - colored 50–300 shades become translucent tints (badges, alerts).
+ *   - colored *text* 500–900 shades are lightened via the `--text-color-*`
+ *     namespace, so `bg-blue-600` buttons keep their colour while
+ *     `text-blue-700` links stay readable on dark surfaces.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans:
+    'Inter', 'Noto Sans Thai', 'IBM Plex Sans Thai', 'Leelawadee UI', 'Sarabun', ui-sans-serif,
+    system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-canvas: oklch(97.4% 0.005 265);
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+
+  --text-color-red-500: oklch(63.7% 0.237 25.331);
+  --text-color-red-600: oklch(57.7% 0.245 27.325);
+  --text-color-red-700: oklch(50.5% 0.213 27.518);
+  --text-color-red-800: oklch(44.4% 0.177 26.899);
+  --text-color-red-900: oklch(39.6% 0.141 25.723);
+  --text-color-orange-500: oklch(70.5% 0.213 47.604);
+  --text-color-orange-600: oklch(64.6% 0.222 41.116);
+  --text-color-orange-700: oklch(55.3% 0.195 38.402);
+  --text-color-orange-800: oklch(47% 0.157 37.304);
+  --text-color-orange-900: oklch(40.8% 0.123 38.172);
+  --text-color-amber-500: oklch(76.9% 0.188 70.08);
+  --text-color-amber-600: oklch(66.6% 0.179 58.318);
+  --text-color-amber-700: oklch(55.5% 0.163 48.998);
+  --text-color-amber-800: oklch(47.3% 0.137 46.201);
+  --text-color-amber-900: oklch(41.4% 0.112 45.904);
+  --text-color-yellow-500: oklch(79.5% 0.184 86.047);
+  --text-color-yellow-600: oklch(68.1% 0.162 75.834);
+  --text-color-yellow-700: oklch(55.4% 0.135 66.442);
+  --text-color-yellow-800: oklch(47.6% 0.114 61.907);
+  --text-color-yellow-900: oklch(42.1% 0.095 57.708);
+  --text-color-lime-500: oklch(76.8% 0.233 130.85);
+  --text-color-lime-600: oklch(64.8% 0.2 131.684);
+  --text-color-lime-700: oklch(53.2% 0.157 131.589);
+  --text-color-lime-800: oklch(45.3% 0.124 130.933);
+  --text-color-lime-900: oklch(40.5% 0.101 131.063);
+  --text-color-green-500: oklch(72.3% 0.219 149.579);
+  --text-color-green-600: oklch(62.7% 0.194 149.214);
+  --text-color-green-700: oklch(52.7% 0.154 150.069);
+  --text-color-green-800: oklch(44.8% 0.119 151.328);
+  --text-color-green-900: oklch(39.3% 0.095 152.535);
+  --text-color-emerald-500: oklch(69.6% 0.17 162.48);
+  --text-color-emerald-600: oklch(59.6% 0.145 163.225);
+  --text-color-emerald-700: oklch(50.8% 0.118 165.612);
+  --text-color-emerald-800: oklch(43.2% 0.095 166.913);
+  --text-color-emerald-900: oklch(37.8% 0.077 168.94);
+  --text-color-teal-500: oklch(70.4% 0.14 182.503);
+  --text-color-teal-600: oklch(60% 0.118 184.704);
+  --text-color-teal-700: oklch(51.1% 0.096 186.391);
+  --text-color-teal-800: oklch(43.7% 0.078 188.216);
+  --text-color-teal-900: oklch(38.6% 0.063 188.416);
+  --text-color-cyan-500: oklch(71.5% 0.143 215.221);
+  --text-color-cyan-600: oklch(60.9% 0.126 221.723);
+  --text-color-cyan-700: oklch(52% 0.105 223.128);
+  --text-color-cyan-800: oklch(45% 0.085 224.283);
+  --text-color-cyan-900: oklch(39.8% 0.07 227.392);
+  --text-color-sky-500: oklch(68.5% 0.169 237.323);
+  --text-color-sky-600: oklch(58.8% 0.158 241.966);
+  --text-color-sky-700: oklch(50% 0.134 242.749);
+  --text-color-sky-800: oklch(44.3% 0.11 240.79);
+  --text-color-sky-900: oklch(39.1% 0.09 240.876);
+  --text-color-blue-500: oklch(62.3% 0.214 259.815);
+  --text-color-blue-600: oklch(54.6% 0.245 262.881);
+  --text-color-blue-700: oklch(48.8% 0.243 264.376);
+  --text-color-blue-800: oklch(42.4% 0.199 265.638);
+  --text-color-blue-900: oklch(37.9% 0.146 265.522);
+  --text-color-indigo-500: oklch(58.5% 0.233 277.117);
+  --text-color-indigo-600: oklch(51.1% 0.262 276.966);
+  --text-color-indigo-700: oklch(45.7% 0.24 277.023);
+  --text-color-indigo-800: oklch(39.8% 0.195 277.366);
+  --text-color-indigo-900: oklch(35.9% 0.144 278.697);
+  --text-color-violet-500: oklch(60.6% 0.25 292.717);
+  --text-color-violet-600: oklch(54.1% 0.281 293.009);
+  --text-color-violet-700: oklch(49.1% 0.27 292.581);
+  --text-color-violet-800: oklch(43.2% 0.232 292.759);
+  --text-color-violet-900: oklch(38% 0.189 293.745);
+  --text-color-purple-500: oklch(62.7% 0.265 303.9);
+  --text-color-purple-600: oklch(55.8% 0.288 302.321);
+  --text-color-purple-700: oklch(49.6% 0.265 301.924);
+  --text-color-purple-800: oklch(43.8% 0.218 303.724);
+  --text-color-purple-900: oklch(38.1% 0.176 304.987);
+  --text-color-fuchsia-500: oklch(66.7% 0.295 322.15);
+  --text-color-fuchsia-600: oklch(59.1% 0.293 322.896);
+  --text-color-fuchsia-700: oklch(51.8% 0.253 323.949);
+  --text-color-fuchsia-800: oklch(45.2% 0.211 324.591);
+  --text-color-fuchsia-900: oklch(40.1% 0.17 325.612);
+  --text-color-pink-500: oklch(65.6% 0.241 354.308);
+  --text-color-pink-600: oklch(59.2% 0.249 0.584);
+  --text-color-pink-700: oklch(52.5% 0.223 3.958);
+  --text-color-pink-800: oklch(45.9% 0.187 3.815);
+  --text-color-pink-900: oklch(40.8% 0.153 2.432);
+  --text-color-rose-500: oklch(64.5% 0.246 16.439);
+  --text-color-rose-600: oklch(58.6% 0.253 17.585);
+  --text-color-rose-700: oklch(51.4% 0.222 16.935);
+  --text-color-rose-800: oklch(45.5% 0.188 13.697);
+  --text-color-rose-900: oklch(41% 0.159 10.272);
+}
+
+.dark {
+  --color-canvas: oklch(15% 0.02 266);
+  --color-surface: oklch(20.5% 0.022 266);
+  --color-surface-raised: oklch(23% 0.022 266);
+
+  --color-gray-50: oklch(23% 0.02 265);
+  --color-gray-100: oklch(26% 0.021 265);
+  --color-gray-200: oklch(30.5% 0.021 265);
+  --color-gray-300: oklch(37.5% 0.02 265);
+  --color-gray-400: oklch(57% 0.018 265);
+  --color-gray-500: oklch(69% 0.016 265);
+  --color-gray-600: oklch(77% 0.013 265);
+  --color-gray-700: oklch(85% 0.01 265);
+  --color-gray-800: oklch(90.5% 0.008 265);
+  --color-gray-900: oklch(95% 0.005 265);
+  --color-gray-950: oklch(97.5% 0.003 265);
+  --color-slate-50: oklch(23% 0.02 265);
+  --color-slate-100: oklch(26% 0.021 265);
+  --color-slate-200: oklch(30.5% 0.021 265);
+  --color-slate-300: oklch(37.5% 0.02 265);
+  --color-slate-400: oklch(57% 0.018 265);
+  --color-slate-500: oklch(69% 0.016 265);
+  --color-slate-600: oklch(77% 0.013 265);
+  --color-slate-700: oklch(85% 0.01 265);
+  --color-slate-800: oklch(90.5% 0.008 265);
+  --color-slate-900: oklch(95% 0.005 265);
+  --color-slate-950: oklch(97.5% 0.003 265);
+
+  --color-red-50: color-mix(in oklab, oklch(63.7% 0.237 25.331) 12%, transparent);
+  --color-red-100: color-mix(in oklab, oklch(63.7% 0.237 25.331) 18%, transparent);
+  --color-red-200: color-mix(in oklab, oklch(63.7% 0.237 25.331) 30%, transparent);
+  --color-red-300: color-mix(in oklab, oklch(63.7% 0.237 25.331) 45%, transparent);
+  --text-color-red-500: oklch(70.4% 0.191 22.216);
+  --text-color-red-600: oklch(70.4% 0.191 22.216);
+  --text-color-red-700: oklch(80.8% 0.114 19.571);
+  --text-color-red-800: oklch(88.5% 0.062 18.334);
+  --text-color-red-900: oklch(93.6% 0.032 17.717);
+  --color-orange-50: color-mix(in oklab, oklch(70.5% 0.213 47.604) 12%, transparent);
+  --color-orange-100: color-mix(in oklab, oklch(70.5% 0.213 47.604) 18%, transparent);
+  --color-orange-200: color-mix(in oklab, oklch(70.5% 0.213 47.604) 30%, transparent);
+  --color-orange-300: color-mix(in oklab, oklch(70.5% 0.213 47.604) 45%, transparent);
+  --text-color-orange-500: oklch(75% 0.183 55.934);
+  --text-color-orange-600: oklch(75% 0.183 55.934);
+  --text-color-orange-700: oklch(83.7% 0.128 66.29);
+  --text-color-orange-800: oklch(90.1% 0.076 70.697);
+  --text-color-orange-900: oklch(95.4% 0.038 75.164);
+  --color-amber-50: color-mix(in oklab, oklch(76.9% 0.188 70.08) 12%, transparent);
+  --color-amber-100: color-mix(in oklab, oklch(76.9% 0.188 70.08) 18%, transparent);
+  --color-amber-200: color-mix(in oklab, oklch(76.9% 0.188 70.08) 30%, transparent);
+  --color-amber-300: color-mix(in oklab, oklch(76.9% 0.188 70.08) 45%, transparent);
+  --text-color-amber-500: oklch(82.8% 0.189 84.429);
+  --text-color-amber-600: oklch(82.8% 0.189 84.429);
+  --text-color-amber-700: oklch(87.9% 0.169 91.605);
+  --text-color-amber-800: oklch(92.4% 0.12 95.746);
+  --text-color-amber-900: oklch(96.2% 0.059 95.617);
+  --color-yellow-50: color-mix(in oklab, oklch(79.5% 0.184 86.047) 12%, transparent);
+  --color-yellow-100: color-mix(in oklab, oklch(79.5% 0.184 86.047) 18%, transparent);
+  --color-yellow-200: color-mix(in oklab, oklch(79.5% 0.184 86.047) 30%, transparent);
+  --color-yellow-300: color-mix(in oklab, oklch(79.5% 0.184 86.047) 45%, transparent);
+  --text-color-yellow-500: oklch(85.2% 0.199 91.936);
+  --text-color-yellow-600: oklch(85.2% 0.199 91.936);
+  --text-color-yellow-700: oklch(90.5% 0.182 98.111);
+  --text-color-yellow-800: oklch(94.5% 0.129 101.54);
+  --text-color-yellow-900: oklch(97.3% 0.071 103.193);
+  --color-lime-50: color-mix(in oklab, oklch(76.8% 0.233 130.85) 12%, transparent);
+  --color-lime-100: color-mix(in oklab, oklch(76.8% 0.233 130.85) 18%, transparent);
+  --color-lime-200: color-mix(in oklab, oklch(76.8% 0.233 130.85) 30%, transparent);
+  --color-lime-300: color-mix(in oklab, oklch(76.8% 0.233 130.85) 45%, transparent);
+  --text-color-lime-500: oklch(84.1% 0.238 128.85);
+  --text-color-lime-600: oklch(84.1% 0.238 128.85);
+  --text-color-lime-700: oklch(89.7% 0.196 126.665);
+  --text-color-lime-800: oklch(93.8% 0.127 124.321);
+  --text-color-lime-900: oklch(96.7% 0.067 122.328);
+  --color-green-50: color-mix(in oklab, oklch(72.3% 0.219 149.579) 12%, transparent);
+  --color-green-100: color-mix(in oklab, oklch(72.3% 0.219 149.579) 18%, transparent);
+  --color-green-200: color-mix(in oklab, oklch(72.3% 0.219 149.579) 30%, transparent);
+  --color-green-300: color-mix(in oklab, oklch(72.3% 0.219 149.579) 45%, transparent);
+  --text-color-green-500: oklch(79.2% 0.209 151.711);
+  --text-color-green-600: oklch(79.2% 0.209 151.711);
+  --text-color-green-700: oklch(87.1% 0.15 154.449);
+  --text-color-green-800: oklch(92.5% 0.084 155.995);
+  --text-color-green-900: oklch(96.2% 0.044 156.743);
+  --color-emerald-50: color-mix(in oklab, oklch(69.6% 0.17 162.48) 12%, transparent);
+  --color-emerald-100: color-mix(in oklab, oklch(69.6% 0.17 162.48) 18%, transparent);
+  --color-emerald-200: color-mix(in oklab, oklch(69.6% 0.17 162.48) 30%, transparent);
+  --color-emerald-300: color-mix(in oklab, oklch(69.6% 0.17 162.48) 45%, transparent);
+  --text-color-emerald-500: oklch(76.5% 0.177 163.223);
+  --text-color-emerald-600: oklch(76.5% 0.177 163.223);
+  --text-color-emerald-700: oklch(84.5% 0.143 164.978);
+  --text-color-emerald-800: oklch(90.5% 0.093 164.15);
+  --text-color-emerald-900: oklch(95% 0.052 163.051);
+  --color-teal-50: color-mix(in oklab, oklch(70.4% 0.14 182.503) 12%, transparent);
+  --color-teal-100: color-mix(in oklab, oklch(70.4% 0.14 182.503) 18%, transparent);
+  --color-teal-200: color-mix(in oklab, oklch(70.4% 0.14 182.503) 30%, transparent);
+  --color-teal-300: color-mix(in oklab, oklch(70.4% 0.14 182.503) 45%, transparent);
+  --text-color-teal-500: oklch(77.7% 0.152 181.912);
+  --text-color-teal-600: oklch(77.7% 0.152 181.912);
+  --text-color-teal-700: oklch(85.5% 0.138 181.071);
+  --text-color-teal-800: oklch(91% 0.096 180.426);
+  --text-color-teal-900: oklch(95.3% 0.051 180.801);
+  --color-cyan-50: color-mix(in oklab, oklch(71.5% 0.143 215.221) 12%, transparent);
+  --color-cyan-100: color-mix(in oklab, oklch(71.5% 0.143 215.221) 18%, transparent);
+  --color-cyan-200: color-mix(in oklab, oklch(71.5% 0.143 215.221) 30%, transparent);
+  --color-cyan-300: color-mix(in oklab, oklch(71.5% 0.143 215.221) 45%, transparent);
+  --text-color-cyan-500: oklch(78.9% 0.154 211.53);
+  --text-color-cyan-600: oklch(78.9% 0.154 211.53);
+  --text-color-cyan-700: oklch(86.5% 0.127 207.078);
+  --text-color-cyan-800: oklch(91.7% 0.08 205.041);
+  --text-color-cyan-900: oklch(95.6% 0.045 203.388);
+  --color-sky-50: color-mix(in oklab, oklch(68.5% 0.169 237.323) 12%, transparent);
+  --color-sky-100: color-mix(in oklab, oklch(68.5% 0.169 237.323) 18%, transparent);
+  --color-sky-200: color-mix(in oklab, oklch(68.5% 0.169 237.323) 30%, transparent);
+  --color-sky-300: color-mix(in oklab, oklch(68.5% 0.169 237.323) 45%, transparent);
+  --text-color-sky-500: oklch(74.6% 0.16 232.661);
+  --text-color-sky-600: oklch(74.6% 0.16 232.661);
+  --text-color-sky-700: oklch(82.8% 0.111 230.318);
+  --text-color-sky-800: oklch(90.1% 0.058 230.902);
+  --text-color-sky-900: oklch(95.1% 0.026 236.824);
+  --color-blue-50: color-mix(in oklab, oklch(62.3% 0.214 259.815) 12%, transparent);
+  --color-blue-100: color-mix(in oklab, oklch(62.3% 0.214 259.815) 18%, transparent);
+  --color-blue-200: color-mix(in oklab, oklch(62.3% 0.214 259.815) 30%, transparent);
+  --color-blue-300: color-mix(in oklab, oklch(62.3% 0.214 259.815) 45%, transparent);
+  --text-color-blue-500: oklch(70.7% 0.165 254.624);
+  --text-color-blue-600: oklch(70.7% 0.165 254.624);
+  --text-color-blue-700: oklch(80.9% 0.105 251.813);
+  --text-color-blue-800: oklch(88.2% 0.059 254.128);
+  --text-color-blue-900: oklch(93.2% 0.032 255.585);
+  --color-indigo-50: color-mix(in oklab, oklch(58.5% 0.233 277.117) 12%, transparent);
+  --color-indigo-100: color-mix(in oklab, oklch(58.5% 0.233 277.117) 18%, transparent);
+  --color-indigo-200: color-mix(in oklab, oklch(58.5% 0.233 277.117) 30%, transparent);
+  --color-indigo-300: color-mix(in oklab, oklch(58.5% 0.233 277.117) 45%, transparent);
+  --text-color-indigo-500: oklch(67.3% 0.182 276.935);
+  --text-color-indigo-600: oklch(67.3% 0.182 276.935);
+  --text-color-indigo-700: oklch(78.5% 0.115 274.713);
+  --text-color-indigo-800: oklch(87% 0.065 274.039);
+  --text-color-indigo-900: oklch(93% 0.034 272.788);
+  --color-violet-50: color-mix(in oklab, oklch(60.6% 0.25 292.717) 12%, transparent);
+  --color-violet-100: color-mix(in oklab, oklch(60.6% 0.25 292.717) 18%, transparent);
+  --color-violet-200: color-mix(in oklab, oklch(60.6% 0.25 292.717) 30%, transparent);
+  --color-violet-300: color-mix(in oklab, oklch(60.6% 0.25 292.717) 45%, transparent);
+  --text-color-violet-500: oklch(70.2% 0.183 293.541);
+  --text-color-violet-600: oklch(70.2% 0.183 293.541);
+  --text-color-violet-700: oklch(81.1% 0.111 293.571);
+  --text-color-violet-800: oklch(89.4% 0.057 293.283);
+  --text-color-violet-900: oklch(94.3% 0.029 294.588);
+  --color-purple-50: color-mix(in oklab, oklch(62.7% 0.265 303.9) 12%, transparent);
+  --color-purple-100: color-mix(in oklab, oklch(62.7% 0.265 303.9) 18%, transparent);
+  --color-purple-200: color-mix(in oklab, oklch(62.7% 0.265 303.9) 30%, transparent);
+  --color-purple-300: color-mix(in oklab, oklch(62.7% 0.265 303.9) 45%, transparent);
+  --text-color-purple-500: oklch(71.4% 0.203 305.504);
+  --text-color-purple-600: oklch(71.4% 0.203 305.504);
+  --text-color-purple-700: oklch(82.7% 0.119 306.383);
+  --text-color-purple-800: oklch(90.2% 0.063 306.703);
+  --text-color-purple-900: oklch(94.6% 0.033 307.174);
+  --color-fuchsia-50: color-mix(in oklab, oklch(66.7% 0.295 322.15) 12%, transparent);
+  --color-fuchsia-100: color-mix(in oklab, oklch(66.7% 0.295 322.15) 18%, transparent);
+  --color-fuchsia-200: color-mix(in oklab, oklch(66.7% 0.295 322.15) 30%, transparent);
+  --color-fuchsia-300: color-mix(in oklab, oklch(66.7% 0.295 322.15) 45%, transparent);
+  --text-color-fuchsia-500: oklch(74% 0.238 322.16);
+  --text-color-fuchsia-600: oklch(74% 0.238 322.16);
+  --text-color-fuchsia-700: oklch(83.3% 0.145 321.434);
+  --text-color-fuchsia-800: oklch(90.3% 0.076 319.62);
+  --text-color-fuchsia-900: oklch(95.2% 0.037 318.852);
+  --color-pink-50: color-mix(in oklab, oklch(65.6% 0.241 354.308) 12%, transparent);
+  --color-pink-100: color-mix(in oklab, oklch(65.6% 0.241 354.308) 18%, transparent);
+  --color-pink-200: color-mix(in oklab, oklch(65.6% 0.241 354.308) 30%, transparent);
+  --color-pink-300: color-mix(in oklab, oklch(65.6% 0.241 354.308) 45%, transparent);
+  --text-color-pink-500: oklch(71.8% 0.202 349.761);
+  --text-color-pink-600: oklch(71.8% 0.202 349.761);
+  --text-color-pink-700: oklch(82.3% 0.12 346.018);
+  --text-color-pink-800: oklch(89.9% 0.061 343.231);
+  --text-color-pink-900: oklch(94.8% 0.028 342.258);
+  --color-rose-50: color-mix(in oklab, oklch(64.5% 0.246 16.439) 12%, transparent);
+  --color-rose-100: color-mix(in oklab, oklch(64.5% 0.246 16.439) 18%, transparent);
+  --color-rose-200: color-mix(in oklab, oklch(64.5% 0.246 16.439) 30%, transparent);
+  --color-rose-300: color-mix(in oklab, oklch(64.5% 0.246 16.439) 45%, transparent);
+  --text-color-rose-500: oklch(71.2% 0.194 13.428);
+  --text-color-rose-600: oklch(71.2% 0.194 13.428);
+  --text-color-rose-700: oklch(81% 0.117 11.638);
+  --text-color-rose-800: oklch(89.2% 0.058 10.001);
+  --text-color-rose-900: oklch(94.1% 0.03 12.58);
+}
+
+@layer base {
+  /* Tailwind v4 defaults border colour to currentColor; restore a soft neutral. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* Focus-ring offsets default to white; match the dark card surface instead. */
+  .dark * {
+    --tw-ring-offset-color: var(--color-surface);
+  }
+
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-gray-900);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-gray-400);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--color-blue-500) 30%, transparent);
+  }
+
+  /* Native date/time pickers and selects follow the theme via color-scheme;
+     give form fields without an explicit background the card surface. */
+  select,
+  input:not([type='checkbox']):not([type='radio']):not([type='range']),
+  textarea {
+    background-color: var(--color-surface);
+  }
+
+  input:disabled,
+  select:disabled,
+  textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-gray-300) transparent;
+  }
+}
+
+/* Smooth cross-fade applied briefly while switching themes. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 160ms ease,
+    fill 160ms ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.theme-transition,
+  html.theme-transition * {
+    transition: none !important;
+  }
+}

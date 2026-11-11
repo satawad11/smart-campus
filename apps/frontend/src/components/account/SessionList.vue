@@ -55,7 +55,7 @@ onMounted(load)
 </script>
 
 <template>
-  <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+  <section class="rounded-lg border border-gray-200 bg-surface p-6 shadow-sm">
     <div class="flex items-center justify-between">
       <h2 class="text-lg font-semibold text-gray-900">อุปกรณ์ที่เข้าสู่ระบบอยู่</h2>
       <button
@@ -63,7 +63,7 @@ onMounted(load)
         data-test="revoke-others"
         type="button"
         :disabled="busy"
-        class="rounded-md border border-red-300 bg-white px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
+        class="rounded-md border border-red-300 bg-surface px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
         @click="revokeOthers"
       >
         ออกจากระบบอุปกรณ์อื่นทั้งหมด

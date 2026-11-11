@@ -68,7 +68,7 @@ onMounted(load)
     </div>
 
     <form
-      class="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-white p-4"
+      class="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4"
       @submit.prevent="search"
     >
       <label class="text-sm text-gray-700">
@@ -122,7 +122,7 @@ onMounted(load)
       {{ errorMessage }}
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-surface">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50 text-left text-xs font-medium uppercase text-gray-500">
           <tr>

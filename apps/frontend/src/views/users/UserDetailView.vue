@@ -154,7 +154,7 @@ onMounted(() => {
         <router-link
           v-if="authStore.can('user.update')"
           :to="`/users/${user.uuid}/edit`"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <svg
             class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-500"
@@ -264,7 +264,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="rounded-lg bg-white p-8 text-center text-gray-500 shadow">
+    <div v-if="loading" class="rounded-lg bg-surface p-8 text-center text-gray-500 shadow">
       <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
         <circle
           class="opacity-25"
@@ -285,7 +285,7 @@ onMounted(() => {
 
     <!-- Detail Card -->
     <div v-else-if="user" class="space-y-6">
-      <div class="overflow-hidden rounded-lg bg-white shadow">
+      <div class="overflow-hidden rounded-lg bg-surface shadow">
         <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <h2 class="text-lg font-medium text-gray-900">ข้อมูลบัญชีผู้ใช้</h2>
           <StatusBadge :status="user.status" size="lg" />
@@ -385,7 +385,7 @@ onMounted(() => {
       </div>
 
       <!-- Account Status Lifecycle Controls (user.disable permission) -->
-      <div v-if="authStore.can('user.disable')" class="rounded-lg bg-white p-6 shadow space-y-4">
+      <div v-if="authStore.can('user.disable')" class="rounded-lg bg-surface p-6 shadow space-y-4">
         <h2 class="text-base font-semibold text-gray-900">การจัดการสถานะบัญชี</h2>
         <p class="text-xs text-gray-500">
           การเปลี่ยนสถานะบัญชีเป็น LOCKED, DISABLED หรือ EXPIRED
@@ -417,7 +417,7 @@ onMounted(() => {
             type="button"
             :disabled="authStore.user?.uuid === user.uuid"
             @click="openStatusModal('LOCKED')"
-            class="rounded-md border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="rounded-md border border-amber-300 bg-surface px-3 py-2 text-xs font-semibold text-amber-700 shadow-sm hover:bg-amber-50 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             ล็อกบัญชี (LOCKED)
           </button>
@@ -439,7 +439,7 @@ onMounted(() => {
             type="button"
             :disabled="authStore.user?.uuid === user.uuid"
             @click="openStatusModal('EXPIRED')"
-            class="rounded-md border border-gray-300 bg-white px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="rounded-md border border-gray-300 bg-surface px-3 py-2 text-xs font-semibold text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             กำหนดหมดอายุ (EXPIRED)
           </button>
