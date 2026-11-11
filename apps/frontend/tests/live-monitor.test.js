@@ -213,4 +213,44 @@ describe('EVT-016: Live Monitor UI', () => {
     expect(stopListeningMock).toHaveBeenCalledWith('.event.decided')
     expect(leaveMock).toHaveBeenCalledWith('site.site-1')
   })
+  it('shows a live frame for the selected camera only with camera.live', async () => {
+    const authStore = useAuthStore()
+    authStore.user = {
+      uuid: 'u-5',
+      username: 'officer',
+      permissions: ['monitor.view', 'camera.view', 'camera.live'],
+    }
+
+    vi.spyOn(api, 'get').mockImplementation((url) => {
+      if (url === '/cameras') {
+        return Promise.resolve({
+          data: {
+            data: [{ uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main' } }],
+            meta: { pagination: { current_page: 1, per_page: 100, total: 1, last_page: 1 } },
+          },
+        })
+      }
+      return Promise.resolve({ data: { data: [], meta: null } })
+    })
+    const postSpy = vi.spyOn(api, 'post').mockResolvedValue({
+      data: { data: { content_type: 'image/jpeg', image_base64: 'AAAA', source: 'ffmpeg' } },
+    })
+
+    const wrapper = mount(LiveMonitorView, { global: { plugins: [router] } })
+    await flushPromises()
+    await flushPromises()
+
+    expect(postSpy).not.toHaveBeenCalled()
+    const cameraSelect = wrapper
+      .findAll('select')
+      .find((s) => s.findAll('option').some((o) => o.element.value === 'cam-1'))
+    await cameraSelect.setValue('cam-1')
+    await flushPromises()
+
+    expect(postSpy).toHaveBeenCalledWith('/cameras/cam-1/snapshot')
+    expect(wrapper.find('[data-testid="live-frame"]').attributes('src')).toBe(
+      'data:image/jpeg;base64,AAAA',
+    )
+    wrapper.unmount()
+  })
 })

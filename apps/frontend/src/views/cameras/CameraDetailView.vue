@@ -3,7 +3,9 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import camerasService from '@/services/cameras'
+import aiNodesService from '@/services/aiNodes'
 import { apiErrorText, statusLabel } from '@/constants/labels'
+import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
 
 const tabLabels = {
   overview: 'ภาพรวม',
@@ -36,10 +38,27 @@ const aiForm = reactive({
 const aiSaving = ref(false)
 const aiError = ref('')
 
-// Preview tab
-const snapshot = ref(null)
-const snapshotLoading = ref(false)
-const snapshotError = ref('')
+// Overview edit form (PUT /cameras/{uuid}). camera_code/site/zone are
+// immutable on update; credentials follow the three-state contract:
+// blank input = unchanged (key omitted), clear checkbox = explicit null.
+const editing = ref(false)
+const editSaving = ref(false)
+const editError = ref('')
+const editFieldErrors = ref({})
+const aiNodes = ref([])
+const aiNodesLoaded = ref(false)
+const editForm = reactive({
+  name: '',
+  camera_type: '',
+  ip_address: '',
+  stream_protocol: '',
+  onvif_url: '',
+  ai_node_uuid: '',
+  rtsp_url: '',
+  username: '',
+  password: '',
+  clear_credentials: false,
+})
 
 // Connection test
 const testResult = ref(null)
@@ -99,17 +118,91 @@ async function runTest() {
   }
 }
 
-async function captureSnapshot() {
-  snapshotLoading.value = true
-  snapshotError.value = ''
-  snapshot.value = null
+async function fetchAiNodes() {
+  if (aiNodesLoaded.value) return
   try {
-    const res = await camerasService.captureSnapshot(camera.value.uuid)
-    snapshot.value = `data:${res.data.content_type};base64,${res.data.image_base64}`
-  } catch (err) {
-    snapshotError.value = apiErrorText(err, 'บันทึกภาพนิ่งไม่สำเร็จ')
+    const res = await aiNodesService.listNodes({ per_page: 100 })
+    aiNodes.value = res.data || []
+  } catch {
+    // Non-fatal: keep the current assignment selectable.
+    aiNodes.value = []
   } finally {
-    snapshotLoading.value = false
+    aiNodesLoaded.value = true
+  }
+}
+
+const aiNodeOptions = computed(() => {
+  const current = camera.value?.ai_node
+  if (current && !aiNodes.value.some((n) => n.uuid === current.uuid)) {
+    return [current, ...aiNodes.value]
+  }
+  return aiNodes.value
+})
+
+function startEdit() {
+  const c = camera.value
+  Object.assign(editForm, {
+    name: c.name || '',
+    camera_type: c.camera_type || '',
+    ip_address: c.ip_address || '',
+    stream_protocol: c.stream_protocol || 'rtsp',
+    onvif_url: c.onvif_url || '',
+    ai_node_uuid: c.ai_node?.uuid || '',
+    rtsp_url: '',
+    username: '',
+    password: '',
+    clear_credentials: false,
+  })
+  editError.value = ''
+  editFieldErrors.value = {}
+  editing.value = true
+  fetchAiNodes()
+}
+
+function cancelEdit() {
+  editing.value = false
+  editError.value = ''
+  editFieldErrors.value = {}
+}
+
+function buildUpdatePayload() {
+  const payload = {
+    name: editForm.name.trim(),
+    camera_type: editForm.camera_type.trim() || null,
+    ip_address: editForm.ip_address.trim() || null,
+    stream_protocol: editForm.stream_protocol.trim() || null,
+    onvif_url: editForm.onvif_url.trim() || null,
+    ai_node_uuid: editForm.ai_node_uuid || null,
+  }
+  // Secrets are never returned by the API, so blank means "keep current".
+  if (editForm.rtsp_url.trim()) payload.rtsp_url = editForm.rtsp_url.trim()
+  if (editForm.clear_credentials) {
+    payload.username = null
+    payload.password = null
+  } else {
+    if (editForm.username.trim()) payload.username = editForm.username.trim()
+    if (editForm.password) payload.password = editForm.password
+  }
+  return payload
+}
+
+async function saveEdit() {
+  editError.value = ''
+  editFieldErrors.value = {}
+  if (!editForm.name.trim()) {
+    editFieldErrors.value = { name: ['กรุณาระบุชื่อกล้อง'] }
+    return
+  }
+  editSaving.value = true
+  try {
+    const res = await camerasService.updateCamera(camera.value.uuid, buildUpdatePayload())
+    camera.value = res.data
+    editing.value = false
+  } catch (err) {
+    editFieldErrors.value = err?.fields || {}
+    editError.value = apiErrorText(err, 'บันทึกข้อมูลกล้องไม่สำเร็จ')
+  } finally {
+    editSaving.value = false
   }
 }
 
@@ -221,9 +314,157 @@ onMounted(() => {
         </button>
       </div>
 
+      <!-- Overview: edit form -->
+      <form
+        v-if="activeTab === 'overview' && editing"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4 text-sm"
+        data-testid="camera-edit-form"
+        @submit.prevent="saveEdit"
+      >
+        <h2 class="font-semibold text-gray-900">แก้ไขข้อมูลกล้อง</h2>
+        <p class="text-xs text-gray-500">
+          รหัสกล้อง พื้นที่ และโซน แก้ไขไม่ได้ · สถานะกล้องเปลี่ยนจากหน้ารายการกล้อง
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-gray-600">ชื่อกล้อง *</span>
+            <input
+              v-model="editForm.name"
+              name="name"
+              type="text"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+            <span v-if="editFieldErrors.name" class="text-xs text-red-600">{{
+              [].concat(editFieldErrors.name)[0]
+            }}</span>
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ประเภทกล้อง</span>
+            <input
+              v-model="editForm.camera_type"
+              name="camera_type"
+              type="text"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ที่อยู่ไอพี</span>
+            <input
+              v-model="editForm.ip_address"
+              name="ip_address"
+              type="text"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+            <span v-if="editFieldErrors.ip_address" class="text-xs text-red-600">{{
+              [].concat(editFieldErrors.ip_address)[0]
+            }}</span>
+          </label>
+          <label class="block">
+            <span class="text-gray-600">โปรโตคอลสตรีม</span>
+            <input
+              v-model="editForm.stream_protocol"
+              name="stream_protocol"
+              type="text"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block md:col-span-2">
+            <span class="text-gray-600">RTSP URL ใหม่</span>
+            <input
+              v-model="editForm.rtsp_url"
+              name="rtsp_url"
+              type="text"
+              maxlength="2048"
+              autocomplete="off"
+              :placeholder="
+                camera.has_rtsp_url ? 'เว้นว่างเพื่อใช้ค่าเดิม' : 'rtsp://ไอพีกล้อง:554/...'
+              "
+              class="mt-1 w-full px-3 py-2 border rounded-lg font-mono"
+            />
+            <span v-if="editFieldErrors.rtsp_url" class="text-xs text-red-600">{{
+              [].concat(editFieldErrors.rtsp_url)[0]
+            }}</span>
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ชื่อผู้ใช้กล้องใหม่</span>
+            <input
+              v-model="editForm.username"
+              name="username"
+              type="text"
+              autocomplete="off"
+              :disabled="editForm.clear_credentials"
+              :placeholder="camera.has_credentials ? 'เว้นว่างเพื่อใช้ค่าเดิม' : ''"
+              class="mt-1 w-full px-3 py-2 border rounded-lg disabled:bg-gray-100"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">รหัสผ่านกล้องใหม่</span>
+            <input
+              v-model="editForm.password"
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              :disabled="editForm.clear_credentials"
+              :placeholder="camera.has_credentials ? 'เว้นว่างเพื่อใช้ค่าเดิม' : ''"
+              class="mt-1 w-full px-3 py-2 border rounded-lg disabled:bg-gray-100"
+            />
+          </label>
+          <label v-if="camera.has_credentials" class="flex items-center gap-2 md:col-span-2">
+            <input v-model="editForm.clear_credentials" name="clear_credentials" type="checkbox" />
+            ลบชื่อผู้ใช้และรหัสผ่านกล้องที่บันทึกไว้
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ONVIF URL</span>
+            <input
+              v-model="editForm.onvif_url"
+              name="onvif_url"
+              type="text"
+              maxlength="2048"
+              class="mt-1 w-full px-3 py-2 border rounded-lg font-mono"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">หน่วยประมวลผล</span>
+            <select
+              v-model="editForm.ai_node_uuid"
+              name="ai_node_uuid"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            >
+              <option value="">ยังไม่กำหนด</option>
+              <option v-for="node in aiNodeOptions" :key="node.uuid" :value="node.uuid">
+                {{ node.name }}{{ node.node_code ? ` (${node.node_code})` : '' }}
+              </option>
+            </select>
+          </label>
+        </div>
+
+        <p v-if="editError" class="text-sm text-red-600" role="alert">{{ editError }}</p>
+
+        <div class="flex gap-2 pt-2 border-t border-gray-200">
+          <button
+            type="submit"
+            :disabled="editSaving"
+            class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {{ editSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+          </button>
+          <button
+            type="button"
+            @click="cancelEdit"
+            class="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+
       <!-- Overview -->
       <div
-        v-if="activeTab === 'overview'"
+        v-if="activeTab === 'overview' && !editing"
         class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
@@ -257,8 +498,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-if="canTest" class="pt-4 border-t border-gray-200">
+        <div v-if="canTest || canUpdate" class="pt-4 border-t border-gray-200 flex flex-wrap gap-2">
           <button
+            v-if="canUpdate"
+            @click="startEdit"
+            class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            แก้ไขข้อมูลกล้อง
+          </button>
+          <button
+            v-if="canTest"
             @click="runTest"
             :disabled="testLoading"
             class="px-4 py-2 text-sm text-gray-50 bg-gray-800 rounded-lg hover:bg-gray-900 disabled:opacity-50"
@@ -267,7 +516,7 @@ onMounted(() => {
           </button>
           <p
             v-if="testResult"
-            class="mt-2 text-sm"
+            class="w-full mt-2 text-sm"
             :class="
               (testResult.success ?? testResult.data?.reachable) ? 'text-green-600' : 'text-red-600'
             "
@@ -282,21 +531,8 @@ onMounted(() => {
         v-if="activeTab === 'preview'"
         class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
       >
-        <button
-          v-if="canLive"
-          @click="captureSnapshot"
-          :disabled="snapshotLoading"
-          class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          {{ snapshotLoading ? 'กำลังบันทึกภาพ...' : 'บันทึกภาพนิ่ง' }}
-        </button>
-        <p v-if="snapshotError" class="text-sm text-red-600">{{ snapshotError }}</p>
-        <img
-          v-if="snapshot"
-          :src="snapshot"
-          alt="ภาพนิ่งจากกล้อง"
-          class="max-w-full rounded-lg border"
-        />
+        <CameraLiveView v-if="canLive" :camera-uuid="camera.uuid" :camera-name="camera.name" />
+        <p v-else class="text-sm text-gray-500">ไม่มีสิทธิ์ดูภาพสดจากกล้อง (camera.live)</p>
       </div>
 
       <!-- AI Settings -->
