@@ -236,6 +236,8 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
 [x] OPS-001 Web "System update" page (อัปเดตระบบ): versions, Thai release notes, history, one-click update
     via the host update agent — ACR-OPS-01 APPROVED 2026-11-10 (docs/decisions/ACR-OPS-01-WEB-SYSTEM-UPDATE.md);
     automated tests pass; end-to-end run on a real campus server with systemd still PENDING HOST
+[x] OPS-002 Read host update configuration as validated data; never source update.env as shell
+[x] OPS-003 Block dependency scans on high/critical advisories; keep lower severities advisory-only
 
 # FUTURE — LOCKED UNTIL APPROVAL
 

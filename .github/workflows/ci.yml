@@ -140,8 +140,7 @@ jobs:
   security-scan:
     name: Dependency / security scan
     runs-on: ubuntu-latest
-    # Advisory only — must not block merges on transitive advisories.
-    continue-on-error: true
+    # Block high/critical dependency advisories; keep low/moderate advisories visible without blocking.
     steps:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
@@ -149,9 +148,7 @@ jobs:
           php-version: '8.2'
       - name: composer audit
         working-directory: apps/backend
-        run: |
-          composer install --no-interaction --no-progress
-          composer audit
+        run: composer audit --locked --ignore-severity=low --ignore-severity=medium
       - uses: actions/setup-node@v4
         with:
           node-version: '22'

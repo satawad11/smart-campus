@@ -29,11 +29,13 @@ need_root() { [ "$(id -u)" -eq 0 ] || fail "ต้องรันด้วย su
 
 load_update_env() {
     [ -f "${UPDATE_ENV}" ] || fail "ยังไม่ได้ตั้งค่าการอัปเดต: รัน sudo smart-campus update-setup ก่อน"
-    # shellcheck disable=SC1090
-    . "${UPDATE_ENV}"
-    [ -n "${GITHUB_REPO:-}" ] || fail "update.env ไม่มี GITHUB_REPO"
     command -v curl >/dev/null || fail "ต้องมีคำสั่ง curl"
     command -v python3 >/dev/null || fail "ต้องมี python3 (ใช้อ่านข้อมูลจาก GitHub)"
+    local -a config_values=()
+    mapfile -t config_values < <(python3 -I "${INSTALL_DIR}/update-config.py" read "${UPDATE_ENV}")
+    [ "${#config_values[@]}" -eq 2 ] || fail "update.env ไม่ถูกต้อง: ตรวจค่า repository และ token"
+    GITHUB_REPO="${config_values[0]}"
+    GITHUB_TOKEN="${config_values[1]}"
     ARCH="$(cat ARCH 2>/dev/null || echo amd64)"
 }
 
@@ -71,9 +73,8 @@ update_setup() {
     printf 'GitHub token แบบอ่านอย่างเดียว (Contents: Read-only) เว้นว่างถ้าเป็น repo สาธารณะ: '
     read -r -s token; printf '\n'
     token="$(printf '%s' "${token}" | LC_ALL=C tr -d '[:space:][:cntrl:]')"
-    umask 077
-    printf 'GITHUB_REPO=%s\nGITHUB_TOKEN=%s\n' "${repo}" "${token}" > "${UPDATE_ENV}"
-    chmod 600 "${UPDATE_ENV}"
+    printf '%s\n%s\n' "${repo}" "${token}" | python3 -I "${INSTALL_DIR}/update-config.py" write "${UPDATE_ENV}" \
+        || fail "ค่า repository หรือ token ไม่ถูกต้อง"
     load_update_env
     if gh_api "/repos/${GITHUB_REPO}/releases?per_page=1" >/dev/null; then
         printf '\033[32mเชื่อมต่อ GitHub ได้\033[0m (บันทึกที่ %s, สิทธิ์ 600)\n' "${UPDATE_ENV}"

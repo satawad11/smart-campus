@@ -83,7 +83,8 @@ docker save "${IMAGES[@]}" | gzip -c > "${OUT}/images.tar.gz"
 cp docker-compose.yml docker-compose.pilot.yml "${OUT}/"
 cp deploy/campus-server/docker-compose.kit.yml deploy/campus-server/install.sh \
    deploy/campus-server/campus.sh deploy/campus-server/README.md \
-   deploy/campus-server/update-agent.py deploy/campus-server/update-agent-setup.sh "${OUT}/"
+   deploy/campus-server/update-agent.py deploy/campus-server/update-agent-setup.sh \
+   deploy/campus-server/update-config.py "${OUT}/"
 mkdir -p "${OUT}/infrastructure/pilot" "${OUT}/scripts" "${OUT}/docs/security"
 cp -r infrastructure/objectstore infrastructure/postgres "${OUT}/infrastructure/"
 cp -r infrastructure/pilot/nginx "${OUT}/infrastructure/pilot/"
