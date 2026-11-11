@@ -99,7 +99,9 @@ function start() {
   error.value = ''
   failures = 0
   startedAt = Date.now()
-  schedule(0)
+  clearTimer()
+  // First frame is requested immediately, not via a 0ms timer.
+  tick()
 }
 
 function stop(reason = '') {

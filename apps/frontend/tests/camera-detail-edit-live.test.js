@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { mount, flushPromises } from '@vue/test-utils'
+import { mount, flushPromises, enableAutoUnmount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import camerasService from '@/services/cameras'
 import aiNodesService from '@/services/aiNodes'
@@ -33,6 +33,10 @@ const CAMERA = {
   zone: { uuid: 'zone-1', code: 'GATE', name: 'ประตูหลัก' },
   ai_node: { uuid: 'node-1', node_code: 'NODE-1', name: 'ประตู' },
 }
+
+// A failed assertion must not leave a live-view refresh loop running into
+// the next test.
+enableAutoUnmount(afterEach)
 
 const SNAPSHOT = { data: { content_type: 'image/jpeg', image_base64: 'AAAA', source: 'ffmpeg' } }
 
