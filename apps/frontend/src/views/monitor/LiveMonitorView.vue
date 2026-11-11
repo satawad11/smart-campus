@@ -6,12 +6,14 @@ import eventsService from '@/services/events'
 import camerasService from '@/services/cameras'
 import { getEcho, disconnectEcho } from '@/services/echo'
 import { apiErrorText } from '@/constants/labels'
+import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
 const canViewMonitor = computed(() => authStore.can('monitor.view'))
 const canViewCameras = computed(() => authStore.can('camera.view'))
+const canViewLive = computed(() => authStore.can('camera.live'))
 const canViewHealth = computed(() => authStore.can('camera.view') || authStore.can('ai_node.view'))
 
 // --- Sites/cameras: no dedicated /sites listing endpoint exists yet, so the
@@ -275,14 +277,20 @@ function personLabel(event) {
               {{ camera.name }}
             </option>
           </select>
+          <CameraLiveView
+            v-if="selectedCamera && canViewLive"
+            :camera-uuid="selectedCamera.uuid"
+            :camera-name="selectedCamera.name"
+          />
           <div
+            v-else
             class="aspect-video bg-zinc-950 ring-1 ring-black/5 rounded-lg flex items-center justify-center text-center p-4"
           >
             <p v-if="selectedCamera" class="text-zinc-400 text-xs">
               {{ selectedCamera.name }}<br />
-              ยังไม่มีระบบสตรีมวิดีโอสด (จำเป็นต้องมีโครงสร้างพื้นฐานสตรีมมิงเพิ่มเติม)
+              ไม่มีสิทธิ์ดูภาพสดจากกล้อง (camera.live)
             </p>
-            <p v-else class="text-zinc-500 text-xs">เลือกกล้องเพื่อดูตัวอย่าง</p>
+            <p v-else class="text-zinc-500 text-xs">เลือกกล้องเพื่อดูภาพสด</p>
           </div>
 
           <!-- Unknown-person events -->
