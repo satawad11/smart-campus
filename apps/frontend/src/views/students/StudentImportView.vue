@@ -142,7 +142,7 @@ onMounted(async () => {
       <div class="mt-4">
         <router-link
           to="/students"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50"
         >
           กลับสู่หน้ารายการนักเรียน
         </router-link>
@@ -151,7 +151,7 @@ onMounted(async () => {
 
     <div v-else class="space-y-6">
       <!-- Steps Progress Bar -->
-      <nav aria-label="Progress" class="rounded-lg bg-white p-4 shadow">
+      <nav aria-label="Progress" class="rounded-lg bg-surface p-4 shadow">
         <ol role="list" class="flex items-center justify-between text-xs font-medium text-gray-500">
           <li
             v-for="(step, idx) in steps"
@@ -175,7 +175,7 @@ onMounted(async () => {
       </nav>
 
       <!-- Loading State -->
-      <div v-if="loading" class="rounded-lg bg-white p-12 text-center shadow">
+      <div v-if="loading" class="rounded-lg bg-surface p-12 text-center shadow">
         <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
           <circle
             class="opacity-25"

@@ -287,6 +287,13 @@ const routes = [
         meta: { requiresAuth: true, permission: 'system.view' },
       },
       {
+        // ACR-OPS-01: SUPER_ADMIN only (system.update); the backend enforces it.
+        path: 'system/update',
+        name: 'system.update',
+        component: () => import('@/views/system/SystemUpdateView.vue'),
+        meta: { requiresAuth: true, permission: 'system.update' },
+      },
+      {
         // Own account only (V1 audit A-15); no permission beyond being signed in.
         path: 'account/security',
         name: 'account.security',

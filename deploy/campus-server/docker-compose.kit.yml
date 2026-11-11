@@ -16,6 +16,11 @@ services:
     <<: *kit
   backend:
     <<: *kit
+    # Web "System update" page (ACR-OPS-01). Backend only: token-free state
+    # written by root (read-only) and the inbox for signed requests.
+    volumes:
+      - ./update-state:/var/lib/smart-campus/update-state:ro
+      - ./update-requests:/var/lib/smart-campus/update-requests
   queue:
     <<: *kit
   scheduler:

@@ -123,6 +123,20 @@ jobs:
       - name: Tests
         run: pytest -q
 
+  deploy-scripts:
+    name: Campus server kit scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          # Ubuntu 22.04 servers run Python 3.10: the agent must stay compatible.
+          python-version: '3.10'
+      - name: Shell syntax
+        run: for f in deploy/campus-server/*.sh scripts/package-campus-server.sh; do bash -n "$f"; done
+      - name: Update agent tests (ACR-OPS-01)
+        run: python -m unittest discover -s deploy/campus-server/tests -v
+
   security-scan:
     name: Dependency / security scan
     runs-on: ubuntu-latest

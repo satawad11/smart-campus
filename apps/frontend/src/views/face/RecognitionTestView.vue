@@ -55,8 +55,8 @@ async function runTest() {
 <template>
   <div class="recognition-test-view max-w-6xl mx-auto p-6 space-y-6">
     <div class="border-b pb-4">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ทดสอบการจดจำใบหน้า</h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400">
+      <h1 class="text-2xl font-bold text-gray-900">ทดสอบการจดจำใบหน้า</h1>
+      <p class="text-sm text-gray-500">
         เครื่องมือสำหรับผู้ดูแลระบบ ใช้ทดสอบการค้นหาใบหน้าที่คล้ายกันและเวลาที่ใช้ประมวลผล
       </p>
     </div>
@@ -68,15 +68,11 @@ async function runTest() {
 
     <div v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <!-- Probe Configuration -->
-      <div
-        class="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 space-y-4"
-      >
-        <h2 class="text-base font-bold text-gray-900 dark:text-white">ตั้งค่าการทดสอบ</h2>
+      <div class="bg-surface p-6 rounded-xl border border-gray-200 space-y-4">
+        <h2 class="text-base font-bold text-gray-900">ตั้งค่าการทดสอบ</h2>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >ภาพใบหน้าที่ใช้ทดสอบ</label
-          >
+          <label class="block text-sm font-medium text-gray-700 mb-1">ภาพใบหน้าที่ใช้ทดสอบ</label>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -91,7 +87,7 @@ async function runTest() {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label class="block text-sm font-medium text-gray-700 mb-1"
             >จำนวนผลลัพธ์สูงสุด (1 - 20)</label
           >
           <input
@@ -99,12 +95,12 @@ async function runTest() {
             type="number"
             min="1"
             max="20"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+          <label class="block text-sm font-medium text-gray-700 mb-1"
             >ความมั่นใจขั้นต่ำ (0.0 - 1.0)</label
           >
           <input
@@ -113,7 +109,7 @@ async function runTest() {
             step="0.05"
             min="0.0"
             max="1.0"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
 
@@ -135,7 +131,7 @@ async function runTest() {
       <div class="lg:col-span-2 space-y-6">
         <div
           v-if="!testResult && !loading"
-          class="bg-white dark:bg-gray-800 p-12 text-center rounded-xl border text-gray-400 text-sm"
+          class="bg-surface p-12 text-center rounded-xl border text-gray-400 text-sm"
         >
           เริ่มทดสอบเพื่อดูรายชื่อบุคคลที่ใบหน้าคล้ายที่สุด เรียงตามความคล้าย
         </div>
@@ -143,11 +139,11 @@ async function runTest() {
         <div v-if="testResult" class="space-y-4">
           <!-- Diagnostics & Latency Banner -->
           <div
-            class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
+            class="bg-surface p-4 rounded-xl border border-gray-200 grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs"
           >
             <div>
               <div class="text-gray-400">โมเดล</div>
-              <div class="font-bold text-gray-900 dark:text-white">
+              <div class="font-bold text-gray-900">
                 {{ testResult.model?.code }}
               </div>
             </div>
@@ -163,18 +159,16 @@ async function runTest() {
             </div>
             <div>
               <div class="text-gray-400">จำนวนที่พบ</div>
-              <div class="font-bold text-gray-900 dark:text-white">
+              <div class="font-bold text-gray-900">
                 {{ testResult.candidates_count }}
               </div>
             </div>
           </div>
 
           <!-- Candidates List -->
-          <div
-            class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-          >
+          <div class="bg-surface rounded-xl border border-gray-200 overflow-hidden">
             <div class="p-4 border-b">
-              <h3 class="font-bold text-sm text-gray-900 dark:text-white">
+              <h3 class="font-bold text-sm text-gray-900">
                 บุคคลที่ใบหน้าคล้ายกัน (เรียงตามความคล้าย)
               </h3>
             </div>
@@ -187,11 +181,11 @@ async function runTest() {
               {{ (minConfidence * 100).toFixed(0) }}%
             </div>
 
-            <div v-else class="divide-y divide-gray-100 dark:divide-gray-700">
+            <div v-else class="divide-y divide-gray-100">
               <div
                 v-for="candidate in testResult.candidates"
                 :key="candidate.rank"
-                class="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700/20 text-sm"
+                class="p-4 flex items-center justify-between hover:bg-gray-50 text-sm"
               >
                 <div class="flex items-center space-x-4">
                   <span
@@ -200,7 +194,7 @@ async function runTest() {
                     #{{ candidate.rank }}
                   </span>
                   <div>
-                    <div class="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+                    <div class="font-mono text-xs font-semibold text-gray-900">
                       บุคคล: {{ candidate.person_uuid }}
                     </div>
                     <div class="text-xs text-gray-400 font-mono">

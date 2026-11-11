@@ -146,6 +146,7 @@ class RbacSeederTest extends TestCase
             'system' => [
                 'system.view',
                 'system.manage',
+                'system.update', // ACR-OPS-01
             ],
         ];
 
@@ -160,14 +161,14 @@ class RbacSeederTest extends TestCase
             }
         }
 
-        $this->assertSame(45, $totalExpected);
-        $this->assertCount(45, Permission::all());
+        $this->assertSame(46, $totalExpected);
+        $this->assertCount(46, Permission::all());
     }
 
     public function test_permission_codes_are_unique(): void
     {
         $codes = Permission::pluck('code')->all();
-        $this->assertCount(45, $codes);
+        $this->assertCount(46, $codes);
         $this->assertSame($codes, array_unique($codes));
     }
 
@@ -176,7 +177,7 @@ class RbacSeederTest extends TestCase
         $superAdmin = Role::where('code', 'SUPER_ADMIN')->firstOrFail();
         $permissions = $superAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(45, $permissions);
+        $this->assertCount(46, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -186,9 +187,11 @@ class RbacSeederTest extends TestCase
         $systemAdmin = Role::where('code', 'SYSTEM_ADMIN')->firstOrFail();
         $permissions = $systemAdmin->permissions->pluck('code')->all();
 
+        // Everything except the SUPER_ADMIN-only system.update (ACR-OPS-01).
         $this->assertCount(45, $permissions);
-        $allPermissions = Permission::pluck('code')->all();
+        $allPermissions = Permission::where('code', '!=', 'system.update')->pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
+        $this->assertNotContains('system.update', $permissions);
     }
 
     public function test_discipline_officer_receives_expected_and_no_prohibited_permissions(): void
@@ -353,8 +356,8 @@ class RbacSeederTest extends TestCase
         $initialRoleUuids = Role::pluck('uuid', 'code')->all();
 
         $this->assertSame(5, $initialRoleCount);
-        $this->assertSame(45, $initialPermCount);
-        $this->assertSame(45 + 45 + 13 + 6 + 3, $initialPivotCount); // 112 assignments
+        $this->assertSame(46, $initialPermCount);
+        $this->assertSame(46 + 45 + 13 + 6 + 3, $initialPivotCount); // 113 assignments (SUPER_ADMIN-only system.update)
 
         // Run seeders again
         $this->seed(DatabaseSeeder::class);

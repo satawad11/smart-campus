@@ -159,7 +159,7 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
           type="button"
           data-test="dry-run"
           :disabled="starting || hasRunning || !meta.configured"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
+          class="rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 disabled:opacity-50"
           @click="start(true)"
         >
           ทดลองซิงก์ (ไม่บันทึก)
@@ -199,7 +199,7 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
       {{ errorMessage }}
     </div>
 
-    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
+    <div class="overflow-x-auto rounded-lg border border-gray-200 bg-surface">
       <table class="min-w-full divide-y divide-gray-200 text-sm">
         <thead class="bg-gray-50 text-left text-gray-600">
           <tr>
@@ -251,7 +251,7 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
 
     <div
       v-if="selected"
-      class="space-y-4 rounded-lg border border-gray-200 bg-white p-4"
+      class="space-y-4 rounded-lg border border-gray-200 bg-surface p-4"
       data-test="report"
     >
       <div class="flex items-center justify-between">

@@ -41,7 +41,7 @@ function formatDate(isoStr) {
 <template>
   <div class="space-y-6">
     <!-- Successful Import Summary -->
-    <div v-if="isSuccess" class="rounded-lg bg-white p-8 shadow text-center">
+    <div v-if="isSuccess" class="rounded-lg bg-surface p-8 shadow text-center">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
         <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -135,7 +135,7 @@ function formatDate(isoStr) {
         </router-link>
         <button
           type="button"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-5 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           @click="$emit('newImport')"
         >
           <svg
@@ -157,7 +157,7 @@ function formatDate(isoStr) {
     </div>
 
     <!-- Failed Job State -->
-    <div v-else class="rounded-lg bg-white p-8 shadow text-center">
+    <div v-else class="rounded-lg bg-surface p-8 shadow text-center">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
         <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path

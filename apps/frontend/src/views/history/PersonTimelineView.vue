@@ -46,7 +46,7 @@ onMounted(() => {
     <div class="flex items-center space-x-4">
       <button
         @click="router.back()"
-        class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+        class="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-surface hover:bg-gray-50"
       >
         <svg class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path
@@ -72,7 +72,7 @@ onMounted(() => {
     <!-- Person Header Card -->
     <div
       v-if="person"
-      class="bg-white p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
+      class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
     >
       <div class="flex items-center space-x-4">
         <div
@@ -104,7 +104,7 @@ onMounted(() => {
     </div>
 
     <!-- Timeline Chronological Stream -->
-    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+    <div class="bg-surface p-6 rounded-lg shadow-sm border border-gray-200">
       <h3 class="text-base font-semibold text-gray-900 mb-6">บันทึกเหตุการณ์ตามลำดับเวลา</h3>
 
       <div class="relative pl-6 border-l-2 border-gray-200 space-y-6">

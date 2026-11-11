@@ -120,7 +120,7 @@ onMounted(load)
       {{ errorMessage }}
     </div>
 
-    <section class="rounded-xl border border-gray-200 bg-white p-6">
+    <section class="rounded-xl border border-gray-200 bg-surface p-6">
       <h3 class="font-semibold text-gray-900">คำสั่งระยะไกล</h3>
       <p class="mt-1 text-xs text-gray-500">
         ส่งได้เฉพาะคำสั่งที่กำหนดไว้ ทุกคำสั่งถูกบันทึก audit
@@ -175,7 +175,7 @@ onMounted(load)
       </table>
     </section>
 
-    <section class="rounded-xl border border-gray-200 bg-white p-6">
+    <section class="rounded-xl border border-gray-200 bg-surface p-6">
       <h3 class="font-semibold text-gray-900">การตั้งค่าการทำงาน (มีเวอร์ชัน)</h3>
       <p class="mt-1 text-xs text-gray-500" data-test="revision-status">
         revision ล่าสุด: {{ latest?.revision ?? '-' }} · AI Node ใช้งานอยู่:

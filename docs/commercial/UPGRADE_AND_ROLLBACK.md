@@ -21,6 +21,29 @@ installer stops, leaves maintenance mode on and prints the rollback command.
 Tested 2026-11-08 against a mock GitHub API (25 checks: list, auth, cancel, download, checksum, tamper rejection,
 missing assets, no-op, rollback). **Not yet run against a real GitHub Release or a real campus server.**
 
+## Upgrade from the web app (ACR-OPS-01)
+Admin page **อัปเดตระบบ** (`/system/update`, permission `system.update`, SUPER_ADMIN only) shows the installed
+version, update history, newer releases with their notes, and the last job. "Update" needs the admin's password
+again and is audited (`SYSTEM_UPDATE_REQUESTED` / `_REJECTED` / `_CHECK_REQUESTED`).
+
+How it works (design and threat model: `docs/decisions/ACR-OPS-01-WEB-SYSTEM-UPDATE.md`):
+- `install.sh` runs `update-agent-setup.sh`: `update-state/` (root, token-free JSON, mounted read-only into the
+  backend), `update-requests/inbox` (www-data, mounted read-write into the backend only), `UPDATE_AGENT_KEY` in
+  `campus.env`, systemd `smart-campus-update-agent.path`/`.service` and a daily `smart-campus-update-check.timer`.
+- The backend writes an HMAC-signed request; the root agent (`update-agent.py run`) accepts only `check` and
+  `update`, re-checks signature, 10-minute expiry, replay, tag format and that the tag is newer than the installed
+  one with a kit, then runs the unchanged `smart-campus update <tag> --yes`. Status goes to `update-state/status.json`,
+  full logs to `update-logs/` (root only).
+- No downgrade from the web; `sudo smart-campus rollback` stays CLI-only. `sudo smart-campus web-update off` disables
+  the button (the page still shows versions and the CLI command).
+- The first update to a release containing this feature must be done from the CLI.
+
+Release notes: write `docs/releases/<tag>.md` in Thai before tagging (template: `docs/releases/TEMPLATE.md`);
+`release.yml` uses it as the release body, otherwise GitHub's generated notes.
+
+Verification: agent unit tests (`deploy/campus-server/tests`, Python 3.10/3.12), backend `SystemUpdateTest`, frontend
+`system-update.test.js`. **Not yet run end-to-end on a real campus server with systemd.**
+
 ## Scripted upgrade (source checkout)
 ```bash
 MIGRATION_DB_PASSWORD=... scripts/upgrade-campus.sh <approved-tag> --dry-run   # review the plan

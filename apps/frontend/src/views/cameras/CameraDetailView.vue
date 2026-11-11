@@ -171,11 +171,9 @@ function setTab(tab) {
 }
 
 function healthBadgeClass(status) {
-  if (status === 'ONLINE')
-    return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
-  if (status === 'DEGRADED')
-    return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
-  return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+  if (status === 'ONLINE') return 'bg-green-100 text-green-800'
+  if (status === 'DEGRADED') return 'bg-yellow-100 text-yellow-800'
+  return 'bg-red-100 text-red-800'
 }
 
 onMounted(() => {
@@ -203,11 +201,11 @@ onMounted(() => {
 
     <template v-else-if="camera">
       <div class="border-b pb-4">
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ camera.name }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 font-mono">{{ camera.camera_code }}</p>
+        <h1 class="text-2xl font-bold text-gray-900">{{ camera.name }}</h1>
+        <p class="text-sm text-gray-500 font-mono">{{ camera.camera_code }}</p>
       </div>
 
-      <div class="flex gap-2 border-b border-gray-200 dark:border-gray-700 text-sm">
+      <div class="flex gap-2 border-b border-gray-200 text-sm">
         <button
           v-for="tab in ['overview', 'preview', 'ai', 'roi', 'health']"
           :key="tab"
@@ -226,7 +224,7 @@ onMounted(() => {
       <!-- Overview -->
       <div
         v-if="activeTab === 'overview'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-3 text-sm"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
           <div><span class="text-gray-500">สถานะ:</span> {{ statusLabel(camera.status) }}</div>
@@ -259,11 +257,11 @@ onMounted(() => {
           </div>
         </div>
 
-        <div v-if="canTest" class="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <div v-if="canTest" class="pt-4 border-t border-gray-200">
           <button
             @click="runTest"
             :disabled="testLoading"
-            class="px-4 py-2 text-sm text-white bg-gray-700 rounded-lg hover:bg-gray-800 disabled:opacity-50"
+            class="px-4 py-2 text-sm text-gray-50 bg-gray-800 rounded-lg hover:bg-gray-900 disabled:opacity-50"
           >
             {{ testLoading ? 'กำลังทดสอบ...' : 'ทดสอบการเชื่อมต่อ' }}
           </button>
@@ -282,7 +280,7 @@ onMounted(() => {
       <!-- Preview -->
       <div
         v-if="activeTab === 'preview'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
       >
         <button
           v-if="canLive"
@@ -304,7 +302,7 @@ onMounted(() => {
       <!-- AI Settings -->
       <div
         v-if="activeTab === 'ai'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
       >
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.face_detection_enabled" type="checkbox" :disabled="!canUpdate" />
@@ -338,9 +336,9 @@ onMounted(() => {
       <!-- ROI -->
       <div
         v-if="activeTab === 'roi'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
       >
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-gray-500">
           คลิกในภาพเพื่อเพิ่มจุดของพื้นที่ (อย่างน้อย 3 จุด) ระบบจะจดจำใบหน้าเฉพาะที่จุดกึ่งกลาง
           อยู่ในพื้นที่นี้เท่านั้น
         </p>
@@ -348,7 +346,7 @@ onMounted(() => {
         <svg
           :width="ROI_SIZE"
           :height="ROI_SIZE"
-          class="border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900 cursor-crosshair"
+          class="border border-gray-300 bg-gray-100 cursor-crosshair"
           @click="canUpdate && addRoiPoint($event)"
         >
           <polygon
@@ -396,7 +394,7 @@ onMounted(() => {
       <!-- Health -->
       <div
         v-if="activeTab === 'health'"
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
+        class="bg-surface rounded-xl border border-gray-200 overflow-hidden"
       >
         <div v-if="healthLoading" class="text-center py-8 text-gray-500">
           กำลังโหลดประวัติสุขภาพกล้อง...
@@ -404,8 +402,8 @@ onMounted(() => {
         <div v-else-if="healthLogs.length === 0" class="text-center py-8 text-gray-400">
           ยังไม่มีข้อมูลสุขภาพกล้อง
         </div>
-        <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">สถานะ</th>
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">FPS</th>
@@ -415,7 +413,7 @@ onMounted(() => {
               <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase">บันทึกเมื่อ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr v-for="(log, i) in healthLogs" :key="i">
               <td class="px-4 py-2">
                 <span

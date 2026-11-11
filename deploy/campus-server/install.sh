@@ -306,6 +306,10 @@ else
     fi
 fi
 
+# Web "System update" page (ACR-OPS-01): state/request dirs, UPDATE_AGENT_KEY,
+# systemd units. Before the backend starts, which mounts those dirs.
+step "ตั้งค่าการอัปเดตผ่านหน้าเว็บ" bash "${KIT_DIR}/update-agent-setup.sh" "${INSTALL_DIR}"
+
 BACKUP_DIR="$(env_value BACKUP_OFFHOST_HOST_PATH)"
 mkdir -p "${BACKUP_DIR}"
 chmod 700 "${BACKUP_DIR}"
@@ -368,6 +372,7 @@ if [ "${MODE}" = update ]; then
         "$(sed -n 's/^from_version=//p' "${INSTALL_DIR}/.last-rollback" 2>/dev/null)" \
         "$(cat "${KIT_DIR}/VERSION")" >> "${INSTALL_DIR}/update-history.log"
 fi
+python3 -I "${INSTALL_DIR}/update-agent.py" publish-state --install-dir "${INSTALL_DIR}" >>"${LOG}" 2>&1 || true
 
 say ""
 say "4) ตรวจระบบ"

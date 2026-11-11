@@ -74,12 +74,24 @@ update_setup() {
     fi
 }
 
+# Token-free state for the web app's System update page (ACR-OPS-01).
+publish_update_state() {
+    [ "$(id -u)" -eq 0 ] && [ -f "${INSTALL_DIR}/update-agent.py" ] || return 0
+    python3 -I "${INSTALL_DIR}/update-agent.py" publish-state --install-dir "${INSTALL_DIR}" || true
+}
+
 update_check() {
     load_update_env
-    local current
+    local current releases
     current="$(cat VERSION 2>/dev/null || echo unknown)"
+    releases="$(gh_api "/repos/${GITHUB_REPO}/releases?per_page=20")" || fail "อ่านรายการรุ่นจาก GitHub ไม่ได้"
+    if [ "$(id -u)" -eq 0 ] && [ -f "${INSTALL_DIR}/update-agent.py" ]; then
+        printf '%s' "${releases}" | python3 -I "${INSTALL_DIR}/update-agent.py" write-releases \
+            --install-dir "${INSTALL_DIR}" --arch "${ARCH}"
+        publish_update_state
+    fi
     printf 'รุ่นที่ติดตั้ง: %s\n\nรุ่นบน GitHub (ล่าสุดก่อน):\n' "${current}"
-    gh_api "/repos/${GITHUB_REPO}/releases?per_page=10" | python3 -c '
+    printf '%s' "${releases}" | python3 -c '
 import json, sys
 current, arch = sys.argv[1], sys.argv[2]
 for r in json.load(sys.stdin):
@@ -180,7 +192,28 @@ rollback() {
     "${DC[@]}" exec -T backend php artisan up || true
     printf '%s\n' "${from}" > VERSION
     printf '%s rollback %s -> %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "${to}" "${from}" >> update-history.log
+    publish_update_state
     printf '\033[32mย้อนกลับเป็น %s แล้ว\033[0m ตรวจระบบ: sudo smart-campus preflight\n' "${from}"
+}
+
+web_update() { # web-update on|off|status: the System update page's "update now" button
+    case "${1:-status}" in
+        on)
+            need_root
+            rm -f "${INSTALL_DIR}/.web-update-off"
+            bash "${INSTALL_DIR}/update-agent-setup.sh" "${INSTALL_DIR}"
+            printf 'เปิดการอัปเดตผ่านเว็บแล้ว (ผู้ใช้ที่มีสิทธิ์ system.update เท่านั้น)\n' ;;
+        off)
+            need_root
+            touch "${INSTALL_DIR}/.web-update-off"
+            systemctl disable --now smart-campus-update-agent.path >/dev/null 2>&1 || true
+            printf '{"enabled": false, "reason": "DISABLED_BY_ADMIN"}\n' > "${INSTALL_DIR}/update-state/agent.json"
+            printf 'ปิดการอัปเดตผ่านเว็บแล้ว หน้าเว็บยังแสดงรุ่นและคำสั่งให้รันบนเซิร์ฟเวอร์\n' ;;
+        status)
+            systemctl is-enabled smart-campus-update-agent.path 2>/dev/null || true
+            cat "${INSTALL_DIR}/update-state/status.json" 2>/dev/null || printf 'ยังไม่มีงานจากหน้าเว็บ\n' ;;
+        *) fail "ใช้: smart-campus web-update on|off|status" ;;
+    esac
 }
 
 case "${1:-help}" in
@@ -198,6 +231,7 @@ case "${1:-help}" in
     update-check) update_check ;;
     update)    update_run "${@:2}" ;;
     rollback)  rollback ;;
+    web-update) web_update "${@:2}" ;;
     *)
         cat <<'USAGE'
 smart-campus <command>
@@ -216,6 +250,7 @@ smart-campus <command>
   update-check        ดูรุ่นที่มีบน GitHub เทียบกับรุ่นที่ติดตั้ง
   update [รุ่น]        ดาวน์โหลด ตรวจ SHA-256 สำรองข้อมูล แล้วอัปเดต (ไม่ระบุ = รุ่นล่าสุด)
   rollback            ย้อนกลับไปรุ่นก่อนการอัปเดตครั้งล่าสุด
+  web-update on|off   เปิด/ปิดปุ่มอัปเดตในหน้าเว็บ "อัปเดตระบบ" (status = ดูงานล่าสุด)
 อัปเดตแบบไม่มีอินเทอร์เน็ต: แตกชุดติดตั้งรุ่นใหม่ แล้วรัน sudo ./install.sh ในโฟลเดอร์นั้น
 USAGE
         ;;

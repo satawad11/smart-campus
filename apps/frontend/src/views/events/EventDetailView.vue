@@ -81,10 +81,10 @@ async function submitReview() {
 function decisionBadgeClass(decision) {
   return (
     {
-      ALLOW: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-      DENY: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      UNKNOWN: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      ALLOW: 'bg-green-100 text-green-800',
+      REVIEW: 'bg-amber-100 text-amber-800',
+      DENY: 'bg-red-100 text-red-800',
+      UNKNOWN: 'bg-gray-100 text-gray-800',
     }[decision] || 'bg-gray-100 text-gray-600'
   )
 }
@@ -127,10 +127,10 @@ onMounted(() => {
       <template v-else-if="event">
         <div class="border-b pb-4 flex items-start justify-between">
           <div>
-            <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 class="text-2xl font-bold text-gray-900">
               {{ event.person?.display_name || 'ไม่ทราบตัวตน' }}
             </h1>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
+            <p class="text-sm text-gray-500">
               {{ event.event_type }} · {{ new Date(event.occurred_at).toLocaleString() }}
             </p>
           </div>
@@ -143,10 +143,8 @@ onMounted(() => {
         </div>
 
         <!-- Event fields -->
-        <div
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
-        >
-          <h2 class="font-semibold text-gray-900 dark:text-white mb-3">ข้อมูลเหตุการณ์</h2>
+        <div class="bg-surface rounded-xl border border-gray-200 p-6">
+          <h2 class="font-semibold text-gray-900 mb-3">ข้อมูลเหตุการณ์</h2>
           <div class="grid grid-cols-2 gap-4 text-sm">
             <div><span class="text-gray-500">สถานที่:</span> {{ event.site?.name || '-' }}</div>
             <div><span class="text-gray-500">โซน:</span> {{ event.zone?.name || '-' }}</div>
@@ -160,10 +158,8 @@ onMounted(() => {
         </div>
 
         <!-- Decision timeline (Event Drawer) -->
-        <div
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6"
-        >
-          <h2 class="font-semibold text-gray-900 dark:text-white mb-3">
+        <div class="bg-surface rounded-xl border border-gray-200 p-6">
+          <h2 class="font-semibold text-gray-900 mb-3">
             ประวัติการตัดสินใจ ({{ event.decisions?.length || 0 }})
           </h2>
           <p class="text-xs text-gray-400 mb-3">
@@ -173,7 +169,7 @@ onMounted(() => {
             <li
               v-for="decision in event.decisions"
               :key="decision.uuid"
-              class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 text-sm"
+              class="border border-gray-200 rounded-lg p-3 text-sm"
             >
               <div class="flex items-center justify-between">
                 <span
@@ -186,7 +182,7 @@ onMounted(() => {
                   new Date(decision.created_at).toLocaleString()
                 }}</span>
               </div>
-              <div class="mt-1 text-gray-600 dark:text-gray-300">
+              <div class="mt-1 text-gray-600">
                 เหตุผล: {{ decision.reason_code || '-' }}
                 <span v-if="decision.reason_text"> — {{ decision.reason_text }}</span>
               </div>
@@ -199,18 +195,15 @@ onMounted(() => {
         </div>
 
         <!-- Manual review form -->
-        <div
-          v-if="canReview"
-          class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 space-y-4"
-        >
-          <h2 class="font-semibold text-gray-900 dark:text-white">ตรวจสอบโดยเจ้าหน้าที่</h2>
+        <div v-if="canReview" class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4">
+          <h2 class="font-semibold text-gray-900">ตรวจสอบโดยเจ้าหน้าที่</h2>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label class="block text-xs text-gray-500 mb-1">ผลการตัดสินใจ</label>
               <select
                 v-model="reviewForm.decision"
-                class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
               >
                 <option value="ALLOW">ALLOW</option>
                 <option value="REVIEW">REVIEW</option>
@@ -223,7 +216,7 @@ onMounted(() => {
                 v-model="reviewForm.reason_code"
                 type="text"
                 placeholder="เช่น OFFICER_OVERRIDE, IDENTITY_MISMATCH"
-                class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                class="w-full px-3 py-2 border rounded-lg text-sm"
               />
             </div>
           </div>
@@ -233,7 +226,7 @@ onMounted(() => {
             <textarea
               v-model="reviewForm.reason_text"
               rows="2"
-              class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              class="w-full px-3 py-2 border rounded-lg text-sm"
             ></textarea>
           </div>
 
