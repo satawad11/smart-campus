@@ -33,6 +33,7 @@ ai-node-kit-<version>/
 ├── restart.sh               # Graceful restart script
 ├── enroll.sh                # One-time enrollment code -> UUID + token in .env (COM-03e)
 ├── update.sh                # Zero-downtime update script (preserves buffer)
+├── upgrade.sh               # Move to this kit from the running one (keeps .env/certs/models)
 ├── healthcheck.sh           # Comprehensive 11-point diagnostic script
 └── README.md                # This operational guide
 ```
@@ -76,6 +77,28 @@ console and set `AI_NODE_UUID` / `AI_NODE_TOKEN` in `.env` yourself.
 ```bash
 ./healthcheck.sh
 ```
+
+### Updating to a new version
+Update the campus server first, then the nodes. From the build machine (key-based
+SSH to the node), one command per release:
+```bash
+scripts/push-ai-node-update.sh v1.2.0 ainode@10.10.20.102 [ainode@... more nodes]
+scripts/push-ai-node-update.sh dist/ai-node-kit-v1.2.0-arm64.tar.gz ainode@10.10.20.102
+```
+A tag downloads the node's kit (matching its CPU) from the GitHub Release with `gh`;
+a file path uses a locally built kit. The script verifies the `.sha256`, copies the
+kit, extracts it next to the running one and runs its `./upgrade.sh`.
+
+By hand on the node, the same thing:
+```bash
+tar -xzf ai-node-kit-<new>-arm64.tar.gz && cd ai-node-kit-<new>-arm64 && ./upgrade.sh
+```
+`upgrade.sh` verifies the kit, copies `.env` (mode 600), `certs/` and `models/` from
+the kit the running container was started from (or `--from <dir>`), lists settings
+new in `.env.example`, runs `./update.sh` and the health check. The node keeps its
+UUID and token (no re-enrollment) and the offline event buffer volume is kept.
+Rollback: run `./update.sh` in the previous kit folder (printed at the end, and
+saved in `.previous-kit`). Delete the old folder once the new version is accepted.
 
 ---
 
