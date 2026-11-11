@@ -231,6 +231,12 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [ ] AUDIT-A20 SEC-020 physical camera results have no raw evidence
 Open register: docs/audit/V1-OPEN-FINDINGS.md
 
+# OPERATIONS
+
+[x] OPS-001 Web "System update" page (อัปเดตระบบ): versions, Thai release notes, history, one-click update
+    via the host update agent — ACR-OPS-01 APPROVED 2026-11-10 (docs/decisions/ACR-OPS-01-WEB-SYSTEM-UPDATE.md);
+    automated tests pass; end-to-end run on a real campus server with systemd still PENDING HOST
+
 # FUTURE — LOCKED UNTIL APPROVAL
 
 [ ] [R] DOOR-* Door Access Control

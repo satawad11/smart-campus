@@ -123,5 +123,9 @@ jobs:
           else
             prerelease=()
             [[ "${TAG}" == *-* ]] && prerelease=(--prerelease)
-            gh release create "${TAG}" dist/* --verify-tag --title "${TAG}" --generate-notes "${prerelease[@]}"
+            # Curated Thai notes (ACR-OPS-01) shown on the web System update page;
+            # fall back to GitHub's generated notes when none were written.
+            notes=(--generate-notes)
+            [ -s "docs/releases/${TAG}.md" ] && notes=(--notes-file "docs/releases/${TAG}.md")
+            gh release create "${TAG}" dist/* --verify-tag --title "${TAG}" "${notes[@]}" "${prerelease[@]}"
           fi

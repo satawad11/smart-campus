@@ -36,9 +36,9 @@ use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use App\Http\Controllers\System\FeatureFlagController;
 use App\Http\Controllers\System\LicenseController;
-use App\Http\Controllers\System\SystemUpdateController;
 use App\Http\Controllers\System\SystemMonitoringController;
 use App\Http\Controllers\System\SystemSettingController;
+use App\Http\Controllers\System\SystemUpdateController;
 use Illuminate\Support\Facades\Route;
 
 /*

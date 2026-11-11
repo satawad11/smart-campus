@@ -361,6 +361,29 @@ async function handleLogout() {
           </router-link>
 
           <router-link
+            v-if="authStore.can('system.update')"
+            to="/system/update"
+            data-test="nav-system-update"
+            class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            active-class="bg-blue-50 text-blue-700 font-semibold"
+          >
+            <svg
+              class="mr-3 h-5 w-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            อัปเดตระบบ
+          </router-link>
+
+          <router-link
             v-if="authStore.can('audit.view')"
             to="/audit-logs"
             class="flex items-center rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900"
