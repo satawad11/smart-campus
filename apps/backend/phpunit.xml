@@ -54,7 +54,7 @@
         <env name="FEATURE_VEHICLE_ENABLED" value="(null)"/>
         <env name="FEATURE_ALPR_ENABLED" value="(null)"/>
         <env name="FEATURE_AI_ASSISTANT_ENABLED" value="(null)"/>
-        <!-- Tests do not reach MinIO; BackupIntegrityTest fakes object-storage disks explicitly. -->
+        <!-- Tests do not reach object storage; BackupIntegrityTest fakes object-storage disks explicitly. -->
         <env name="BACKUP_OBJECT_STORAGE_DISKS" value=""/>
     </php>
 </phpunit>

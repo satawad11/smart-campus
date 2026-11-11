@@ -8,6 +8,8 @@ on:
   push:
     branches: ["**"]
   pull_request:
+  # Reused by release.yml: a release is built only after this whole pipeline passes.
+  workflow_call:
 
 jobs:
   backend:

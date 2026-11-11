@@ -2,7 +2,7 @@
 #
 # Defines the initial service topology from docs/04-development-blueprint.md §3:
 #   nginx, frontend, backend, queue, scheduler, websocket, ai-service,
-#   postgres, redis, minio
+#   postgres, redis, objectstore (S3-compatible, SeaweedFS)
 # plus named volumes and ONE internal application network.
 #
 # Scope note (FND-002): this file wires the base services only. Application
@@ -42,7 +42,7 @@ networks:
 volumes:
   postgres-data:
   redis-data:
-  minio-data:
+  objectstore-data:
   backend-storage:
 
 services:
@@ -85,7 +85,7 @@ services:
     depends_on:
       - postgres
       - redis
-      - minio
+      - objectstore
     expose:
       - "9000"
     healthcheck:
@@ -171,23 +171,40 @@ services:
       timeout: 5s
       retries: 5
 
-  minio:
-    # Pinned (2026-10-14) to the image already in use (built 2025-09-07) instead of
-    # `latest`; MinIO is AGPL-3.0, see docs/commercial/DEPENDENCY_LICENSES.md.
-    image: minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
-    command: ["server", "/data", "--console-address", ":9001"]
+  objectstore:
+    # S3-compatible object storage: SeaweedFS (Apache-2.0), replacing MinIO,
+    # whose images are no longer published (2026-11). Pinned by digest.
+    # Identities are generated from the environment by start.sh: a root
+    # (admin) identity and a least-privilege app identity limited to the
+    # buckets in buckets.txt. Defaults below are for development only.
+    image: chrislusf/seaweedfs:4.52@sha256:57877e32bb90073b37dc109b438ba66e84fd5ed9ced5f5c04f56444ef243ce59
+    entrypoint: ["/bin/sh", "/objectstore/start.sh"]
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+      OBJECTSTORE_ROOT_USER: ${OBJECTSTORE_ROOT_USER:-campus-root}
+      OBJECTSTORE_ROOT_PASSWORD: ${OBJECTSTORE_ROOT_PASSWORD:-campus-dev-root-secret}
+      OBJECTSTORE_APP_ACCESS_KEY: ${AWS_ACCESS_KEY_ID:-campus-dev-app}
+      OBJECTSTORE_APP_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY:-campus-dev-app-secret}
     volumes:
-      - minio-data:/data
+      - objectstore-data:/data
+      - ./infrastructure/objectstore:/objectstore:ro
     ports:
-      - "${MINIO_API_PORT:-9000}:9000"
-      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+      - "${OBJECTSTORE_PORT:-8333}:8333"
     networks: [smartcampus]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8333/healthz"]
       interval: 15s
       timeout: 5s
       retries: 5
+
+  objectstore-init:
+    # One-shot, idempotent: creates the buckets in buckets.txt.
+    image: chrislusf/seaweedfs:4.52@sha256:57877e32bb90073b37dc109b438ba66e84fd5ed9ced5f5c04f56444ef243ce59
+    entrypoint: ["/bin/sh", "/objectstore/init.sh"]
+    depends_on:
+      objectstore:
+        condition: service_healthy
+    volumes:
+      - ./infrastructure/objectstore:/objectstore:ro
+    networks: [smartcampus]
+    restart: "no"

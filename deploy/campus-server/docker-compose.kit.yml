@@ -29,11 +29,17 @@ services:
     pull_policy: never
   redis:
     pull_policy: never
-  minio:
-    image: smart-campus/vendor-minio:kit
+  objectstore:
+    image: smart-campus/vendor-seaweedfs:kit
     pull_policy: never
-  minio-init:
-    image: smart-campus/vendor-mc:kit
+  objectstore-init:
+    image: smart-campus/vendor-seaweedfs:kit
+    pull_policy: never
+    # One-shot: install.sh runs it with `dc run`. Kept out of `up` because
+    # `up --wait` treats its normal exit (0) as a failure.
+    profiles: ["setup"]
+  storage-migrate:
+    image: smart-campus/vendor-rclone:kit
     pull_policy: never
   clamav:
     image: smart-campus/vendor-clamav:kit

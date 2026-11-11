@@ -18,7 +18,7 @@ Current specification:
 
 Proposed change (recommended: Option B):
   1. Keep the campus platform single-tenant. Deploy one isolated instance per institution
-     (on-premises server or dedicated VM): own PostgreSQL, MinIO, Redis, Reverb, AI nodes.
+     (on-premises server or dedicated VM): own PostgreSQL, object storage, Redis, Reverb, AI nodes.
      Biometric and student data never leave the institution's instance.
   2. Add a separate Central Management Plane (same locked stack: Laravel, Vue 3, PostgreSQL)
      that is multi-tenant by Organization and holds only commercial/operational metadata:

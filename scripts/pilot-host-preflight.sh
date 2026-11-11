@@ -80,12 +80,12 @@ if [ "$(pf 'DB user is least-privilege (SEC-005)')" = "PASS" ] && [ "$app_create
   report H5 PASS "app role has no schema CREATE; no privileged campus_* roles; not published"
 else report H5 FAIL "app CREATE=$app_create privileged_roles=$supers published=${pg_port:-no}"; fi
 
-# H6 MinIO buckets and least-privilege credentials
-init_exit=$(docker inspect -f '{{.State.ExitCode}}' "$($COMPOSE ps -a -q minio-init 2>/dev/null)" 2>/dev/null)
-minio_port=$(published minio 9000)
-if [ "$init_exit" = "0" ] && [ "$(pf 'storage')" = "PASS" ] && [ -z "$minio_port" ]; then
-  report H6 PASS "minio-init exit 0; app buckets reachable with app credentials; not published"
-else report H6 FAIL "minio-init exit=${init_exit:-none} storage=$(pf 'storage') published=${minio_port:-no}"; fi
+# H6 object storage buckets and least-privilege credentials
+init_exit=$(docker inspect -f '{{.State.ExitCode}}' "$($COMPOSE ps -a -q objectstore-init 2>/dev/null)" 2>/dev/null)
+store_port=$(published objectstore 8333)
+if [ "$init_exit" = "0" ] && [ "$(pf 'storage')" = "PASS" ] && [ -z "$store_port" ]; then
+  report H6 PASS "objectstore-init exit 0; app buckets reachable with app credentials; not published"
+else report H6 FAIL "objectstore-init exit=${init_exit:-none} storage=$(pf 'storage') published=${store_port:-no}"; fi
 
 # H7 queue running and stable
 q=$($COMPOSE ps -q queue 2>/dev/null)

@@ -18,7 +18,8 @@
 | `pgvector/pgvector:pg16` | PostgreSQL licence + pgvector (PostgreSQL licence) | OK |
 | `nginx` | BSD-2 | OK |
 | `redis:7-alpine` | Redis ≥ 7.4 is RSALv2 / SSPLv1 (no longer BSD) | **REVIEW**: internal use by a customer is generally the intended case, but bundling in a sold product needs counsel; drop-in alternative **Valkey** (BSD-3) |
-| `minio/minio:latest` | AGPL-3.0 | **REVIEW**: unmodified use alongside the product vs. distribution obligations; alternatives: commercial MinIO licence or another S3-compatible store. Also pin a version instead of `latest` |
+| `chrislusf/seaweedfs:4.52` (object storage, pinned by digest) | Apache-2.0 | OK. Replaced `minio/minio` (AGPL-3.0) in 2026-11 |
+| `rclone/rclone:1.75.2` (one-off MinIO migration only, pinned by digest) | MIT | OK |
 | `node:22-alpine` (build stage only) | MIT (Node) | OK (not in the runtime image) |
 
 ## 3. AI models
@@ -26,6 +27,6 @@ See [OWNER-DECISIONS-2026-10-14](../decisions/OWNER-DECISIONS-2026-10-14.md) (B5
 non-commercial; YuNet MIT; SFace Apache-2.0; MiniFASNet weights' licence unstated.
 
 ## 4. Actions
-1. Counsel review of Redis and MinIO licensing for the commercial package (or switch to Valkey / alternative S3).
-2. ~~Pin image versions~~ Done 2026-10-14: `minio/minio` and `quay.io/minio/mc` pinned by digest to the images already in use (built 2025-09-07).
+1. Counsel review of Redis licensing for the commercial package (or switch to Valkey). MinIO: resolved 2026-11 by switching to SeaweedFS (Apache-2.0).
+2. ~~Pin image versions~~ Done 2026-10-14 (MinIO); 2026-11: SeaweedFS and rclone pinned by digest.
 3. Add a `THIRD_PARTY_NOTICES` file to release artefacts (generated from the tools above) before the first sale.

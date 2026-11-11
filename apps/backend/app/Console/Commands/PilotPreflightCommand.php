@@ -57,7 +57,7 @@ class PilotPreflightCommand extends Command
     ];
 
     /** Default/development secret values that must not reach the pilot host. */
-    public const DEFAULT_SECRETS = ['', 'smart_campus', 'postgres', 'password', 'secret', 'minioadmin', 'changeme'];
+    public const DEFAULT_SECRETS = ['', 'smart_campus', 'postgres', 'password', 'secret', 'minioadmin', 'changeme', 'campus-dev-root-secret', 'campus-dev-app-secret'];
 
     public const MIN_FREE_BYTES = 10 * 1073741824;
 

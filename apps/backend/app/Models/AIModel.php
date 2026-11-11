@@ -14,7 +14,7 @@ use Illuminate\Support\Carbon;
  * AI Model Registry model (FACE-001, database blueprint §5).
  *
  * Stores metadata and artifact references for perception and biometric AI models.
- * Model binaries are strictly stored in S3/MinIO object storage, never in PostgreSQL.
+ * Model binaries are strictly stored in S3-compatible object storage, never in PostgreSQL.
  *
  * Invariants:
  * - Public identity via UUID only.

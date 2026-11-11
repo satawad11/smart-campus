@@ -43,7 +43,7 @@ Initial:
 - ai-service
 - postgres
 - redis
-- minio
+- objectstore (S3-compatible; SeaweedFS since 2026-11, previously MinIO)
 
 Future:
 - mqtt

@@ -62,7 +62,7 @@ return [
 
         /*
         | Per-bucket object-storage disks (FND-008). Each maps to one of the
-        | approved buckets (development blueprint §8) on the shared MinIO/S3
+        | approved buckets (development blueprint §8) on the shared SeaweedFS/S3
         | endpoint. Consumers are added in later modules (person photos,
         | face samples, event snapshots, report exports).
         */

@@ -1,3 +1,3 @@
-# Shell scripts run inside Linux containers/hosts (e.g. minio-init mounts
-# infrastructure/minio/init-pilot.sh): keep LF even on Windows checkouts.
+# Shell scripts run inside Linux containers/hosts (e.g. objectstore mounts
+# infrastructure/objectstore/start.sh): keep LF even on Windows checkouts.
 *.sh text eol=lf

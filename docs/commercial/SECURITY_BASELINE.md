@@ -15,7 +15,7 @@
 | 5 | Session management, forced logout, forced password change | TECH | AUTH-012; server-side forced change (A-04) |
 | 6 | Credential rotation | PARTIAL | AI-node credentials: issue/revoke API. App secrets: manual per `docs/security/SECRETS-STRATEGY.md` |
 | 7 | TLS in transit | TECH | TLS gateway; node `health_check` FAILs on plain HTTP to a remote backend (G-7) |
-| 8 | Encryption at rest | PARTIAL | Camera credentials encrypted (Laravel `Crypt`); MFA secrets encrypted. DB/MinIO/backup volumes rely on host disk encryption (GAP: not enforced by preflight) |
+| 8 | Encryption at rest | PARTIAL | Camera credentials encrypted (Laravel `Crypt`); MFA secrets encrypted. DB/object-storage/backup volumes rely on host disk encryption (GAP: not enforced by preflight) |
 | 9 | Secrets management | PARTIAL | `.env` outside repo, mandatory pilot secrets; no vault. License private key never in product (COM-02) |
 | 10 | Audit logging | TECH | `AuditService` with sensitive-key scrubbing; biometric, admin, licence actions audited |
 | 11 | Rate limiting | TECH | login, MFA throttled; `/api/v1` limited per user/IP (`API_RATE_LIMIT_PER_MINUTE`, default 300; `ApiRateLimitTest`); `/internal/v1` excluded |
@@ -24,7 +24,7 @@
 | 14 | Backup encryption | TECH (opt-in) | `BACKUP_ENCRYPTION_KEY` → libsodium secretstream, drill verifies by decrypting, `backup:decrypt`; key custody = ops (vault, apart from backups) |
 | 15 | Restore testing | PARTIAL | rehearsal restores into an empty DB pass (REPORTED); none on a production host (BLOCKED) |
 | 16 | Vulnerability / dependency scanning | PARTIAL | `composer audit` + `npm audit` in CI (advisory only); no container image scan |
-| 17 | Dependency licence audit | PARTIAL | Done for libraries ([DEPENDENCY_LICENSES](DEPENDENCY_LICENSES.md)): all permissive; Redis ≥7.4 and MinIO (AGPL) images need counsel review |
+| 17 | Dependency licence audit | PARTIAL | Done for libraries ([DEPENDENCY_LICENSES](DEPENDENCY_LICENSES.md)): all permissive; Redis ≥7.4 image needs counsel review (MinIO/AGPL replaced by SeaweedFS/Apache-2.0) |
 | 18 | Threat model | TECH | [THREAT_MODEL](THREAT_MODEL.md) (STRIDE, 15 threats); review each release |
 | 19 | Cross-tenant security tests | BLOCKED | depends on ACR-COM-01 |
 | 20 | Biometric data minimisation and erasure | PARTIAL | `face:purge` erasure (G-1 done); retention schedule for revoked profiles is a controller decision (G-2) |

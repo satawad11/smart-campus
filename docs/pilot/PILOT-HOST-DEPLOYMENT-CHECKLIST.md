@@ -21,7 +21,7 @@ DC="docker compose --env-file apps/backend/.env -f docker-compose.yml -f docker-
 | Environment template | `infrastructure/pilot/pilot.env.example` → `apps/backend/.env` (0600) |
 | TLS gateway | `infrastructure/pilot/nginx/default.conf`; certificates in `infrastructure/pilot/certs/` (not committed) |
 | Production frontend | `apps/frontend/Dockerfile.prod` + `apps/frontend/deploy/nginx-spa.conf` (static build; no Vite dev server) |
-| Object storage init | `infrastructure/minio/init-pilot.sh`, `pilot-app-policy.json`, `buckets.txt` (compose service `minio-init`) |
+| Object storage | `infrastructure/objectstore/start.sh` (identities), `init.sh` (compose service `objectstore-init`), `buckets.txt` |
 | DB roles | `docs/security/LEAST-PRIVILEGE-ROLES.sql` (compose service `db-roles`, profile `setup`) |
 | Deployment / rollback | `docs/runbooks/DEPLOYMENT.md`, `docs/runbooks/ROLLBACK.md` |
 | Backup policy | `docs/pilot/PILOT-BACKUP-RETENTION-POLICY.md` (AWAITING HUMAN RETENTION APPROVAL) |
@@ -51,8 +51,8 @@ DC="docker compose --env-file apps/backend/.env -f docker-compose.yml -f docker-
 | App / migration / backup / monitoring DB roles | `DB_PASSWORD`, `MIGRATION_DB_PASSWORD`, `BACKUP_DB_PASSWORD`, `MONITORING_DB_PASSWORD` | `openssl rand -hex 24` each |
 | Redis | `REDIS_PASSWORD` | `openssl rand -hex 24` |
 | Reverb | `REVERB_APP_ID`, `REVERB_APP_KEY` (public), `REVERB_APP_SECRET` | random |
-| MinIO root | `MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD` | random |
-| MinIO application user (least privilege) | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | random, created by `minio-init` |
+| Object storage root | `OBJECTSTORE_ROOT_USER`, `OBJECTSTORE_ROOT_PASSWORD` | random |
+| Object storage application identity (least privilege) | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | random, configured by `start.sh` |
 | AI node token | issued in the UI when registering the node (`/ai-nodes` → credentials); stored on the node only | UI |
 | Camera RTSP credentials | entered in the camera form; stored encrypted | camera admin |
 
@@ -61,7 +61,7 @@ development defaults, `CHANGE_IN_PRODUCTION*` placeholders, or an empty Redis pa
 
 ## 4. Deployment Steps
 Follow `docs/runbooks/DEPLOYMENT.md` §3. Summary: checkout tag → `$DC config` → build → datastores →
-`minio-init` → `db-roles` → migrate and seed as `campus_migration_user` → caches → `up -d` →
+`objectstore-init` → `db-roles` → migrate and seed as `campus_migration_user` → caches → `up -d` →
 **initial verified backup** → `pilot:preflight --require-backup` → `scripts/pilot-host-preflight.sh`.
 
 ## 4b. First Administrator, Site/Gate and Operator Roles
@@ -79,7 +79,7 @@ dashboard API (it requires `report.view`; see V1 audit A-14).
 | Volume | Purpose | Backed up by |
 |---|---|---|
 | `postgres-data` | database | `backup:run --type=POSTGRESQL` (10 min) |
-| `minio-data` | object storage (4 buckets) | `backup:run --type=STORAGE` (hourly) |
+| `objectstore-data` | object storage (4 buckets) | `backup:run --type=STORAGE` (hourly) |
 | `redis-data` | sessions, queue, cache (AOF) | not backed up (transient) |
 | `backend-storage` | Laravel storage incl. local backups `storage/app/backups` | the local backups are themselves copied off-host |
 | off-host bind (`/var/backups/offhost`) | verified backup copies + `.sha256` | target-side retention |
@@ -142,7 +142,7 @@ restore the verified pre-deployment backup into a **new** database if the data i
 | H3 | Production secrets installed | PASS (random rehearsal secrets) | PENDING HOST |
 | H4 | Redis private and protected | PASS (not published; unauthenticated ping refused) | PENDING HOST |
 | H5 | PostgreSQL least-privilege roles | PASS | PENDING HOST |
-| H6 | MinIO buckets and permissions | PASS (4 buckets; app user can't create buckets, use admin or set public; anonymous 403) | PENDING HOST |
+| H6 | Object storage buckets and permissions | PASS (4 buckets; app user can't create buckets, use admin or set public; anonymous 403; re-verified on SeaweedFS 2026-11) | PENDING HOST |
 | H7 | Queue running | PASS (0 restarts) | PENDING HOST |
 | H8 | Scheduler running | PASS (monitor and backup jobs listed; scheduled backup fired, see PILOT-009) | PENDING HOST |
 | H9 | Off-host backup reachable | PASS (copies re-verified; restore from off-host copy OK) | PENDING HOST (real off-host target) |

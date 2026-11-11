@@ -1,0 +1,127 @@
+name: Release
+
+# Builds the install kits for a version tag and publishes them as a GitHub
+# Release, so a campus server can update itself with
+#   sudo smart-campus update <tag>
+# (deploy/campus-server/campus.sh: downloads, verifies SHA-256, runs install.sh).
+#
+# Trigger: push an annotated tag `vX.Y.Z` (or `vX.Y.Z-rc1` for a pre-release)
+# on a reviewed commit, or run this workflow manually with "Use workflow from"
+# set to an existing tag to rebuild that tag's kits.
+# The full CI pipeline must pass before anything is built or published.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Check trigger is a version tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require a v* tag
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          if [ "${REF_TYPE}" != "tag" ] || [[ "${REF_NAME}" != v* ]]; then
+            echo "::error::Run this workflow from a version tag (vX.Y.Z), not from a branch."
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: guard
+    uses: ./.github/workflows/ci.yml
+
+  campus-server-kit:
+    name: Campus server kit (amd64)
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Build kit
+        env:
+          TAG: ${{ github.ref_name }}
+        run: bash scripts/package-campus-server.sh "${TAG}"
+      - name: Checksum
+        env:
+          TAG: ${{ github.ref_name }}
+        working-directory: dist
+        run: sha256sum "campus-server-kit-${TAG}-amd64.tar.gz" > "campus-server-kit-${TAG}-amd64.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: campus-server-kit
+          path: |
+            dist/campus-server-kit-*.tar.gz
+            dist/campus-server-kit-*.tar.gz.sha256
+          retention-days: 3
+          compression-level: 0
+
+  ai-node-kit:
+    name: AI node kit (${{ matrix.arch }})
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Build kit
+        env:
+          TAG: ${{ github.ref_name }}
+          AI_NODE_PLATFORM: linux/${{ matrix.arch }}
+        run: bash scripts/package-ai-node.sh "${TAG}"
+      - name: Checksum
+        env:
+          TAG: ${{ github.ref_name }}
+        working-directory: dist
+        run: sha256sum "ai-node-kit-${TAG}-${{ matrix.arch }}.tar.gz" > "ai-node-kit-${TAG}-${{ matrix.arch }}.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ai-node-kit-${{ matrix.arch }}
+          path: |
+            dist/ai-node-kit-*.tar.gz
+            dist/ai-node-kit-*.tar.gz.sha256
+          retention-days: 3
+          compression-level: 0
+
+  publish:
+    name: Publish GitHub Release
+    needs: [campus-server-kit, ai-node-kit]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          ls -la dist
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" dist/* --clobber
+          else
+            prerelease=()
+            [[ "${TAG}" == *-* ]] && prerelease=(--prerelease)
+            gh release create "${TAG}" dist/* --verify-tag --title "${TAG}" --generate-notes "${prerelease[@]}"
+          fi

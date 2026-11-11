@@ -37,9 +37,15 @@ done
 say()  { printf '%s\n' "$*"; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$*"; }
 warn() { printf '  \033[33m!\033[0m %s\n' "$*"; }
+UPDATE_IN_PROGRESS=0
 die()  {
     printf '\n\033[31mติดตั้งไม่สำเร็จ:\033[0m %s\n' "$*" >&2
     [ -f "${LOG}" ] && printf 'รายละเอียด: %s (20 บรรทัดสุดท้าย)\n' "${LOG}" >&2 && tail -n 20 "${LOG}" >&2
+    if [ "${UPDATE_IN_PROGRESS}" -eq 1 ]; then
+        printf '\nระบบยังอยู่ในโหมดปรับปรุง (ผู้ใช้เข้าเว็บไม่ได้) ข้อมูลถูกสำรองไว้ก่อนอัปเดตแล้ว\n' >&2
+        printf '  ย้อนกลับไปรุ่นเดิม:  sudo smart-campus rollback\n' >&2
+        printf '  หรือแก้สาเหตุแล้วรันตัวติดตั้งนี้ซ้ำ\n' >&2
+    fi
     exit 1
 }
 
@@ -169,15 +175,21 @@ if [ "${MODE}" = update ] && dc ps --status running --services 2>/dev/null | gre
         docker image inspect "smart-campus/${img}:pilot" >/dev/null 2>&1 \
             && docker tag "smart-campus/${img}:pilot" "smart-campus/${img}:rollback-${STAMP}"
     done
+    # Read by `smart-campus rollback`: which images and version to return to.
+    printf 'stamp=%s\nfrom_version=%s\nto_version=%s\nstarted_at=%s\n' "${STAMP}" \
+        "$(cat "${INSTALL_DIR}/VERSION" 2>/dev/null || echo unknown)" "$(cat "${KIT_DIR}/VERSION")" \
+        "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "${INSTALL_DIR}/.last-rollback"
     ok "เก็บ image เดิมไว้สำหรับย้อนกลับ (rollback-${STAMP})"
     step "เข้าสู่โหมดปรับปรุงระบบ" dc exec -T backend php artisan down --retry=60
+    UPDATE_IN_PROGRESS=1
 fi
 
 copy_runtime() {
     cp "${KIT_DIR}/docker-compose.yml" "${KIT_DIR}/docker-compose.pilot.yml" "${KIT_DIR}/docker-compose.kit.yml" \
         "${KIT_DIR}/campus.sh" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
+    if [ -f "${KIT_DIR}/ARCH" ]; then cp "${KIT_DIR}/ARCH" "${INSTALL_DIR}/"; fi
     mkdir -p "${INSTALL_DIR}/infrastructure/pilot/certs" "${INSTALL_DIR}/scripts" "${INSTALL_DIR}/docs/security"
-    cp -r "${KIT_DIR}/infrastructure/minio" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
+    cp -r "${KIT_DIR}/infrastructure/objectstore" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
     rm -rf "${INSTALL_DIR}/infrastructure/pilot/nginx"
     cp -r "${KIT_DIR}/infrastructure/pilot/nginx" "${INSTALL_DIR}/infrastructure/pilot/"
     cp "${KIT_DIR}/infrastructure/pilot/pilot.env.example" "${INSTALL_DIR}/infrastructure/pilot/"
@@ -207,8 +219,8 @@ write_env() {
     # Public key baked into the kit's frontend image; the secret is per install.
     set_env REVERB_APP_KEY "$(cat "${KIT_DIR}/REVERB_APP_KEY")"
     set_env REVERB_APP_SECRET "$(secret)"
-    set_env MINIO_ROOT_USER "campus-root"
-    set_env MINIO_ROOT_PASSWORD "$(secret)"
+    set_env OBJECTSTORE_ROOT_USER "campus-root"
+    set_env OBJECTSTORE_ROOT_PASSWORD "$(secret)"
     set_env AWS_ACCESS_KEY_ID "campus-app"
     set_env AWS_SECRET_ACCESS_KEY "$(secret)"
     set_env BACKUP_ENCRYPTION_KEY "$(openssl rand -base64 32)"
@@ -229,10 +241,69 @@ merge_new_env_keys() { # keys added by a newer release, existing values untouche
     done < "${INSTALL_DIR}/infrastructure/pilot/pilot.env.example"
 }
 
+# ---- one-off move of files from MinIO (installs before 2026-11) -------------
+LEGACY_MINIO_VOLUME="smart-campus_minio-data"
+LEGACY_MINIO_CONTAINER="smart-campus-minio-1"
+NEEDS_STORAGE_MIGRATION=0
+
+legacy_minio_up() { # the old MinIO, reachable as "minio" on the app network
+    local envf
+    if docker container inspect "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1; then
+        docker start "${LEGACY_MINIO_CONTAINER}" >/dev/null
+    else
+        docker image inspect smart-campus/vendor-minio:kit >/dev/null 2>&1 \
+            || { echo "legacy MinIO container and image smart-campus/vendor-minio:kit not found"; return 1; }
+        LEGACY_MINIO_CONTAINER="smart-campus-minio-legacy"
+        docker rm -f "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1 || true
+        envf="$(mktemp)"; chmod 600 "${envf}"
+        printf 'MINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\n' \
+            "$(env_value MINIO_ROOT_USER)" "$(env_value MINIO_ROOT_PASSWORD)" > "${envf}"
+        docker run -d --name "${LEGACY_MINIO_CONTAINER}" --network smart-campus_smartcampus \
+            --network-alias minio --env-file "${envf}" -v "${LEGACY_MINIO_VOLUME}:/data" \
+            smart-campus/vendor-minio:kit server /data >/dev/null || { rm -f "${envf}"; return 1; }
+        rm -f "${envf}"
+    fi
+    for _ in $(seq 1 60); do
+        docker exec "${LEGACY_MINIO_CONTAINER}" curl -fsS http://localhost:9000/minio/health/live >/dev/null 2>&1 && return 0
+        sleep 2
+    done
+    echo "legacy MinIO did not become ready"; return 1
+}
+
+migrate_legacy_storage() {
+    step "เปิดที่เก็บไฟล์ MinIO เดิมเพื่อย้ายข้อมูล" legacy_minio_up
+    step "ย้ายไฟล์จาก MinIO ไปที่เก็บไฟล์ใหม่ (ตรวจทุกไบต์)" dc --profile migrate run --rm storage-migrate
+    # Only now does the app switch over; until here a rollback still finds
+    # every file in the old MinIO.
+    set_env AWS_ENDPOINT "http://objectstore:8333"
+    date -u +%Y-%m-%dT%H:%M:%SZ > "${INSTALL_DIR}/.objectstore-migrated"
+    docker rm -f "${LEGACY_MINIO_CONTAINER}" >/dev/null 2>&1 || true
+    ok "ย้ายไฟล์เสร็จ (volume ${LEGACY_MINIO_VOLUME} เดิมยังเก็บไว้ ลบเองได้เมื่อมั่นใจ)"
+}
+
 if [ "${MODE}" = install ]; then
     step "สร้างไฟล์ตั้งค่าและรหัสผ่านทั้งหมดแบบสุ่ม (campus.env)" write_env
 else
     step "เพิ่มค่าตั้งใหม่ของรุ่นนี้ใน campus.env (ค่าเดิมไม่เปลี่ยน)" merge_new_env_keys
+    # Every kit build bakes a new public Reverb key into the frontend image.
+    # Keeping the old key in campus.env broke realtime (Live Monitor) after
+    # every update. The per-install REVERB_APP_SECRET is left unchanged.
+    if [ -s "${KIT_DIR}/REVERB_APP_KEY" ]; then
+        set_env REVERB_APP_KEY "$(cat "${KIT_DIR}/REVERB_APP_KEY")"
+        ok "ปรับ REVERB_APP_KEY ให้ตรงกับหน้าเว็บของรุ่นนี้"
+    fi
+    # Object storage moved from MinIO to SeaweedFS (MinIO images are no
+    # longer published). The app keys (AWS_*) are reused unchanged.
+    [ -n "$(env_value OBJECTSTORE_ROOT_USER)" ] || set_env OBJECTSTORE_ROOT_USER "campus-root"
+    [ -n "$(env_value OBJECTSTORE_ROOT_PASSWORD)" ] || set_env OBJECTSTORE_ROOT_PASSWORD "$(secret)"
+    if docker volume inspect "${LEGACY_MINIO_VOLUME}" >/dev/null 2>&1 \
+        && [ ! -f "${INSTALL_DIR}/.objectstore-migrated" ]; then
+        NEEDS_STORAGE_MIGRATION=1
+        [ -n "$(env_value MINIO_ROOT_USER)" ] && [ -n "$(env_value MINIO_ROOT_PASSWORD)" ] \
+            || die "พบข้อมูลไฟล์ของ MinIO เดิม แต่ไม่พบ MINIO_ROOT_USER/MINIO_ROOT_PASSWORD ใน ${ENV_FILE}"
+    elif [ "$(env_value AWS_ENDPOINT)" = "http://minio:9000" ]; then
+        set_env AWS_ENDPOINT "http://objectstore:8333"
+    fi
 fi
 
 BACKUP_DIR="$(env_value BACKUP_OFFHOST_HOST_PATH)"
@@ -253,8 +324,11 @@ if [ ! -s "${INSTALL_DIR}/infrastructure/pilot/certs/fullchain.pem" ]; then
 fi
 
 step "ตรวจไฟล์ตั้งค่า" dc config --quiet
-step "เริ่มฐานข้อมูล, Redis และที่เก็บไฟล์" dc up -d --wait --wait-timeout 300 postgres redis minio
-step "สร้าง bucket และผู้ใช้ของที่เก็บไฟล์" dc run --rm minio-init
+step "เริ่มฐานข้อมูล, Redis และที่เก็บไฟล์" dc up -d --wait --wait-timeout 300 postgres redis objectstore
+step "สร้าง bucket ของที่เก็บไฟล์" dc run --rm objectstore-init
+if [ "${NEEDS_STORAGE_MIGRATION}" -eq 1 ]; then
+    migrate_legacy_storage
+fi
 step "สร้างบทบาทฐานข้อมูลแบบสิทธิ์ต่ำสุด" dc --profile setup run --rm db-roles
 step "เริ่ม backend" dc up -d --wait --wait-timeout 300 backend
 
@@ -289,6 +363,10 @@ step "เตรียม cache ของระบบ" dc exec -T backend sh -c '
 step "เริ่มทุกบริการและรอจนพร้อม (ครั้งแรกอาจใช้หลายนาที)" dc up -d --wait --wait-timeout 900
 if [ "${MODE}" = update ]; then
     step "ออกจากโหมดปรับปรุงระบบ" dc exec -T backend php artisan up
+    UPDATE_IN_PROGRESS=0
+    printf '%s update %s -> %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        "$(sed -n 's/^from_version=//p' "${INSTALL_DIR}/.last-rollback" 2>/dev/null)" \
+        "$(cat "${KIT_DIR}/VERSION")" >> "${INSTALL_DIR}/update-history.log"
 fi
 
 say ""

@@ -175,6 +175,16 @@ class PilotPreflightCommandTest extends TestCase
         $this->assertStringNotContainsString('minioadmin', $output);
     }
 
+    public function test_object_store_development_secret_fails(): void
+    {
+        $this->compliantConfig();
+        config(['filesystems.disks.s3.secret' => 'campus-dev-app-secret']);
+
+        $report = $this->runPreflight();
+
+        $this->assertSame('FAIL', $this->statusOf($report, 'AWS_SECRET_ACCESS_KEY not a default/dev value'));
+    }
+
     public function test_host_checks_report_clock_drift_and_disk(): void
     {
         $report = $this->runPreflight();

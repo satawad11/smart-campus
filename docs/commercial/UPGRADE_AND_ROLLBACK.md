@@ -3,7 +3,25 @@
 **Status:** scripted (`scripts/upgrade-campus.sh`, 2026-10-14): verified with `bash -n` and `--dry-run`;
 **not yet run on a real host**. Image-retag rollback rehearsed in the pilot rehearsal (REPORTED).
 
-## Scripted upgrade
+## Upgrade from GitHub Releases (campus server installed from the kit)
+Releases are produced by `.github/workflows/release.yml` when a `v*` tag is pushed: the full CI pipeline runs first,
+then the campus-server kit (amd64) and AI-node kits (amd64, arm64) are built and attached to the GitHub Release with
+`.sha256` files. Tags containing `-` (e.g. `v1.2.0-rc1`) are published as pre-releases.
+
+On the server, an administrator runs the update by hand (nothing updates automatically):
+```bash
+sudo smart-campus update-setup     # once: repository + read-only fine-grained token (stored 0600 in update.env)
+sudo smart-campus update-check     # releases on GitHub vs installed version
+sudo smart-campus update vX.Y.Z    # notes + confirmation, download, SHA-256 check, then the kit's install.sh
+sudo smart-campus rollback         # back to the images tagged before the last update (database not reverted)
+```
+`install.sh` in update mode: verified backup, `rollback-<timestamp>` image tags + `.last-rollback`, maintenance
+mode, migrations as `campus_migration_user`, restart, preflight; history in `update-history.log`. If a step fails the
+installer stops, leaves maintenance mode on and prints the rollback command.
+Tested 2026-11-08 against a mock GitHub API (25 checks: list, auth, cancel, download, checksum, tamper rejection,
+missing assets, no-op, rollback). **Not yet run against a real GitHub Release or a real campus server.**
+
+## Scripted upgrade (source checkout)
 ```bash
 MIGRATION_DB_PASSWORD=... scripts/upgrade-campus.sh <approved-tag> --dry-run   # review the plan
 MIGRATION_DB_PASSWORD=... scripts/upgrade-campus.sh <approved-tag>             # asks for confirmation
@@ -23,6 +41,13 @@ The script performs the manual steps below in order, starting with a **verified 
    deliver them idempotently afterwards (CAM-012, A-07).
 
 ## Migration rules
+### Object storage: MinIO → SeaweedFS (releases after 2026-11)
+The first update to a release with SeaweedFS copies every object from the old MinIO store (`storage-migrate`,
+rclone), verifies it byte for byte, and only then points the app at the new store. The `smart-campus_minio-data`
+volume is kept; delete it by hand once the new release is accepted. If the copy fails the update stops with the
+app still on MinIO, so `smart-campus rollback` finds every file. Allow time and disk space for one more copy of
+the object data.
+
 Migrations are additive (PROJECT_RULES §15). A release containing a destructive or data-rewriting migration must say
 so in its notes and requires an explicit human approval plus a verified backup.
 
