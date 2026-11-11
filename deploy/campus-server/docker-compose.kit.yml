@@ -40,6 +40,9 @@ services:
   objectstore-init:
     image: smart-campus/vendor-seaweedfs:kit
     pull_policy: never
+    # One-shot: install.sh runs it with `dc run`. Kept out of `up` because
+    # `up --wait` treats its normal exit (0) as a failure.
+    profiles: ["setup"]
   storage-migrate:
     image: smart-campus/vendor-rclone:kit
     pull_policy: never

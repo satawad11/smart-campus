@@ -140,7 +140,7 @@ onMounted(() => {
           class="px-4 py-2 text-sm font-medium rounded-md transition"
           :class="
             activeTab === 'generator'
-              ? 'bg-white shadow-sm text-blue-700'
+              ? 'bg-surface shadow-sm text-blue-700'
               : 'text-gray-600 hover:text-gray-900'
           "
         >
@@ -151,7 +151,7 @@ onMounted(() => {
           class="px-4 py-2 text-sm font-medium rounded-md transition"
           :class="
             activeTab === 'exports'
-              ? 'bg-white shadow-sm text-blue-700'
+              ? 'bg-surface shadow-sm text-blue-700'
               : 'text-gray-600 hover:text-gray-900'
           "
         >
@@ -163,7 +163,7 @@ onMounted(() => {
     <!-- TAB 1: Report Generator -->
     <div v-if="activeTab === 'generator'" class="space-y-6">
       <!-- Filter Panel -->
-      <div class="bg-white p-5 rounded-lg shadow-sm border border-gray-200">
+      <div class="bg-surface p-5 rounded-lg shadow-sm border border-gray-200">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
           <!-- Report Type -->
           <div>
@@ -296,43 +296,43 @@ onMounted(() => {
       <div v-if="reportData" class="space-y-6">
         <!-- Totals Cards -->
         <div v-if="reportData.totals" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-gray-500 uppercase font-semibold">ตรวจพบทั้งหมด</span>
             <div class="text-xl font-bold text-gray-900 mt-1">
               {{ reportData.totals.detected.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-blue-600 uppercase font-semibold">ยืนยันตัวตน</span>
             <div class="text-xl font-bold text-blue-700 mt-1">
               {{ reportData.totals.recognized.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-green-600 uppercase font-semibold">อนุญาต</span>
             <div class="text-xl font-bold text-green-700 mt-1">
               {{ reportData.totals.allow.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-red-600 uppercase font-semibold">ปฏิเสธ</span>
             <div class="text-xl font-bold text-red-700 mt-1">
               {{ reportData.totals.deny.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-amber-600 uppercase font-semibold">รอตรวจสอบ</span>
             <div class="text-xl font-bold text-amber-700 mt-1">
               {{ reportData.totals.review.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-gray-600 uppercase font-semibold">ไม่ทราบตัวตน</span>
             <div class="text-xl font-bold text-gray-700 mt-1">
               {{ reportData.totals.unknown.toLocaleString() }}
             </div>
           </div>
-          <div class="bg-white p-3 rounded-lg border border-gray-200">
+          <div class="bg-surface p-3 rounded-lg border border-gray-200">
             <span class="text-[10px] text-purple-600 uppercase font-semibold">คนไม่ซ้ำ</span>
             <div class="text-xl font-bold text-purple-700 mt-1">
               {{ reportData.totals.unique_persons_recognized.toLocaleString() }}
@@ -349,7 +349,7 @@ onMounted(() => {
         </div>
 
         <!-- Hourly breakdown (for daily) -->
-        <div v-if="reportData.by_hour" class="bg-white p-5 rounded-lg border border-gray-200">
+        <div v-if="reportData.by_hour" class="bg-surface p-5 rounded-lg border border-gray-200">
           <h3 class="text-sm font-bold text-gray-900 mb-3">แจกแจงรายชั่วโมง</h3>
           <div class="grid grid-cols-6 md:grid-cols-12 gap-2 text-center text-xs">
             <div v-for="h in reportData.by_hour" :key="h.hour" class="p-2 bg-gray-50 rounded">
@@ -360,7 +360,7 @@ onMounted(() => {
         </div>
 
         <!-- Daily breakdown (for weekly / monthly / custom) -->
-        <div v-if="reportData.by_day" class="bg-white p-5 rounded-lg border border-gray-200">
+        <div v-if="reportData.by_day" class="bg-surface p-5 rounded-lg border border-gray-200">
           <h3 class="text-sm font-bold text-gray-900 mb-3">แจกแจงรายวัน</h3>
           <div class="overflow-x-auto max-h-60">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
@@ -383,7 +383,7 @@ onMounted(() => {
         </div>
 
         <!-- Camera List (for camera report) -->
-        <div v-if="reportData.cameras" class="bg-white p-5 rounded-lg border border-gray-200">
+        <div v-if="reportData.cameras" class="bg-surface p-5 rounded-lg border border-gray-200">
           <h3 class="text-sm font-bold text-gray-900 mb-3">สถิติรายกล้องทั้งหมด</h3>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
@@ -431,7 +431,7 @@ onMounted(() => {
         </div>
 
         <!-- AI Nodes (for ai-node report) -->
-        <div v-if="reportData.nodes" class="bg-white p-5 rounded-lg border border-gray-200">
+        <div v-if="reportData.nodes" class="bg-surface p-5 rounded-lg border border-gray-200">
           <h3 class="text-sm font-bold text-gray-900 mb-3">สถานะหน่วยประมวลผลทั้งหมด</h3>
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200 text-xs">
@@ -476,7 +476,7 @@ onMounted(() => {
 
     <!-- TAB 2: Export History -->
     <div v-if="activeTab === 'exports'" class="space-y-4">
-      <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      <div class="bg-surface rounded-lg shadow-sm border border-gray-200 overflow-hidden">
         <div class="p-4 border-b border-gray-200 flex justify-between items-center">
           <h2 class="text-base font-semibold text-gray-900">ประวัติการส่งออกไฟล์รายงาน</h2>
           <button
@@ -501,7 +501,7 @@ onMounted(() => {
                 <th class="px-4 py-3 text-right">ดาวน์โหลด</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 bg-white">
+            <tbody class="divide-y divide-gray-100 bg-surface">
               <tr v-for="item in exportsList" :key="item.uuid" class="hover:bg-gray-50">
                 <td class="px-4 py-3 font-medium text-gray-900">{{ item.report_type }}</td>
                 <td class="px-4 py-3">

@@ -148,7 +148,7 @@ onMounted(() => {
         <button
           v-if="authStore.can('student.status.change')"
           type="button"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           @click="showStatusModal = true"
         >
           <svg
@@ -171,7 +171,7 @@ onMounted(() => {
         <router-link
           v-if="authStore.can('student.update')"
           :to="`/students/${student.uuid}/edit`"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <svg
             class="-ml-1 mr-2 h-4 w-4 text-gray-500"
@@ -240,7 +240,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="rounded-lg bg-white p-12 text-center shadow">
+    <div v-if="loading" class="rounded-lg bg-surface p-12 text-center shadow">
       <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path
@@ -255,7 +255,7 @@ onMounted(() => {
     <!-- Detail Content -->
     <div v-else-if="student" class="space-y-6">
       <!-- Profile Header Summary Card -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
           <div
             class="h-20 w-20 shrink-0 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-2xl border-2 border-blue-200 shadow-sm mb-4 sm:mb-0"
@@ -293,7 +293,7 @@ onMounted(() => {
 
       <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <!-- Card 1: ข้อมูลส่วนบุคคล (Identity) -->
-        <div class="rounded-lg bg-white p-6 shadow">
+        <div class="rounded-lg bg-surface p-6 shadow">
           <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
             ข้อมูลส่วนบุคคล (Identity)
           </h3>
@@ -334,7 +334,7 @@ onMounted(() => {
         </div>
 
         <!-- Card 2: ข้อมูลการศึกษา (Academic Information) -->
-        <div class="rounded-lg bg-white p-6 shadow">
+        <div class="rounded-lg bg-surface p-6 shadow">
           <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
             ข้อมูลการศึกษา (Academic Profile)
           </h3>
@@ -399,7 +399,7 @@ onMounted(() => {
       </div>
 
       <!-- Card 3: ข้อมูลระบบ (System Metadata) -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
           ข้อมูลระบบ (System Info)
         </h3>

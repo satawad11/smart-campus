@@ -108,7 +108,7 @@ async function handleSubmit() {
     </div>
 
     <!-- Create Form -->
-    <div class="rounded-lg bg-white p-6 shadow">
+    <div class="rounded-lg bg-surface p-6 shadow">
       <form @submit.prevent="handleSubmit" class="space-y-6" novalidate>
         <!-- Username -->
         <div>
@@ -234,7 +234,7 @@ async function handleSubmit() {
         <div class="flex items-center justify-end space-x-3 pt-4 border-t border-gray-200">
           <router-link
             to="/users"
-            class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            class="rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
           >
             ยกเลิก
           </router-link>

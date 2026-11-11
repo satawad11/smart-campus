@@ -95,7 +95,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="space-y-6">
     <!-- State 1: Confirmation before dispatching process -->
-    <div v-if="!isProcessing && !isCompleted && !isFailed" class="rounded-lg bg-white p-6 shadow">
+    <div v-if="!isProcessing && !isCompleted && !isFailed" class="rounded-lg bg-surface p-6 shadow">
       <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
         ยืนยันการเริ่มประมวลผลข้อมูล (Confirm Process Execution)
       </h3>
@@ -194,7 +194,7 @@ onBeforeUnmount(() => {
         <button
           type="button"
           :disabled="processing"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           @click="$emit('back')"
         >
           &larr; กลับไปตรวจสอบข้อมูล
@@ -233,7 +233,7 @@ onBeforeUnmount(() => {
     </div>
 
     <!-- State 2: Active Processing and Polling -->
-    <div v-else-if="isProcessing" class="rounded-lg bg-white p-8 shadow text-center">
+    <div v-else-if="isProcessing" class="rounded-lg bg-surface p-8 shadow text-center">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-100">
         <svg class="h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
           <circle

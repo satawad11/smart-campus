@@ -163,7 +163,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="loadingStudent" class="rounded-lg bg-white p-12 text-center shadow">
+    <div v-if="loadingStudent" class="rounded-lg bg-surface p-12 text-center shadow">
       <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
         <path
@@ -178,7 +178,7 @@ onMounted(() => {
     <!-- Edit Form -->
     <form v-else-if="student" @submit.prevent="handleSubmit" class="space-y-6" novalidate>
       <!-- Section 1: ข้อมูลส่วนบุคคล (Editable) -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <div class="border-b border-gray-200 pb-4 mb-6">
           <h2 class="text-base font-semibold text-gray-900">1. ข้อมูลส่วนบุคคล</h2>
           <p class="mt-1 text-xs text-gray-500">ชื่อ นามสกุล และข้อมูลการแสดงผลของนักเรียน</p>
@@ -308,7 +308,7 @@ onMounted(() => {
       </div>
 
       <!-- Section 2: ข้อมูลการศึกษา (Editable & Read-Only Context) -->
-      <div class="rounded-lg bg-white p-6 shadow">
+      <div class="rounded-lg bg-surface p-6 shadow">
         <div class="border-b border-gray-200 pb-4 mb-6">
           <h2 class="text-base font-semibold text-gray-900">2. ข้อมูลการศึกษา</h2>
           <p class="mt-1 text-xs text-gray-500">
@@ -446,7 +446,7 @@ onMounted(() => {
       <div class="flex items-center justify-end space-x-3">
         <router-link
           :to="`/students/${student.uuid}`"
-          class="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           ยกเลิก
         </router-link>

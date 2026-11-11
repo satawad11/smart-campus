@@ -131,7 +131,7 @@ onMounted(load)
     <form
       v-if="canManage"
       data-test="create-form"
-      class="space-y-2 rounded-lg border border-gray-200 bg-white p-4"
+      class="space-y-2 rounded-lg border border-gray-200 bg-surface p-4"
       @submit.prevent="create"
     >
       <h2 class="font-semibold text-gray-900">บันทึกเหตุการณ์ใหม่</h2>
@@ -172,7 +172,7 @@ onMounted(load)
     <div class="space-y-2">
       <p
         v-if="incidents.length === 0"
-        class="rounded-lg border border-gray-200 bg-white p-6 text-center text-sm text-gray-500"
+        class="rounded-lg border border-gray-200 bg-surface p-6 text-center text-sm text-gray-500"
       >
         ไม่มีเหตุการณ์
       </p>
@@ -180,7 +180,7 @@ onMounted(load)
         v-for="incident in incidents"
         :key="incident.id"
         data-test="incident"
-        class="rounded-lg border border-gray-200 bg-white p-4"
+        class="rounded-lg border border-gray-200 bg-surface p-4"
       >
         <div class="flex items-center justify-between gap-3">
           <div>

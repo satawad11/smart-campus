@@ -101,7 +101,7 @@ defineExpose({
 </script>
 
 <template>
-  <div v-if="canView" class="rounded-lg bg-white p-6 shadow">
+  <div v-if="canView" class="rounded-lg bg-surface p-6 shadow">
     <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
       <div>
         <h3 class="text-base font-semibold text-gray-900">
@@ -114,7 +114,7 @@ defineExpose({
       <button
         type="button"
         :disabled="loading"
-        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+        class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-2.5 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
         title="รีเฟรชประวัติ"
         @click="fetchTimeline(pagination.current_page)"
       >
@@ -250,7 +250,7 @@ defineExpose({
           <button
             type="button"
             :disabled="pagination.current_page <= 1 || loading"
-            class="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center rounded border border-gray-300 bg-surface px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="fetchTimeline(pagination.current_page - 1)"
           >
             ย้อนกลับ
@@ -258,7 +258,7 @@ defineExpose({
           <button
             type="button"
             :disabled="pagination.current_page >= pagination.last_page || loading"
-            class="inline-flex items-center rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center rounded border border-gray-300 bg-surface px-2.5 py-1 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             @click="fetchTimeline(pagination.current_page + 1)"
           >
             ถัดไป

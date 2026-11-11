@@ -144,13 +144,13 @@ async function submitReenroll() {
 function getStatusBadgeClass(status) {
   switch (status) {
     case 'ACTIVE':
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+      return 'bg-green-100 text-green-800'
     case 'PENDING':
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+      return 'bg-yellow-100 text-yellow-800'
     case 'REVOKED':
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+      return 'bg-red-100 text-red-800'
     case 'RE_ENROLL_REQUIRED':
-      return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300'
+      return 'bg-orange-100 text-orange-800'
     default:
       return 'bg-gray-100 text-gray-800'
   }
@@ -168,8 +168,8 @@ onMounted(() => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">ข้อมูลใบหน้า</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <h1 class="text-2xl font-bold text-gray-900">ข้อมูลใบหน้า</h1>
+        <p class="text-sm text-gray-500">
           จัดการข้อมูลใบหน้าที่ลงทะเบียน การเพิกถอน และประวัติภาพตัวอย่าง
         </p>
       </div>
@@ -185,21 +185,19 @@ onMounted(() => {
     </div>
 
     <!-- Filters Bar -->
-    <div
-      class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
-    >
+    <div class="bg-surface p-4 rounded-xl border border-gray-200 flex flex-wrap gap-4 items-center">
       <input
         v-model="filters.search"
         @keyup.enter="fetchProfiles"
         type="text"
         placeholder="ค้นหาด้วยรหัสบุคคล รหัสโปรไฟล์ หรือชื่อ..."
-        class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        class="flex-1 min-w-[240px] px-3 py-2 border rounded-lg text-sm"
       />
 
       <select
         v-model="filters.status"
         @change="fetchProfiles"
-        class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        class="px-3 py-2 border rounded-lg text-sm"
       >
         <option value="">ทุกสถานะ</option>
         <option value="ACTIVE">ใช้งาน</option>
@@ -225,17 +223,15 @@ onMounted(() => {
     </div>
 
     <!-- Table -->
-    <div
-      class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-    >
+    <div class="bg-surface rounded-xl border border-gray-200 overflow-hidden">
       <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลดข้อมูลใบหน้า...</div>
 
       <div v-else-if="profiles.length === 0" class="text-center py-12 text-gray-400">
         ไม่พบข้อมูลใบหน้าตามเงื่อนไข
       </div>
 
-      <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-        <thead class="bg-gray-50 dark:bg-gray-700/50">
+      <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+        <thead class="bg-gray-50">
           <tr>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">บุคคล / โปรไฟล์</th>
             <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">สถานะ</th>
@@ -245,14 +241,10 @@ onMounted(() => {
             <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การดำเนินการ</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
-          <tr
-            v-for="profile in profiles"
-            :key="profile.face_profile_uuid"
-            class="hover:bg-gray-50 dark:hover:bg-gray-700/30"
-          >
+        <tbody class="divide-y divide-gray-200">
+          <tr v-for="profile in profiles" :key="profile.face_profile_uuid" class="hover:bg-gray-50">
             <td class="px-6 py-4">
-              <div class="font-mono text-xs font-semibold text-gray-900 dark:text-white">
+              <div class="font-mono text-xs font-semibold text-gray-900">
                 {{ profile.face_profile_uuid }}
               </div>
               <div class="text-xs text-gray-500">บุคคล: {{ profile.person_uuid }}</div>
@@ -266,7 +258,7 @@ onMounted(() => {
               </span>
             </td>
             <td class="px-6 py-4 text-xs">
-              <div class="font-medium text-gray-800 dark:text-gray-200">
+              <div class="font-medium text-gray-800">
                 {{ profile.model?.code || 'ไม่ระบุ' }}
               </div>
               <div class="text-gray-400">v{{ profile.model?.version || '1.0' }}</div>
@@ -318,21 +310,21 @@ onMounted(() => {
       v-if="showRevokeModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">เพิกถอนข้อมูลใบหน้า</h3>
+      <div class="bg-surface rounded-xl max-w-md w-full p-6 space-y-4">
+        <h3 class="text-lg font-bold text-gray-900">เพิกถอนข้อมูลใบหน้า</h3>
         <p class="text-sm text-gray-500">
           เมื่อเพิกถอนแล้ว ระบบจะไม่ใช้ข้อมูลใบหน้านี้ในการจดจำและนโยบายการเข้าออกอีก
         </p>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
             เหตุผลการเพิกถอน <span class="text-red-500">*</span>
           </label>
           <input
             v-model="revokeReason"
             type="text"
             placeholder="เช่น ถอนความยินยอม นักเรียนจบการศึกษา"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
 
@@ -364,14 +356,14 @@ onMounted(() => {
       v-if="showReenrollModal"
       class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
     >
-      <div class="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6 space-y-4">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white">ลงทะเบียนใบหน้าใหม่</h3>
+      <div class="bg-surface rounded-xl max-w-md w-full p-6 space-y-4">
+        <h3 class="text-lg font-bold text-gray-900">ลงทะเบียนใบหน้าใหม่</h3>
         <p class="text-sm text-gray-500">
           อัปโหลดรูปใบหน้าใหม่เพื่อเปิดใช้งานหรือปรับปรุงข้อมูลใบหน้าของบุคคลนี้
         </p>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
             รูปใบหน้าใหม่ <span class="text-red-500">*</span>
           </label>
           <input
@@ -383,14 +375,14 @@ onMounted(() => {
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label class="block text-sm font-medium text-gray-700 mb-1">
             เหตุผลการลงทะเบียนใหม่ <span class="text-red-500">*</span>
           </label>
           <input
             v-model="reenrollReason"
             type="text"
             placeholder="เช่น ปรับรูปสำหรับภาคเรียนใหม่"
-            class="w-full px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+            class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
 

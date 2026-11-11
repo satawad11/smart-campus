@@ -94,7 +94,7 @@ onMounted(() => {
         <router-link
           v-if="authStore.can('role.manage')"
           :to="`/roles/${role.uuid}/edit`"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <svg
             class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-500"
@@ -237,7 +237,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div v-if="loading" class="rounded-lg bg-white p-8 text-center text-gray-500 shadow">
+    <div v-if="loading" class="rounded-lg bg-surface p-8 text-center text-gray-500 shadow">
       <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
         <circle
           class="opacity-25"
@@ -258,7 +258,7 @@ onMounted(() => {
 
     <!-- Detail Card -->
     <div v-else-if="role" class="space-y-6">
-      <div class="overflow-hidden rounded-lg bg-white shadow">
+      <div class="overflow-hidden rounded-lg bg-surface shadow">
         <div class="border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div class="flex items-center gap-3">
             <h2 class="text-lg font-medium text-gray-900">ข้อมูลบทบาท</h2>
@@ -321,7 +321,7 @@ onMounted(() => {
       </div>
 
       <!-- Assigned Permissions Preview -->
-      <div class="rounded-lg bg-white p-6 shadow space-y-4">
+      <div class="rounded-lg bg-surface p-6 shadow space-y-4">
         <div class="flex items-center justify-between">
           <div>
             <h2 class="text-base font-semibold text-gray-900">สิทธิ์ที่ได้รับอนุญาตในบทบาทนี้</h2>

@@ -189,7 +189,7 @@ copy_runtime() {
         "${KIT_DIR}/campus.sh" "${KIT_DIR}/install.sh" "${KIT_DIR}/README.md" "${KIT_DIR}/VERSION" "${INSTALL_DIR}/"
     if [ -f "${KIT_DIR}/ARCH" ]; then cp "${KIT_DIR}/ARCH" "${INSTALL_DIR}/"; fi
     mkdir -p "${INSTALL_DIR}/infrastructure/pilot/certs" "${INSTALL_DIR}/scripts" "${INSTALL_DIR}/docs/security"
-    cp -r "${KIT_DIR}/infrastructure/objectstore""${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
+    cp -r "${KIT_DIR}/infrastructure/objectstore" "${KIT_DIR}/infrastructure/postgres" "${INSTALL_DIR}/infrastructure/"
     rm -rf "${INSTALL_DIR}/infrastructure/pilot/nginx"
     cp -r "${KIT_DIR}/infrastructure/pilot/nginx" "${INSTALL_DIR}/infrastructure/pilot/"
     cp "${KIT_DIR}/infrastructure/pilot/pilot.env.example" "${INSTALL_DIR}/infrastructure/pilot/"

@@ -92,10 +92,10 @@ function goToPage(page) {
 function decisionBadgeClass(decision) {
   return (
     {
-      ALLOW: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-      REVIEW: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300',
-      DENY: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-      UNKNOWN: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
+      ALLOW: 'bg-green-100 text-green-800',
+      REVIEW: 'bg-amber-100 text-amber-800',
+      DENY: 'bg-red-100 text-red-800',
+      UNKNOWN: 'bg-gray-100 text-gray-800',
     }[decision] || 'bg-gray-100 text-gray-600'
   )
 }
@@ -111,10 +111,10 @@ onMounted(() => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+        <h1 class="text-2xl font-bold text-gray-900">
           {{ isReviewQueue ? 'คิวรอตรวจสอบ' : 'ประวัติเหตุการณ์' }}
         </h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400">
+        <p class="text-sm text-gray-500">
           {{
             isReviewQueue
               ? 'เหตุการณ์ที่รอการตรวจสอบจากเจ้าหน้าที่ (EVT-017)'
@@ -147,12 +147,12 @@ onMounted(() => {
 
     <template v-else>
       <div
-        class="bg-white dark:bg-gray-800 p-4 rounded-xl border border-gray-200 dark:border-gray-700 flex flex-wrap gap-4 items-center"
+        class="bg-surface p-4 rounded-xl border border-gray-200 flex flex-wrap gap-4 items-center"
       >
         <select
           v-model="filters.decision"
           @change="applyFilters"
-          class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="px-3 py-2 border rounded-lg text-sm"
         >
           <option value="">ทุกผลการตัดสินใจ</option>
           <option value="ALLOW">ALLOW</option>
@@ -163,7 +163,7 @@ onMounted(() => {
         <select
           v-model="filters.event_type"
           @change="applyFilters"
-          class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="px-3 py-2 border rounded-lg text-sm"
         >
           <option value="">ทุกประเภทเหตุการณ์</option>
           <option value="FACE_RECOGNIZED">FACE_RECOGNIZED</option>
@@ -174,13 +174,13 @@ onMounted(() => {
           v-model="filters.from"
           @change="applyFilters"
           type="datetime-local"
-          class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="px-3 py-2 border rounded-lg text-sm"
         />
         <input
           v-model="filters.to"
           @change="applyFilters"
           type="datetime-local"
-          class="px-3 py-2 border rounded-lg text-sm dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+          class="px-3 py-2 border rounded-lg text-sm"
         />
         <button
           @click="clearFilters"
@@ -197,15 +197,13 @@ onMounted(() => {
         {{ errorMessage }}
       </div>
 
-      <div
-        class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden"
-      >
+      <div class="bg-surface rounded-xl border border-gray-200 overflow-hidden">
         <div v-if="loading" class="text-center py-12 text-gray-500">กำลังโหลด...</div>
         <div v-else-if="events.length === 0" class="text-center py-12 text-gray-400">
           ไม่พบเหตุการณ์
         </div>
-        <table v-else class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
-          <thead class="bg-gray-50 dark:bg-gray-700/50">
+        <table v-else class="min-w-full divide-y divide-gray-200 text-sm">
+          <thead class="bg-gray-50">
             <tr>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">บุคคล</th>
               <th class="px-6 py-3 text-left font-medium text-gray-500 uppercase">ประเภท</th>
@@ -215,23 +213,23 @@ onMounted(() => {
               <th class="px-6 py-3 text-right font-medium text-gray-500 uppercase">การจัดการ</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody class="divide-y divide-gray-200">
             <tr
               v-for="event in events"
               :key="event.uuid"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700/30 cursor-pointer"
+              class="hover:bg-gray-50 cursor-pointer"
               @click="router.push({ name: 'events.show', params: { uuid: event.uuid } })"
             >
               <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900 dark:text-white">
+                <div class="font-semibold text-gray-900">
                   {{ event.person?.display_name || 'ไม่ทราบตัวตน' }}
                 </div>
               </td>
-              <td class="px-6 py-4 text-xs text-gray-600 dark:text-gray-300">
+              <td class="px-6 py-4 text-xs text-gray-600">
                 {{ event.event_type }}
               </td>
               <td class="px-6 py-4 text-xs">
-                <div class="text-gray-800 dark:text-gray-200">{{ event.site?.name || '-' }}</div>
+                <div class="text-gray-800">{{ event.site?.name || '-' }}</div>
                 <div class="text-gray-400">{{ event.camera?.name || '-' }}</div>
               </td>
               <td class="px-6 py-4">
@@ -259,7 +257,7 @@ onMounted(() => {
 
         <div
           v-if="pagination.last_page > 1"
-          class="flex justify-between items-center px-6 py-3 border-t border-gray-200 dark:border-gray-700 text-sm"
+          class="flex justify-between items-center px-6 py-3 border-t border-gray-200 text-sm"
         >
           <span class="text-gray-500">{{ pagination.total }} รายการทั้งหมด</span>
           <div class="space-x-2">

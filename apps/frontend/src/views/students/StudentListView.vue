@@ -226,7 +226,7 @@ onMounted(() => {
         <router-link
           v-if="authStore.can('student.sync')"
           to="/students/rms-sync"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           ซิงก์จาก RMS
         </router-link>
@@ -234,7 +234,7 @@ onMounted(() => {
         <router-link
           v-if="authStore.can('student.import')"
           to="/students/import"
-          class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <svg
             class="-ml-1 mr-2 h-5 w-5 text-gray-500"
@@ -295,7 +295,7 @@ onMounted(() => {
     </div>
 
     <!-- Filter & Search Card -->
-    <div class="rounded-lg bg-white p-4 shadow">
+    <div class="rounded-lg bg-surface p-4 shadow">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <!-- Search Keyword -->
         <div class="lg:col-span-2">
@@ -444,7 +444,7 @@ onMounted(() => {
           <button
             @click="resetFilters"
             type="button"
-            class="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            class="rounded-md border border-gray-300 bg-surface px-3 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             title="ล้างตัวกรองทั้งหมด"
           >
             ล้างตัวกรอง
@@ -454,7 +454,7 @@ onMounted(() => {
     </div>
 
     <!-- Student Table Card -->
-    <div class="rounded-lg bg-white shadow overflow-hidden">
+    <div class="rounded-lg bg-surface shadow overflow-hidden">
       <!-- Loading State -->
       <div v-if="loading" class="p-12 text-center">
         <svg class="mx-auto h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
@@ -565,7 +565,7 @@ onMounted(() => {
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-200">
+          <tbody class="bg-surface divide-y divide-gray-200">
             <tr v-for="s in students" :key="s.uuid" class="hover:bg-gray-50 transition-colors">
               <!-- Student Avatar & Name -->
               <td class="px-6 py-4 whitespace-nowrap">
@@ -640,20 +640,20 @@ onMounted(() => {
       <!-- Pagination -->
       <div
         v-if="pagination.total > 0"
-        class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6"
+        class="flex items-center justify-between border-t border-gray-200 bg-surface px-4 py-3 sm:px-6"
       >
         <div class="flex flex-1 justify-between sm:hidden">
           <button
             @click="changePage(pagination.current_page - 1)"
             :disabled="pagination.current_page <= 1"
-            class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            class="relative inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             ก่อนหน้า
           </button>
           <button
             @click="changePage(pagination.current_page + 1)"
             :disabled="pagination.current_page >= pagination.last_page"
-            class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+            class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
             ถัดไป
           </button>
