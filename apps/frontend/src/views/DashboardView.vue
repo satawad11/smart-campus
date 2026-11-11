@@ -12,6 +12,7 @@ const summary = ref({
   unknown: 0,
   allow: 0,
   deny: 0,
+  unique_persons: 0,
   cameras_online: 0,
   cameras_total: 0,
   ai_nodes_online: 0,
@@ -35,6 +36,33 @@ const totalDecisions = computed(() => {
   return decisionData.value.reduce((acc, curr) => acc + (curr.count || 0), 0)
 })
 
+// GET /dashboard/summary (RPT-005) groups its numbers: { events: {...}, cameras: { online,
+// total }, ai_nodes: { online, total } }. Flatten them for the cards, defaulting to 0.
+function toSummary(data) {
+  const events = data?.events ?? {}
+  const count = (value) => Number(value) || 0
+  return {
+    detected: count(events.detected),
+    recognized: count(events.recognized),
+    review: count(events.review),
+    unknown: count(events.unknown),
+    allow: count(events.allow),
+    deny: count(events.deny),
+    unique_persons: count(data?.unique_persons_recognized),
+    cameras_online: count(data?.cameras?.online),
+    cameras_total: count(data?.cameras?.total),
+    ai_nodes_online: count(data?.ai_nodes?.online),
+    ai_nodes_total: count(data?.ai_nodes?.total),
+  }
+}
+
+// The chart endpoints (RPT-006) return { date | from, to, series: [...] }.
+function seriesOf(data) {
+  return Array.isArray(data?.series) ? data.series : []
+}
+
+const hasHourlyEvents = computed(() => hourlyData.value.some((h) => (h.count || 0) > 0))
+
 async function fetchDashboard() {
   loading.value = true
   error.value = null
@@ -52,11 +80,11 @@ async function fetchDashboard() {
       api.get('/dashboard/events-by-department', { params }),
     ])
 
-    summary.value = sumRes.data.data
-    hourlyData.value = hourRes.data.data || []
-    decisionData.value = decRes.data.data || []
-    cameraData.value = camRes.data.data || []
-    departmentData.value = deptRes.data.data || []
+    summary.value = toSummary(sumRes.data.data)
+    hourlyData.value = seriesOf(hourRes.data.data)
+    decisionData.value = seriesOf(decRes.data.data)
+    cameraData.value = seriesOf(camRes.data.data)
+    departmentData.value = seriesOf(deptRes.data.data)
   } catch (err) {
     // Thai only: backend messages are English, so map known codes instead.
     error.value = errorMessage(err, 'ไม่สามารถโหลดข้อมูลแดชบอร์ดได้ กรุณาลองใหม่อีกครั้ง')
@@ -109,7 +137,7 @@ onMounted(() => {
     </div>
 
     <!-- Metric Cards Grid -->
-    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
       <!-- Detected -->
       <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
         <span class="text-xs font-medium text-gray-500 uppercase">ตรวจพบทั้งหมด</span>
@@ -125,7 +153,9 @@ onMounted(() => {
         <div class="mt-2 text-2xl font-bold text-blue-700">
           {{ summary.recognized.toLocaleString() }}
         </div>
-        <div class="mt-1 text-xs text-blue-500">คนรู้จัก</div>
+        <div class="mt-1 text-xs text-blue-500">
+          {{ summary.unique_persons.toLocaleString() }} คนไม่ซ้ำ
+        </div>
       </div>
 
       <!-- Allow -->
@@ -142,6 +172,24 @@ onMounted(() => {
         <span class="text-xs font-medium text-red-600 uppercase">ปฏิเสธผ่านทาง</span>
         <div class="mt-2 text-2xl font-bold text-red-700">{{ summary.deny.toLocaleString() }}</div>
         <div class="mt-1 text-xs text-red-500">ไม่อนุญาต</div>
+      </div>
+
+      <!-- Review -->
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
+        <span class="text-xs font-medium text-amber-600 uppercase">รอตรวจสอบ</span>
+        <div class="mt-2 text-2xl font-bold text-amber-700">
+          {{ summary.review.toLocaleString() }}
+        </div>
+        <div class="mt-1 text-xs text-amber-500">ต้องให้เจ้าหน้าที่ยืนยัน</div>
+      </div>
+
+      <!-- Unknown -->
+      <div class="bg-surface p-4 rounded-lg shadow-sm border border-gray-200">
+        <span class="text-xs font-medium text-gray-500 uppercase">ไม่ทราบตัวตน</span>
+        <div class="mt-2 text-2xl font-bold text-gray-900">
+          {{ summary.unknown.toLocaleString() }}
+        </div>
+        <div class="mt-1 text-xs text-gray-500">ไม่พบในฐานข้อมูล</div>
       </div>
 
       <!-- Cameras Online -->
@@ -172,7 +220,22 @@ onMounted(() => {
         <div class="mt-2 text-2xl font-bold text-gray-900">
           {{ summary.ai_nodes_online }} / {{ summary.ai_nodes_total }}
         </div>
-        <div class="mt-1 text-xs text-green-600">พร้อมประมวลผล</div>
+        <div
+          class="mt-1 text-xs"
+          :class="
+            summary.ai_nodes_total > 0 && summary.ai_nodes_online === summary.ai_nodes_total
+              ? 'text-green-600'
+              : 'text-amber-600'
+          "
+        >
+          {{
+            summary.ai_nodes_total === 0
+              ? 'ยังไม่ได้ลงทะเบียน'
+              : summary.ai_nodes_online === summary.ai_nodes_total
+                ? 'พร้อมประมวลผล'
+                : 'มีหน่วยออฟไลน์'
+          }}
+        </div>
       </div>
     </div>
 
@@ -183,7 +246,13 @@ onMounted(() => {
         <h2 class="text-base font-semibold text-gray-900 mb-4">
           ปริมาณการเข้า-ออกรายชั่วโมง (วันนี้)
         </h2>
-        <div class="h-64 flex items-end space-x-1 pt-6 pb-2">
+        <div
+          v-if="!hasHourlyEvents"
+          class="h-64 flex items-center justify-center text-sm text-gray-400"
+        >
+          ยังไม่มีการเข้า-ออกวันนี้
+        </div>
+        <div v-else class="h-64 flex items-end space-x-1 pt-6 pb-2">
           <div
             v-for="hour in hourlyData"
             :key="hour.hour"

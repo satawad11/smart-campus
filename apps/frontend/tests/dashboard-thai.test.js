@@ -12,32 +12,35 @@ const LATIN = /[A-Za-z]/
 function mockDashboard() {
   vi.spyOn(api, 'get').mockImplementation((url) => {
     const data = {
+      // Shapes returned by DashboardController / DashboardChartsController.
       '/dashboard/summary': {
-        detected: 120,
-        recognized: 100,
-        review: 8,
-        unknown: 12,
-        allow: 95,
-        deny: 5,
-        cameras_online: 2,
-        cameras_total: 2,
-        ai_nodes_online: 1,
-        ai_nodes_total: 1,
+        date: '2026-09-29',
+        events: { detected: 120, recognized: 100, review: 8, unknown: 12, allow: 95, deny: 5 },
+        unique_persons_recognized: 90,
+        cameras: { online: 2, total: 2 },
+        ai_nodes: { online: 1, total: 1 },
       },
-      '/dashboard/events-by-hour': [
-        { hour: '08:00', count: 40 },
-        { hour: '09:00', count: 12 },
-      ],
-      '/dashboard/events-by-decision': [
-        { decision: 'ALLOW', count: 95 },
-        { decision: 'DENY', count: 5 },
-        { decision: 'REVIEW', count: 8 },
-        { decision: 'UNKNOWN', count: 12 },
-      ],
-      '/dashboard/events-by-camera': [{ camera_uuid: 'c1', camera_name: 'ประตูหน้า', count: 80 }],
-      '/dashboard/events-by-department': [
-        { department_uuid: 'd1', department_name: 'ช่างยนต์', count: 60 },
-      ],
+      '/dashboard/events-by-hour': {
+        date: '2026-09-29',
+        series: [
+          { hour: '08:00', count: 40 },
+          { hour: '09:00', count: 12 },
+        ],
+      },
+      '/dashboard/events-by-decision': {
+        series: [
+          { decision: 'ALLOW', count: 95 },
+          { decision: 'DENY', count: 5 },
+          { decision: 'REVIEW', count: 8 },
+          { decision: 'UNKNOWN', count: 12 },
+        ],
+      },
+      '/dashboard/events-by-camera': {
+        series: [{ camera_uuid: 'c1', camera_name: 'ประตูหน้า', count: 80 }],
+      },
+      '/dashboard/events-by-department': {
+        series: [{ department_uuid: 'd1', department_name: 'ช่างยนต์', count: 60 }],
+      },
     }[url]
     return Promise.resolve({ data: { data } })
   })
@@ -64,6 +67,38 @@ describe('Dashboard shown entirely in Thai', () => {
     expect(text).toContain('รอตรวจสอบ')
     expect(text).toContain('ไม่ทราบตัวตน')
     expect(text).toContain('หน่วยประมวลผลปัญญาประดิษฐ์ออนไลน์')
+    expect(text.match(LATIN)).toBeNull()
+  })
+
+  it('shows zeros and empty states when nothing has happened yet today', async () => {
+    vi.spyOn(api, 'get').mockImplementation((url) => {
+      const data = {
+        '/dashboard/summary': {
+          date: '2026-09-29',
+          events: { detected: 0, recognized: 0, review: 0, unknown: 0, allow: 0, deny: 0 },
+          unique_persons_recognized: 0,
+          cameras: { online: 0, total: 0 },
+          ai_nodes: { online: 0, total: 0 },
+        },
+        '/dashboard/events-by-hour': {
+          date: '2026-09-29',
+          series: Array.from({ length: 24 }, (_, h) => ({
+            hour: `${String(h).padStart(2, '0')}:00`,
+            count: 0,
+          })),
+        },
+      }[url] ?? { from: '2026-09-29', to: '2026-09-29', series: [] }
+      return Promise.resolve({ data: { data } })
+    })
+
+    const wrapper = mount(DashboardView)
+    await flushPromises()
+
+    const text = wrapper.text()
+    expect(wrapper.find('.bg-red-50').exists()).toBe(false)
+    expect(text).toContain('ยังไม่มีการเข้า-ออกวันนี้')
+    expect(text).toContain('ไม่มีข้อมูลการตัดสินใจสำหรับวันนี้')
+    expect(text).toContain('ยังไม่ได้ลงทะเบียน')
     expect(text.match(LATIN)).toBeNull()
   })
 

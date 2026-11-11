@@ -32,17 +32,20 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
       if (url === '/dashboard/summary') {
         return Promise.resolve({
           data: {
+            // Shape returned by DashboardController::summary (RPT-005).
             data: {
-              detected: 150,
-              recognized: 120,
-              review: 10,
-              unknown: 20,
-              allow: 110,
-              deny: 20,
-              cameras_online: 8,
-              cameras_total: 10,
-              ai_nodes_online: 2,
-              ai_nodes_total: 2,
+              date: '2026-09-29',
+              events: {
+                detected: 150,
+                recognized: 120,
+                review: 10,
+                unknown: 20,
+                allow: 110,
+                deny: 20,
+              },
+              unique_persons_recognized: 95,
+              cameras: { online: 8, total: 10 },
+              ai_nodes: { online: 2, total: 2 },
             },
           },
         })
@@ -50,32 +53,43 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
       if (url === '/dashboard/events-by-hour') {
         return Promise.resolve({
           data: {
-            data: [
-              { hour: '08:00', count: 35 },
-              { hour: '09:00', count: 50 },
-            ],
+            data: {
+              date: '2026-09-29',
+              series: [
+                { hour: '08:00', count: 35 },
+                { hour: '09:00', count: 50 },
+              ],
+            },
           },
         })
       }
       if (url === '/dashboard/events-by-decision') {
         return Promise.resolve({
           data: {
-            data: [
-              { decision: 'ALLOW', count: 110 },
-              { decision: 'DENY', count: 20 },
-            ],
+            data: {
+              series: [
+                { decision: 'ALLOW', count: 110 },
+                { decision: 'DENY', count: 20 },
+              ],
+            },
           },
         })
       }
       if (url === '/dashboard/events-by-camera') {
         return Promise.resolve({
-          data: { data: [{ camera_uuid: 'cam-1', camera_name: 'Main Gate Cam', count: 90 }] },
+          data: {
+            data: { series: [{ camera_uuid: 'cam-1', camera_name: 'Main Gate Cam', count: 90 }] },
+          },
         })
       }
       if (url === '/dashboard/events-by-department') {
         return Promise.resolve({
           data: {
-            data: [{ department_uuid: 'dept-1', department_name: 'Computer Science', count: 70 }],
+            data: {
+              series: [
+                { department_uuid: 'dept-1', department_name: 'Computer Science', count: 70 },
+              ],
+            },
           },
         })
       }
@@ -87,6 +101,8 @@ describe('Module 06 Frontend Views (RPT-019, RPT-020, RPT-021)', () => {
 
     expect(wrapper.text()).toContain('แดชบอร์ดภาพรวมระบบ')
     expect(wrapper.text()).toContain('150')
+    expect(wrapper.text()).toContain('8 / 10')
+    expect(wrapper.text()).toContain('95 คนไม่ซ้ำ')
     expect(wrapper.text()).toContain('Main Gate Cam')
     expect(wrapper.text()).toContain('Computer Science')
   })
