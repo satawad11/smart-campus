@@ -167,26 +167,26 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
 
     <!-- Sidebar -->
     <aside
-      class="fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col border-r border-gray-200 bg-surface transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
+      class="sidebar fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0"
       :class="sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'"
     >
-      <div class="flex h-16 shrink-0 items-center gap-3 border-b border-gray-200 px-5">
+      <div class="sidebar-brand flex h-16 shrink-0 items-center gap-3 px-5">
         <div
-          class="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 text-sm font-bold text-white shadow-md shadow-blue-600/25"
+          class="sidebar-mark flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold text-white"
         >
           สอ
         </div>
         <div class="min-w-0 leading-tight">
-          <p class="truncate text-[15px] font-bold tracking-tight text-gray-900">
+          <p class="sidebar-title truncate text-[15px] font-semibold tracking-tight text-white">
             สถานศึกษาอัจฉริยะ
           </p>
-          <p class="truncate text-xs text-gray-500">ความปลอดภัยและการเข้าออก</p>
+          <p class="truncate text-xs text-white/50">ความปลอดภัยและการเข้าออก</p>
         </div>
       </div>
 
       <nav class="flex-1 space-y-6 overflow-y-auto px-3 py-5">
         <div v-for="section in visibleSections" :key="section.title">
-          <p class="mb-2 px-3 text-[11px] font-semibold tracking-wider text-gray-400">
+          <p class="mb-2 px-3 text-[11px] font-semibold tracking-wider text-white/35">
             {{ section.title }}
           </p>
           <div class="space-y-0.5">
@@ -194,12 +194,12 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
               v-for="item in section.items"
               :key="item.to"
               :to="item.to"
-              class="group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              class="nav-item group flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium"
               active-class="nav-active"
               @click="sidebarOpen = false"
             >
               <svg
-                class="h-5 w-5 shrink-0 opacity-80 group-hover:opacity-100"
+                class="nav-icon h-5 w-5 shrink-0"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -220,19 +220,19 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
       </nav>
 
       <!-- User profile in sidebar footer -->
-      <div v-if="authStore.user" class="shrink-0 border-t border-gray-200 p-3">
-        <div class="flex items-center gap-3 rounded-xl bg-gray-50 p-2.5">
+      <div v-if="authStore.user" class="sidebar-footer shrink-0 p-3">
+        <div class="sidebar-user flex items-center gap-3 rounded-xl p-2.5">
           <div
-            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700"
+            class="sidebar-avatar flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white"
             aria-hidden="true"
           >
             {{ avatarInitial }}
           </div>
           <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-semibold text-gray-900">
+            <p class="truncate text-sm font-semibold text-white">
               {{ displayName }}
             </p>
-            <p class="truncate text-xs text-gray-500">
+            <p class="truncate text-xs text-white/50">
               {{
                 authStore.user.roles?.map((r) => roleLabel(r)).join(', ') || authStore.user.username
               }}
@@ -242,7 +242,7 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
             @click="handleLogout"
             title="ออกจากระบบ"
             aria-label="ออกจากระบบ"
-            class="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            class="rounded-lg p-1.5 text-white/45 transition hover:bg-white/10 hover:text-red-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400"
           >
             <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
@@ -260,7 +260,7 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
     <!-- Main Content Area -->
     <div class="flex min-w-0 flex-1 flex-col">
       <header
-        class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-surface/85 px-4 backdrop-blur-md sm:px-6"
+        class="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-gray-200/70 bg-surface/75 px-4 backdrop-blur-xl backdrop-saturate-150 sm:px-6"
       >
         <div class="flex min-w-0 items-center gap-3">
           <button
@@ -278,7 +278,7 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
               />
             </svg>
           </button>
-          <div class="hidden truncate text-sm font-medium text-gray-500 sm:block">
+          <div class="hidden truncate text-sm font-medium tracking-tight text-gray-500 sm:block">
             ระบบบริหารจัดการความปลอดภัยและควบคุมการเข้าออก
           </div>
         </div>
@@ -318,10 +318,92 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
 </template>
 
 <style scoped>
-.nav-active {
-  background-color: var(--color-blue-50);
-  color: var(--text-color-blue-700);
+/* Premium navy sidebar: fixed palette in both light and dark themes. */
+.sidebar {
+  background:
+    radial-gradient(120% 40% at 0% 0%, oklch(30% 0.09 268 / 0.9), transparent 70%),
+    linear-gradient(180deg, oklch(20% 0.045 268), oklch(15.5% 0.032 270));
+  border-right: 1px solid rgb(255 255 255 / 0.06);
+  color: rgb(255 255 255 / 0.9);
+}
+
+.sidebar-brand {
+  border-bottom: 1px solid rgb(255 255 255 / 0.07);
+}
+
+.sidebar-mark {
+  background: linear-gradient(135deg, oklch(62% 0.2 262), oklch(52% 0.24 282));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.16) inset,
+    0 8px 20px -6px oklch(55% 0.22 268 / 0.75);
+  font-family: var(--font-display);
+}
+
+.sidebar-title {
+  font-family: var(--font-display);
+}
+
+.sidebar nav {
+  scrollbar-color: rgb(255 255 255 / 0.15) transparent;
+}
+
+.nav-item {
+  position: relative;
+  color: rgb(255 255 255 / 0.62);
+}
+.nav-item:hover {
+  background-color: rgb(255 255 255 / 0.06);
+  color: #fff;
+}
+.nav-item:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px oklch(70% 0.15 255);
+}
+.nav-icon {
+  opacity: 0.75;
+  transition: opacity 160ms ease;
+}
+.nav-item:hover .nav-icon {
+  opacity: 1;
+}
+
+.nav-active,
+.nav-active:hover {
+  background: linear-gradient(
+    90deg,
+    oklch(58% 0.2 264 / 0.32),
+    oklch(58% 0.2 264 / 0.1) 70%,
+    transparent
+  );
+  color: #fff;
   font-weight: 600;
-  box-shadow: inset 3px 0 0 var(--color-blue-600);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.nav-active::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: oklch(72% 0.15 250);
+  box-shadow: 0 0 12px oklch(72% 0.15 250 / 0.8);
+}
+.nav-active .nav-icon {
+  opacity: 1;
+  color: oklch(80% 0.11 245);
+}
+
+.sidebar-footer {
+  border-top: 1px solid rgb(255 255 255 / 0.07);
+}
+.sidebar-user {
+  background-color: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+.sidebar-avatar {
+  background: linear-gradient(135deg, oklch(64% 0.17 250), oklch(55% 0.2 285));
+  box-shadow: 0 0 0 2px rgb(255 255 255 / 0.12);
 }
 </style>
