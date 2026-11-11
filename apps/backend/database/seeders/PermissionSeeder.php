@@ -336,6 +336,13 @@ class PermissionSeeder extends Seeder
                 'name' => 'Manage System Settings',
                 'description' => 'Modify platform configurations and system parameters',
             ],
+            [
+                // ACR-OPS-01: SUPER_ADMIN only (see RolePermissionSeeder::SUPER_ADMIN_ONLY).
+                'code' => 'system.update',
+                'module' => 'system',
+                'name' => 'Update System Version',
+                'description' => 'View available releases and start a system update from the web app',
+            ],
         ];
     }
 }
