@@ -19,6 +19,12 @@ GITHUB_API="${GITHUB_API:-https://api.github.com}"
 
 fail() { printf '\033[31m%s\033[0m\n' "$*" >&2; exit 1; }
 
+# A reply typed over SSH from Windows (OpenSSH, PuTTY) can carry a CR or
+# terminal escape bytes, so "y" did not match and an update was cancelled.
+# Keep ASCII letters only before comparing.
+norm_answer() { printf '%s' "$1" | LC_ALL=C tr -cd 'A-Za-z' | LC_ALL=C tr 'A-Z' 'a-z'; }
+is_yes() { case "$(norm_answer "$1")" in y|yes) return 0 ;; *) return 1 ;; esac; }
+
 need_root() { [ "$(id -u)" -eq 0 ] || fail "ต้องรันด้วย sudo"; }
 
 load_update_env() {
@@ -60,9 +66,11 @@ update_setup() {
     need_root
     local repo token
     read -r -p "GitHub repository [${GITHUB_REPO:-satawad11/smart-campus}]: " repo
+    repo="$(printf '%s' "${repo}" | LC_ALL=C tr -d '[:space:][:cntrl:]')"
     repo="${repo:-${GITHUB_REPO:-satawad11/smart-campus}}"
     printf 'GitHub token แบบอ่านอย่างเดียว (Contents: Read-only) เว้นว่างถ้าเป็น repo สาธารณะ: '
     read -r -s token; printf '\n'
+    token="$(printf '%s' "${token}" | LC_ALL=C tr -d '[:space:][:cntrl:]')"
     umask 077
     printf 'GITHUB_REPO=%s\nGITHUB_TOKEN=%s\n' "${repo}" "${token}" > "${UPDATE_ENV}"
     chmod 600 "${UPDATE_ENV}"
@@ -141,7 +149,7 @@ update_run() {
     printf '%s' "${release}" | release_field body | sed -n '1,15p' | sed 's/^/  │ /'
     if [ "${assume_yes}" -eq 0 ]; then
         local a; read -r -p "ระบบจะสำรองข้อมูลก่อน แล้วปิดให้บริการชั่วคราวระหว่างอัปเดต ดำเนินการต่อ? [y/N]: " a
-        case "${a}" in y|Y|yes|YES) ;; *) printf 'ยกเลิก\n'; return 0 ;; esac
+        is_yes "${a}" || { printf 'ยกเลิก\n'; return 0; }
     fi
 
     mkdir -p "${RELEASES_DIR}"; chmod 700 "${RELEASES_DIR}"
@@ -184,7 +192,7 @@ rollback() {
     printf '\033[33mหมายเหตุ:\033[0m ฐานข้อมูลไม่ถูกย้อนกลับ ถ้ารุ่นใหม่เปลี่ยนโครงสร้างฐานข้อมูลจนรุ่นเดิมใช้ไม่ได้\n'
     printf 'ให้กู้จากไฟล์สำรองที่ทำก่อนอัปเดต ตามเอกสาร UPGRADE_AND_ROLLBACK\n'
     read -r -p "ดำเนินการต่อ? [y/N]: " a
-    case "${a}" in y|Y|yes|YES) ;; *) printf 'ยกเลิก\n'; return 0 ;; esac
+    is_yes "${a}" || { printf 'ยกเลิก\n'; return 0; }
     for img in backend frontend ai-service; do
         docker tag "smart-campus/${img}:rollback-${stamp}" "smart-campus/${img}:pilot"
     done

@@ -74,7 +74,10 @@ ask() { # ask VAR "question" default
 confirm() { # confirm "question" -> 0 yes
     [ "${ASSUME_YES}" -eq 1 ] && return 0
     local a; read -r -p "  $1 [Y/n]: " a
-    case "${a}" in n|N|no|NO) return 1 ;; *) return 0 ;; esac
+    # Letters only: a CR or escape bytes from a Windows SSH client must not
+    # turn an "n" into the default yes.
+    a="$(printf '%s' "${a}" | LC_ALL=C tr -cd 'A-Za-z' | LC_ALL=C tr 'A-Z' 'a-z')"
+    case "${a}" in n|no) return 1 ;; *) return 0 ;; esac
 }
 
 dc() {

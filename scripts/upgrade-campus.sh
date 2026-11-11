@@ -68,7 +68,8 @@ fi
 
 if [ "${DRY_RUN}" -eq 0 ] && [ "${ASSUME_YES}" -eq 0 ]; then
   read -r -p "Upgrade this instance from ${PREVIOUS_REF} to ${TAG}? [y/N] " answer
-  [ "${answer}" = "y" ] || [ "${answer}" = "Y" ] || { echo "aborted"; exit 1; }
+  answer="$(printf '%s' "${answer}" | LC_ALL=C tr -cd 'A-Za-z' | LC_ALL=C tr 'A-Z' 'a-z')"
+  [ "${answer}" = "y" ] || [ "${answer}" = "yes" ] || { echo "aborted"; exit 1; }
 fi
 
 echo "== 1. Verified backup before any change"
