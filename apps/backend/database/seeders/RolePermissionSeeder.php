@@ -15,7 +15,7 @@ class RolePermissionSeeder extends Seeder
      *
      * @var list<string>
      */
-    public const SUPER_ADMIN_ONLY = ['system.update'];
+    public const SUPER_ADMIN_ONLY = ['system.update', 'integration.manage'];
 
     /**
      * Seed canonical role-permission assignment matrix.

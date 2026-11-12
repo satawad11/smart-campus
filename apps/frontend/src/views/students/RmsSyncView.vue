@@ -182,12 +182,13 @@ onBeforeUnmount(() => clearTimeout(pollTimer))
         <span :class="meta.configured ? 'text-green-700' : 'text-red-700'">
           {{ meta.configured ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่ากุญแจ RMS' }}
         </span>
+        <span class="text-gray-500"> (ตั้งค่าที่เมนู ผู้ดูแลระบบ → การเชื่อมต่อระบบภายนอก)</span>
       </p>
       <p>
         ซิงก์อัตโนมัติรายวัน:
         {{
           meta.schedule_enabled
-            ? `เปิด (${meta.schedule_cron})`
+            ? `เปิด (${meta.schedule_time ? `ทุกวัน ${meta.schedule_time} น.` : meta.schedule_cron})`
             : 'ปิด (เปิดได้หลังตรวจผลทดลองซิงก์)'
         }}
       </p>

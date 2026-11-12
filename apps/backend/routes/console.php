@@ -1,6 +1,7 @@
 <?php
 
 use App\Services\Camera\AiNodeCommandService;
+use App\Services\Integration\Rms\RmsConnectionSettings;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -51,8 +52,14 @@ if (config('backup.schedule.enabled')) {
 }
 
 // ACR-INT-01: daily RMS student/staff sync. Off until the operator has
-// reviewed a dry run (rms:sync --dry-run) and set RMS_SYNC_ENABLED=true.
-if (config('rms.sync.enabled')) {
-    Schedule::command('rms:sync --scheduled')
-        ->cron(config('rms.sync.cron'))->withoutOverlapping(60);
+// reviewed a dry run (rms:sync --dry-run) and turned it on, either with
+// RMS_SYNC_ENABLED=true or from the web app (ACR-INT-02, saved values win;
+// read on every scheduler run, so a change applies without a restart). The
+// database is read only by the schedule commands, not by every artisan call.
+if (app()->runningConsoleCommand('schedule:run', 'schedule:work', 'schedule:list', 'schedule:test')) {
+    $rmsConnection = RmsConnectionSettings::current();
+    if ($rmsConnection->syncEnabled) {
+        Schedule::command('rms:sync --scheduled')
+            ->cron($rmsConnection->syncCron)->withoutOverlapping(60);
+    }
 }

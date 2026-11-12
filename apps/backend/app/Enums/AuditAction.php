@@ -97,6 +97,10 @@ enum AuditAction: string
     case RMS_SYNC_COMPLETED = 'RMS_SYNC_COMPLETED';
     case RMS_SYNC_FAILED = 'RMS_SYNC_FAILED';
 
+    // External API connections set from the web app (ACR-INT-02)
+    case INTEGRATION_UPDATED = 'INTEGRATION_UPDATED';
+    case INTEGRATION_TESTED = 'INTEGRATION_TESTED';
+
     // Commercial — remote node operations (COM-03)
     case AI_NODE_COMMAND_REQUESTED = 'AI_NODE_COMMAND_REQUESTED';
     case AI_NODE_COMMAND_COMPLETED = 'AI_NODE_COMMAND_COMPLETED';
