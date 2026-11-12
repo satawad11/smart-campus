@@ -246,5 +246,40 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
 
 [ ] [R] DOOR-* Door Access Control
 [ ] [R] VIS-* Visitor/Parent
-[ ] [R] VEH-* Vehicle + ALPR
+[ ] [R] VEH-* Vehicle + ALPR — proposed in ACR-VEH-01, see the two sections below
 [ ] [R] AIA-* AI Assistant + Advanced Analytics
+
+# PHASE 4 — VEHICLE + ALPR (ACR-VEH-01 PROPOSED, NOT APPROVED — do not start)
+
+Face stays the primary identifier. Plate reading is optional: system flag `feature.alpr` plus
+per-camera `plate_recognition_enabled`, both fail closed.
+
+[ ] [R] VEH-001 Unlock `vehicle`/`alpr` from LOCKED_V1_FEATURES (kill switches stay); update preflight, SEC-024 and DEPLOYMENT flag lists
+[ ] [R] VEH-002 Create vehicles and vehicle_ownership_histories schemas (append-only history, UUIDs)
+[ ] [R] VEH-003 Thai plate normalisation and province code list (shared backend/AI rules + tests)
+[ ] [R] VEH-004 Vehicle registry APIs + permissions vehicle.view / vehicle.manage, audited
+[ ] [R] VEH-005 Add cameras.plate_recognition_enabled and sync it to nodes (CAM-015 path)
+[ ] [R] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
+[ ] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)
+[ ] [R] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle)
+[ ] [R] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
+[ ] [R] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
+[ ] [R] VEH-011 Vehicle management UI (จัดการยานพาหนะ) and camera toggle "อ่านป้ายทะเบียน"
+[ ] [R] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
+[ ] [R] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
+[ ] [R] VEH-014 Benchmark face+plate load per node; Phase 4 acceptance tests
+
+# PHASE 5 — FACE-FIRST SMART GATE (ACR-VEH-01 PROPOSED, NOT APPROVED — do not start)
+
+Decision and notification only. Physical barrier control needs Phase 2 and its own ACR.
+
+[ ] [R] GATE-001 Create gates and gate_cameras schemas (camera role FACE / PLATE / BOTH)
+[ ] [R] GATE-002 Gate management APIs and UI
+[ ] [R] GATE-003 Create gate_passes schema (links events, never modifies them)
+[ ] [R] GATE-004 Face + plate correlation service within the gate time window
+[ ] [R] GATE-005 Extend AccessContext with gate, vehicle, ownership link and match_result
+[ ] [R] GATE-006 Seed FACE_PRIMARY gate policies (decision D2)
+[ ] [R] GATE-007 Gate pass decisions in Live Monitor, notifications and review queue
+[ ] [R] GATE-008 Gate pass history search and reports
+[ ] [R] GATE-009 Correlation edge cases: two cars, tailgating, out-of-order and late events
+[ ] [R] GATE-010 Smart Gate acceptance tests and pilot runbook update
