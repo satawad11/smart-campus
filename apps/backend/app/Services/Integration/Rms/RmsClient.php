@@ -21,12 +21,18 @@ class RmsClient
         private readonly int $maxRetryAfterSeconds = 60,
     ) {}
 
+    /**
+     * The connection in effect: values saved from the web app (ACR-INT-02)
+     * over .env/config (RmsConnectionSettings).
+     */
     public static function fromConfig(): self
     {
+        $settings = RmsConnectionSettings::current();
+
         return new self(
-            (string) config('rms.url'),
-            config('rms.key'),
-            (int) config('rms.timeout_seconds', 30),
+            $settings->url,
+            $settings->key,
+            $settings->timeoutSeconds,
             (int) config('rms.page_limit', 500),
             (int) config('rms.max_retry_after_seconds', 60),
         );
@@ -46,10 +52,10 @@ class RmsClient
     public function get(string $resource, array $query = []): array
     {
         if (! $this->configured()) {
-            throw new RmsApiException('no_key', 'RMS_API_KEY is not set.');
+            throw new RmsApiException('no_key', 'The RMS API key is not set.');
         }
         if (! str_starts_with($this->url, 'https://')) {
-            throw new RmsApiException('https_required', 'RMS_API_URL must use https://.');
+            throw new RmsApiException('https_required', 'The RMS API URL must use https://.');
         }
 
         $params = ['v' => 1, 'res' => $resource, ...$query];

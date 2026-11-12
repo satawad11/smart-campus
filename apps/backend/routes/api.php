@@ -26,6 +26,7 @@ use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
+use App\Http\Controllers\Integration\IntegrationConnectionController;
 use App\Http\Controllers\Integration\RmsSyncController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Report\DashboardChartsController;
@@ -202,6 +203,16 @@ Route::middleware(['auth:web', 'active', 'session.active', 'permission:student.s
     Route::get('/integrations/rms/sync-runs', [RmsSyncController::class, 'index']);
     Route::get('/integrations/rms/sync-runs/{rmsSyncRun}', [RmsSyncController::class, 'show']);
     Route::post('/integrations/rms/sync-runs', [RmsSyncController::class, 'store'])->middleware('throttle:6,1');
+});
+
+/*
+| External API connections set from the web app (ACR-INT-02). The API key is
+| write-only and never returned. Read: system.view; change/test: integration.manage.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/integrations', [IntegrationConnectionController::class, 'index'])->middleware('permission:system.view');
+    Route::put('/integrations/rms', [IntegrationConnectionController::class, 'updateRms'])->middleware('permission:integration.manage');
+    Route::post('/integrations/rms/test', [IntegrationConnectionController::class, 'testRms'])->middleware(['permission:integration.manage', 'throttle:6,1']);
 });
 
 /*

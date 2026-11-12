@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Integration;
 use App\Http\Controllers\Controller;
 use App\Jobs\RunRmsSyncJob;
 use App\Models\RmsSyncRun;
-use App\Services\Integration\Rms\RmsClient;
+use App\Services\Integration\Rms\RmsConnectionSettings;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -17,14 +17,16 @@ class RmsSyncController extends Controller
 {
     public function index(): JsonResponse
     {
+        $connection = RmsConnectionSettings::current();
         $runs = RmsSyncRun::with('createdBy:id,username')->latest('id')->limit(20)->get();
 
         return response()->json([
             'data' => $runs->map(fn (RmsSyncRun $run) => $this->present($run, withIssues: false)),
             'meta' => [
-                'configured' => RmsClient::fromConfig()->configured(),
-                'schedule_enabled' => (bool) config('rms.sync.enabled'),
-                'schedule_cron' => config('rms.sync.cron'),
+                'configured' => $connection->configured(),
+                'schedule_enabled' => $connection->syncEnabled,
+                'schedule_cron' => $connection->syncCron,
+                'schedule_time' => $connection->syncTime,
                 'running' => RmsSyncRun::where('status', RmsSyncRun::RUNNING)->where('started_at', '>', now()->subHour())->exists(),
             ],
         ]);

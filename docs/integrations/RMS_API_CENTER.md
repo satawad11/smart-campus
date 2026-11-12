@@ -18,7 +18,9 @@ document "RMS API Center v1" (2026). Read-only JSON over HTTPS.
   10 wrong keys in 15 minutes block the caller for 15 minutes.
 - Cache and refresh at most hourly or daily; never call RMS per page view or from the browser.
 - Student data are personal data of mostly minors: use only what the data-sharing agreement allows.
-- The key lives in `apps/backend/.env` (`RMS_API_KEY`), never in git, logs or the frontend.
+- The key is set from the web app (ผู้ดูแลระบบ → การเชื่อมต่อระบบภายนอก, ACR-INT-02): stored
+  encrypted, write-only, never returned to the browser or written to logs. `RMS_API_KEY` in
+  `apps/backend/.env` remains the fallback when nothing is saved there. Never in git.
 
 ## Resources and the fields we would use
 
@@ -69,7 +71,7 @@ docker compose exec backend php artisan rms:sync             # real run
 
 Or Students -> "ซิงก์จาก RMS" in the web UI (permission `student.sync`). Review the dry-run
 report (unmapped majors, new departments, students missing from RMS) before the first real run,
-then set `RMS_SYNC_ENABLED=true` for the daily run.
+then turn on the daily run on the การเชื่อมต่อระบบภายนอก page (or `RMS_SYNC_ENABLED=true`).
 
 ## Run the preview
 

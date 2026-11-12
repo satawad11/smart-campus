@@ -147,6 +147,7 @@ class RbacSeederTest extends TestCase
                 'system.view',
                 'system.manage',
                 'system.update', // ACR-OPS-01
+                'integration.manage', // ACR-INT-02
             ],
         ];
 
@@ -161,14 +162,14 @@ class RbacSeederTest extends TestCase
             }
         }
 
-        $this->assertSame(46, $totalExpected);
-        $this->assertCount(46, Permission::all());
+        $this->assertSame(47, $totalExpected);
+        $this->assertCount(47, Permission::all());
     }
 
     public function test_permission_codes_are_unique(): void
     {
         $codes = Permission::pluck('code')->all();
-        $this->assertCount(46, $codes);
+        $this->assertCount(47, $codes);
         $this->assertSame($codes, array_unique($codes));
     }
 
@@ -177,7 +178,7 @@ class RbacSeederTest extends TestCase
         $superAdmin = Role::where('code', 'SUPER_ADMIN')->firstOrFail();
         $permissions = $superAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(46, $permissions);
+        $this->assertCount(47, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -187,11 +188,13 @@ class RbacSeederTest extends TestCase
         $systemAdmin = Role::where('code', 'SYSTEM_ADMIN')->firstOrFail();
         $permissions = $systemAdmin->permissions->pluck('code')->all();
 
-        // Everything except the SUPER_ADMIN-only system.update (ACR-OPS-01).
+        // Everything except the SUPER_ADMIN-only system.update (ACR-OPS-01)
+        // and integration.manage (ACR-INT-02).
         $this->assertCount(45, $permissions);
-        $allPermissions = Permission::where('code', '!=', 'system.update')->pluck('code')->all();
+        $allPermissions = Permission::whereNotIn('code', ['system.update', 'integration.manage'])->pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
         $this->assertNotContains('system.update', $permissions);
+        $this->assertNotContains('integration.manage', $permissions);
     }
 
     public function test_discipline_officer_receives_expected_and_no_prohibited_permissions(): void
@@ -356,8 +359,8 @@ class RbacSeederTest extends TestCase
         $initialRoleUuids = Role::pluck('uuid', 'code')->all();
 
         $this->assertSame(5, $initialRoleCount);
-        $this->assertSame(46, $initialPermCount);
-        $this->assertSame(46 + 45 + 13 + 6 + 3, $initialPivotCount); // 113 assignments (SUPER_ADMIN-only system.update)
+        $this->assertSame(47, $initialPermCount);
+        $this->assertSame(47 + 45 + 13 + 6 + 3, $initialPivotCount); // 114 assignments (SUPER_ADMIN-only system.update, integration.manage)
 
         // Run seeders again
         $this->seed(DatabaseSeeder::class);

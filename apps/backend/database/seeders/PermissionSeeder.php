@@ -343,6 +343,13 @@ class PermissionSeeder extends Seeder
                 'name' => 'Update System Version',
                 'description' => 'View available releases and start a system update from the web app',
             ],
+            [
+                // ACR-INT-02: SUPER_ADMIN only (see RolePermissionSeeder::SUPER_ADMIN_ONLY).
+                'code' => 'integration.manage',
+                'module' => 'system',
+                'name' => 'Manage External Integrations',
+                'description' => 'Set and test external API connections (RMS) and their API keys',
+            ],
         ];
     }
 }

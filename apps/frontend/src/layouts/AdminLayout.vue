@@ -62,6 +62,9 @@ const ICONS = {
   warning: [
     'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z',
   ],
+  link: [
+    'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1',
+  ],
   update: [
     'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
   ],
@@ -125,6 +128,13 @@ const NAV_SECTIONS = [
     title: 'ผู้ดูแลระบบ',
     items: [
       { to: '/settings', label: 'การตั้งค่าระบบ', icon: 'settings', perm: 'system.view' },
+      // ACR-INT-02: external API connections (RMS)
+      {
+        to: '/integrations',
+        label: 'การเชื่อมต่อระบบภายนอก',
+        icon: 'link',
+        perm: 'system.view',
+      },
       { to: '/system/license', label: 'สิทธิ์การใช้งานระบบ', icon: 'shield', perm: 'system.view' },
       // ACR-OPS-01: SUPER_ADMIN only (system.update)
       { to: '/system/update', label: 'อัปเดตระบบ', icon: 'update', perm: 'system.update' },

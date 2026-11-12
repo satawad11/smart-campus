@@ -238,6 +238,9 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
     automated tests pass; end-to-end run on a real campus server with systemd still PENDING HOST
 [x] OPS-002 Read host update configuration as validated data; never source update.env as shell
 [x] OPS-003 Block dependency scans on high/critical advisories; keep lower severities advisory-only
+[x] INT-002 External API connection settings page (การเชื่อมต่อระบบภายนอก): RMS address, encrypted write-only key,
+    timeout, daily sync time, connection test — ACR-INT-02 APPROVED 2026-11-12
+    (docs/decisions/ACR-INT-02-INTEGRATION-SETTINGS-UI.md); live test against RMS still PENDING HOST
 
 # FUTURE — LOCKED UNTIL APPROVAL
 

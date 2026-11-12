@@ -263,6 +263,13 @@ const routes = [
         meta: { requiresAuth: true, permission: 'system.view' },
       },
       {
+        // ACR-INT-02: external API connections (RMS). Edit needs integration.manage.
+        path: 'integrations',
+        name: 'integrations.index',
+        component: () => import('@/views/system/IntegrationsView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
+      {
         path: 'system/health',
         name: 'system.health',
         component: () => import('@/views/system/SystemHealthView.vue'),
