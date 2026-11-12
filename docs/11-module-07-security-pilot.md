@@ -22,8 +22,8 @@ Backend and frontend must enforce flags.
 Production V1 keeps:
 - DOOR false
 - VISITOR false
-- VEHICLE false
-- ALPR false
+- VEHICLE false by default — optional since ACR-VEH-01 (approved 2026-11-12)
+- ALPR false by default — optional since ACR-VEH-01 (approved 2026-11-12)
 - AI_ASSISTANT false
 
 ## Security Hardening

@@ -57,3 +57,13 @@
 1. **Maintain Fail-Closed Actuator Flags**: In production environment configurations, `FEATURE_DOOR_ENABLED`, `FEATURE_VISITOR_ENABLED`, `FEATURE_VEHICLE_ENABLED`, `FEATURE_ALPR_ENABLED`, and `FEATURE_AI_ASSISTANT_ENABLED` must remain explicitly set to `false`.
 2. **Execute Initial Live Baseline Backup**: Run `php artisan backup:run --type=ALL --verify` immediately following the live pilot migration and seeding.
 3. **Pilot Operator Onboarding**: Complete mandatory operator walkthrough with the designated campus security and discipline staff using the pilot runbook prior to live gate enablement.
+
+---
+
+## Amendment 2026-11-12 — ACR-VEH-01
+
+The review above is kept as written. Since ACR-VEH-01 (approved by the project owner on 2026-11-12),
+`vehicle` and `alpr` are optional modules instead of locked ones: they stay off by default, their
+`FEATURE_VEHICLE_ENABLED` / `FEATURE_ALPR_ENABLED` kill switches still force them off when `false`, and
+`pilot:preflight` requires both variables to be set explicitly. `door`, `visitor` and `ai_assistant`
+remain locked under the original conditions. Physical actuation of any kind is still out of scope.

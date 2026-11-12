@@ -10,7 +10,9 @@ use Illuminate\Support\Facades\Cache;
  *
  * Enforces feature gate checks at the backend level.
  * Features default to FAIL-CLOSED (disabled) unless explicitly enabled in approved system settings.
- * Production V1 strictly locks: door, visitor, vehicle, alpr, ai_assistant.
+ * Production V1 strictly locks: door, visitor, ai_assistant.
+ * vehicle and alpr were unlocked by ACR-VEH-01 (approved 2026-11-12): they stay disabled by
+ * default but an administrator may enable them; their environment kill switches still apply.
  */
 class FeatureFlagService
 {
@@ -20,10 +22,27 @@ class FeatureFlagService
     public const LOCKED_V1_FEATURES = [
         'door',
         'visitor',
-        'vehicle',
-        'alpr',
         'ai_assistant',
     ];
+
+    /**
+     * Approved optional modules (ACR-VEH-01): off by default, may be enabled by an
+     * administrator, and can always be forced off with their FEATURE_*_ENABLED variable.
+     */
+    public const OPTIONAL_FEATURES = [
+        'vehicle',
+        'alpr',
+    ];
+
+    /**
+     * Every feature that has an environment kill switch.
+     *
+     * @return list<string>
+     */
+    public static function killSwitchFeatures(): array
+    {
+        return [...self::LOCKED_V1_FEATURES, ...self::OPTIONAL_FEATURES];
+    }
 
     public function __construct(
         private readonly SystemSettingService $settingService,
@@ -81,8 +100,8 @@ class FeatureFlagService
                 $flags[$featureName] = (bool) $setting['value'];
             }
 
-            // Ensure locked V1 features are always present
-            foreach (self::LOCKED_V1_FEATURES as $locked) {
+            // Ensure locked and optional features are always present
+            foreach (self::killSwitchFeatures() as $locked) {
                 if (! isset($flags[$locked])) {
                     $flags[$locked] = false;
                 }
@@ -102,12 +121,13 @@ class FeatureFlagService
     }
 
     /**
-     * Whether a locked V1 feature is hard-disabled by its FEATURE_*_ENABLED variable.
-     * Only an explicitly false value engages the switch; an unset variable is null.
+     * Whether a locked or optional feature is hard-disabled by its FEATURE_*_ENABLED variable.
+     * Only an explicitly true value releases the switch; an unset variable is null (no switch),
+     * and any other value, including an unparseable one, engages it (fail closed).
      */
     public function isKillSwitchEngaged(string $feature): bool
     {
-        if (! in_array($feature, self::LOCKED_V1_FEATURES, true)) {
+        if (! in_array($feature, self::killSwitchFeatures(), true)) {
             return false;
         }
 
@@ -117,5 +137,14 @@ class FeatureFlagService
         }
 
         return filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) !== true;
+    }
+
+    /**
+     * Whether the FEATURE_*_ENABLED variable of a kill-switch feature is set at all.
+     */
+    public function isKillSwitchConfigured(string $feature): bool
+    {
+        return in_array($feature, self::killSwitchFeatures(), true)
+            && config('features.locked_kill_switches.'.$feature) !== null;
     }
 }

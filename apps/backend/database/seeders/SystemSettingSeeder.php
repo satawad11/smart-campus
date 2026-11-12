@@ -330,7 +330,7 @@ class SystemSettingSeeder extends Seeder
                 'group' => 'FEATURE',
                 'type' => 'boolean',
                 'value' => 'false',
-                'description' => 'Vehicle access control integration (LOCKED in Production V1)',
+                'description' => 'Vehicle registry (optional module, ACR-VEH-01; off by default)',
                 'is_public' => true,
             ],
             [
@@ -338,7 +338,7 @@ class SystemSettingSeeder extends Seeder
                 'group' => 'FEATURE',
                 'type' => 'boolean',
                 'value' => 'false',
-                'description' => 'Automated License Plate Recognition (LOCKED in Production V1)',
+                'description' => 'Licence plate recognition on AI nodes (optional module, ACR-VEH-01; off by default)',
                 'is_public' => true,
             ],
             [

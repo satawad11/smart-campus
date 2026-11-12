@@ -1,7 +1,7 @@
 # ARCHITECTURE_CHANGE_REQUEST — ACR-VEH-01 Vehicle + ALPR (Phase 4) and face-first Smart Gate (Phase 5)
 
-**Status:** PROPOSED — waiting for project-owner approval. No code may be written for VEH-* or GATE-* tasks
-until this file says APPROVED and the open owner decisions (D1–D6) below are answered.
+**Status:** APPROVED by the project owner (chat, 2026-11-12: "Approve as recommended") — alternative A,
+decisions D1–D6 as recommended. Tasks run one at a time in TASKS.md order, starting with VEH-001.
 · **Raised:** 2026-11-12 · **Requested by:** project owner (chat, 2026-11-12: "ดำเนินการตาม แผนในเอกสาร
 (docs/00-system-blueprint.md §18) … Phase 4 = Vehicle + ALPR และ Phase 5 = Smart Gate ที่ใช้ใบหน้าคู่กับทะเบียนรถ")
 
@@ -154,6 +154,9 @@ See `TASKS.md` § "PHASE 4 — VEHICLE + ALPR" and § "PHASE 5 — FACE-FIRST SM
 
 ## Approval
 
-Not approved yet. To approve, the owner states in chat which alternative (A recommended) and
-answers D1–D6 (or "ตามที่แนะนำ"). The approval is then recorded here with the date, and VEH-001
-starts first.
+APPROVED 2026-11-12 by the project owner in chat ("Approve as recommended"):
+
+- Alternative **A** (Phase 4, then Phase 5 decision-only; actuation deferred to a Phase 2 ACR).
+- D1–D6 exactly as in the "Recommended" column above.
+- Still requiring separate human approval later: the ALPR model and its thresholds (VEH-007,
+  after the Thai-plate evaluation and licence check), and any physical barrier control (Phase 2).

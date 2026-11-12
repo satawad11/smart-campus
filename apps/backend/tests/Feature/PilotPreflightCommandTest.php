@@ -37,7 +37,7 @@ class PilotPreflightCommandTest extends TestCase
 
     private function compliantConfig(): void
     {
-        foreach (FeatureFlagService::LOCKED_V1_FEATURES as $feature) {
+        foreach (FeatureFlagService::killSwitchFeatures() as $feature) {
             config(['features.locked_kill_switches.'.$feature => false]);
         }
 
@@ -126,6 +126,27 @@ class PilotPreflightCommandTest extends TestCase
         $this->assertSame(1, $report['exit']);
         $this->assertSame('FAIL', $this->statusOf($report, 'door effectively disabled'));
         $this->assertSame('FAIL', $this->statusOf($report, 'face.recognition.match_threshold = 0.80'));
+    }
+
+    public function test_optional_features_must_be_explicitly_set_and_may_be_enabled(): void
+    {
+        $this->compliantConfig();
+        config(['features.locked_kill_switches.alpr' => null]);
+
+        $report = $this->runPreflight();
+        $this->assertSame(1, $report['exit']);
+        $this->assertSame('FAIL', $this->statusOf($report, 'FEATURE_ALPR_ENABLED explicitly set'));
+        $this->assertSame('PASS', $this->statusOf($report, 'FEATURE_VEHICLE_ENABLED explicitly set'));
+
+        config(['features.locked_kill_switches.alpr' => true]);
+        app(SystemSettingService::class)->updateGroup('FEATURE', ['feature.alpr' => true]);
+
+        $report = $this->runPreflight();
+        $this->assertSame('PASS', $this->statusOf($report, 'FEATURE_ALPR_ENABLED explicitly set'));
+        $this->assertSame('PASS', $this->statusOf($report, 'alpr state'));
+        $this->assertNull($this->statusOf($report, 'alpr effectively disabled'));
+        $this->assertNotContains('FEATURE_ALPR_ENABLED explicitly set',
+            array_column(array_filter($report['checks'], fn ($r) => $r['status'] === 'FAIL'), 'check'));
     }
 
     public function test_backup_check_warns_by_default_and_fails_when_required(): void
