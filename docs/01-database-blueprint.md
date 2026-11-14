@@ -615,5 +615,40 @@ Future, feature-disabled:
 - visitor_profiles
 - visits
 - visitor_passes
-- vehicles
-- vehicle_ownership_histories
+
+## 16. Vehicle Tables (ACR-VEH-01, VEH-002)
+
+Approved optional module (`feature.vehicle`, off by default). Face stays the primary identity; a
+vehicle is linked to persons, never to users or students.
+
+### vehicles
+- id
+- uuid
+- plate_number (normalised Thai plate text, no spaces/dashes; rules in VEH-003)
+- plate_province (province code; list in VEH-003)
+- vehicle_type CAR | MOTORCYCLE | PICKUP | VAN | TRUCK | BUS | OTHER
+- brand nullable
+- model nullable
+- color nullable
+- status ACTIVE | INACTIVE | BLOCKED
+- notes nullable
+- created_by_user_id nullable
+- timestamps
+- deleted_at nullable
+
+Unique `(plate_number, plate_province)` among rows where `deleted_at IS NULL`.
+
+### vehicle_ownership_histories
+- id
+- uuid
+- vehicle_id (restrict delete)
+- person_id (restrict delete)
+- relation OWNER | DRIVER | AUTHORIZED
+- effective_from
+- effective_to nullable
+- reason nullable
+- created_by_user_id nullable
+- created_at
+
+Append-oriented: a row is never rewritten or deleted. The only allowed change is closing it once by
+setting `effective_to` (not earlier than `effective_from`). A vehicle may have several current links.

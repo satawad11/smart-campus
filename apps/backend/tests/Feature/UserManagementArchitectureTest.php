@@ -41,9 +41,10 @@ class UserManagementArchitectureTest extends TestCase
     public function test_no_door_visitor_vehicle_domain_introduced(): void // 58
     {
         // Person (STD-002), StudentProfile (STD-003), and Site/Zone/Camera
-        // (CAM-001) are now legitimate Module 02/04 artifacts; the locked
-        // future modules (Door/Visitor/Vehicle) remain out of scope.
-        foreach (['Door', 'Visitor', 'Vehicle'] as $model) {
+        // (CAM-001) are now legitimate Module 02/04 artifacts. Vehicle became
+        // an approved optional module (ACR-VEH-01, VEH-002); the still-locked
+        // future modules (Door/Visitor) remain out of scope.
+        foreach (['Door', 'Visitor'] as $model) {
             $this->assertFileDoesNotExist(base_path("app/Models/{$model}.php"));
         }
     }

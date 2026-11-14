@@ -8,6 +8,7 @@ use App\Enums\PersonType;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -75,5 +76,14 @@ class Person extends Model
     public function faceProfile(): HasOne
     {
         return $this->hasOne(FaceProfile::class);
+    }
+
+    /**
+     * Vehicle links over time (VEH-002, ACR-VEH-01). Append-only history; use
+     * ->current() for links that apply now.
+     */
+    public function vehicleOwnerships(): HasMany
+    {
+        return $this->hasMany(VehicleOwnershipHistory::class);
     }
 }
