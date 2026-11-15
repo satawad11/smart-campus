@@ -37,7 +37,7 @@ class VehicleSchemaTest extends TestCase
 
     public function test_vehicle_gets_public_uuid_defaults_and_casts(): void
     {
-        $vehicle = Vehicle::create(['plate_number' => '1กข1234', 'plate_province' => 'BKK'])->refresh();
+        $vehicle = Vehicle::create(['plate_number' => '1กข1234', 'plate_province' => 'TH-10'])->refresh();
 
         $this->assertMatchesRegularExpression('/^[0-9a-f-]{36}$/', $vehicle->uuid);
         $this->assertSame('uuid', $vehicle->getRouteKeyName());
@@ -48,18 +48,18 @@ class VehicleSchemaTest extends TestCase
 
     public function test_live_plate_is_unique_per_province_but_soft_deleted_plate_can_be_reused(): void
     {
-        $first = Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'BKK']);
+        $first = Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'TH-10']);
 
         // Same text, other province: a different plate.
-        Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'CMI']);
+        Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'TH-50']);
 
         $this->assertRejectedByDatabase(
-            fn () => Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'BKK']),
+            fn () => Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'TH-10']),
             'Duplicate live plate must be rejected',
         );
 
         $first->delete();
-        $again = Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'BKK']);
+        $again = Vehicle::factory()->create(['plate_number' => '1กข1234', 'plate_province' => 'TH-10']);
 
         $this->assertNotSame($first->id, $again->id);
         $this->assertSame(1, Vehicle::onlyTrashed()->count());

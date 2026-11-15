@@ -25,7 +25,7 @@ class VehicleFactory extends Factory
             'plate_number' => $this->faker->numberBetween(1, 9)
                 .$this->faker->randomElement($letters)
                 .$this->faker->unique()->numberBetween(1000, 9999),
-            'plate_province' => 'BKK',
+            'plate_province' => 'TH-10',
             'vehicle_type' => VehicleType::CAR,
             'brand' => null,
             'model' => null,

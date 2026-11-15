@@ -624,8 +624,12 @@ vehicle is linked to persons, never to users or students.
 ### vehicles
 - id
 - uuid
-- plate_number (normalised Thai plate text, no spaces/dashes; rules in VEH-003)
-- plate_province (province code; list in VEH-003)
+- plate_number (canonical Thai plate text: Arabic digits, no spaces/dashes, e.g. `1กข1234`, `701234`)
+- plate_province (ISO 3166-2:TH province code, e.g. `TH-10` = กรุงเทพมหานคร)
+
+Plate and province rules are defined once in `contracts/thai-plates.json` (VEH-003) and implemented
+in the backend (`App\Support\Vehicles\ThaiPlate`, `ThaiProvince`) and the AI service
+(`app/plates/thai.py`); both test suites check the contract file.
 - vehicle_type CAR | MOTORCYCLE | PICKUP | VAN | TRUCK | BUS | OTHER
 - brand nullable
 - model nullable
