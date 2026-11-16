@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Enums\ImportJobType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Student\UploadStudentImportRequest;
 use App\Http\Resources\ImportErrorResource;
@@ -11,6 +12,7 @@ use App\Services\Audit\AuditRequestContext;
 use App\Services\Student\StudentImportService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Student import intake, validation, and status API (STD-012).
@@ -47,6 +49,7 @@ class StudentImportController extends Controller
      */
     public function show(Request $request, ImportJob $importJob): JsonResponse
     {
+        $this->assertStudentJob($importJob);
         $importJob->loadMissing('creator');
 
         return (new ImportJobResource($importJob))
@@ -59,6 +62,7 @@ class StudentImportController extends Controller
      */
     public function errors(Request $request, ImportJob $importJob): JsonResponse
     {
+        $this->assertStudentJob($importJob);
         $validated = $request->validate([
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'],
@@ -81,6 +85,7 @@ class StudentImportController extends Controller
      */
     public function preview(Request $request, ImportJob $importJob): JsonResponse
     {
+        $this->assertStudentJob($importJob);
         $preview = $this->service->getPreview($importJob);
 
         return response()->json($preview, 200);
@@ -94,6 +99,7 @@ class StudentImportController extends Controller
      */
     public function process(Request $request, ImportJob $importJob): JsonResponse
     {
+        $this->assertStudentJob($importJob);
         $request->validate([
             'conflict_mode' => ['prohibited'],
         ], [
@@ -108,5 +114,16 @@ class StudentImportController extends Controller
         return (new ImportJobResource($job))
             ->response()
             ->setStatusCode(202);
+    }
+
+    /**
+     * Staff import jobs (PPL-004) share import_jobs; they are never reachable
+     * through the student import endpoints.
+     */
+    private function assertStudentJob(ImportJob $job): void
+    {
+        if ($job->type !== ImportJobType::STUDENT) {
+            throw new NotFoundHttpException;
+        }
     }
 }

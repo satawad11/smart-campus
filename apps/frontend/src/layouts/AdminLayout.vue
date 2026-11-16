@@ -16,7 +16,8 @@ const sidebarOpen = ref(false)
 // EVT-022: poll the signed-in user's notification inbox while the console is open.
 watch(
   () => authStore.isAuthenticated,
-  (signedIn) => (signedIn ? notificationsStore.start() : notificationsStore.stop()),
+  (signedIn) =>
+    signedIn ? notificationsStore.start(authStore.user?.uuid) : notificationsStore.stop(),
   { immediate: true },
 )
 onBeforeUnmount(() => notificationsStore.stop())
@@ -111,6 +112,7 @@ const NAV_SECTIONS = [
     items: [
       { to: '/events', label: 'ประวัติเหตุการณ์ / คิวตรวจสอบ', icon: 'events', perm: 'event.view' },
       { to: '/unknown-persons', label: 'บุคคลไม่ทราบตัวตน', icon: 'unknown', perm: 'event.view' },
+      { to: '/attendance', label: 'บันทึกเวลาเข้า-ออก', icon: 'events', perm: 'report.view' },
       { to: '/history', label: 'ค้นหาประวัติการเข้า-ออก', icon: 'search', perm: 'report.view' },
       { to: '/reports', label: 'รายงานและการส่งออก', icon: 'reports', perm: 'report.view' },
     ],

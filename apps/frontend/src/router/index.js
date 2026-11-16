@@ -257,6 +257,13 @@ const routes = [
         meta: { requiresAuth: true, permission: 'report.view' },
       },
       {
+        // Daily time-in / time-out recorded automatically from recognition events.
+        path: 'attendance',
+        name: 'attendance.daily',
+        component: () => import('@/views/reports/AttendanceView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
+      {
         path: 'reports',
         name: 'reports.index',
         component: () => import('@/views/reports/ReportsView.vue'),

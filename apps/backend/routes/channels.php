@@ -21,6 +21,14 @@ use Illuminate\Support\Facades\Broadcast;
 | semantics — a zone assignment doesn't imply the whole site is in scope).
 | An unknown siteUuid is always denied (nothing to be in scope of).
 */
+/*
+| Personal notification push (unknown-person / denied alerts): each user may only
+| listen on their own channel, keyed by their public uuid.
+*/
+Broadcast::channel('user.{userUuid}', function (User $user, string $userUuid) {
+    return $user->uuid === $userUuid && ! $user->must_change_password && ! $user->requiresMfaEnrollment();
+});
+
 Broadcast::channel('site.{siteUuid}', function (User $user, string $siteUuid) {
     $site = Site::where('uuid', $siteUuid)->first();
 

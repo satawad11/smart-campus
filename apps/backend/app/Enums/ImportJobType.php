@@ -8,4 +8,5 @@ namespace App\Enums;
 enum ImportJobType: string
 {
     case STUDENT = 'STUDENT';
+    case STAFF = 'STAFF'; // Module 09, PPL-004
 }

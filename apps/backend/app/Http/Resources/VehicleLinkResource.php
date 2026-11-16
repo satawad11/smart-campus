@@ -32,8 +32,7 @@ class VehicleLinkResource extends JsonResource
                 'uuid' => $this->person->uuid,
                 'person_code' => $this->person->person_code,
                 'person_type' => $this->person->person_type?->value,
-                'display_name' => $this->person->display_name
-                    ?? trim($this->person->first_name.' '.$this->person->last_name),
+                'display_name' => $this->person->displayLabel(),
             ]),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
