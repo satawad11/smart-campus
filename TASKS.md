@@ -254,13 +254,13 @@ Approved by the owner (docs/decisions/OWNER-DECISIONS-2026-11-16.md). Each modul
 feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
-[~] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — spec DRAFT: docs/12-module-09-people-visitor.md
+[~] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — spec ACCEPTED: docs/12-module-09-people-visitor.md
 [ ] [R] VEH-* Vehicle + ALPR (module 10) — needs plate model chosen and licence-checked
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
-## Module 09 — People: staff, visitors, parents (blocked until the spec is accepted)
+## Module 09 — People: staff, visitors, parents
 
-[ ] PPL-001 Owner accepts docs/12-module-09-people-visitor.md (answers its open questions)
+[x] PPL-001 Owner accepts docs/12-module-09-people-visitor.md — ACCEPTED 2026-11-16 with default answers
 [ ] PPL-002 Migrations + models: staff_profiles, guardian_links, visitor_profiles, visits; permissions + role matrix
 [ ] PPL-003 Staff API: CRUD, status change workflow + history, audit
 [ ] PPL-004 Staff import (csv/xlsx) reusing the student import wizard

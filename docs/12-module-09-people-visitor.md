@@ -1,6 +1,7 @@
 # Module 09 — People: Staff, Visitors, Parents
 
-Status: **DRAFT spec — awaiting owner acceptance** (OWNER-DECISIONS-2026-11-16 U2/U3). No code until accepted.
+Status: **ACCEPTED by the owner 2026-11-16** ("Accept, start building"; OWNER-DECISIONS-2026-11-16 U2/U3). The owner
+accepted without answering the open questions, so the defaults below apply until the owner changes them.
 
 ## Goal
 Manage every non-student identity the campus needs to recognise: teachers and staff, parents/guardians, visitors and
@@ -112,7 +113,8 @@ create/check-in/check-out/cancel/expire · automatic visitor face revoke.
 ## Tasks
 See `TASKS.md` → Module 09 (PPL-001 … PPL-012).
 
-## Open questions for the owner
-1. Where does staff data come from: manual entry, CSV import, or RMS (does RMS expose staff)?
-2. Visitor face retention: is 30 days after the last visit right?
-3. Should a visitor without a face profile still be checked in manually at the gate (yes, by default)?
+## Owner answers (defaults, accepted 2026-11-16)
+1. Staff data: **manual entry and CSV/XLSX import**. RMS staff sync is not assumed; it becomes a separate task if RMS
+   exposes staff.
+2. Visitor face retention: **30 days** after the last visit ends (`visitor.face_retention_days`, changeable).
+3. A visitor without a face profile **can be checked in manually** at the gate.
