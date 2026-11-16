@@ -87,7 +87,7 @@ Default roles: SUPER_ADMIN/SYSTEM_ADMIN all; SECURITY_OFFICER `visitor.*`, `visi
 DISCIPLINE_OFFICER `staff.view`, `guardian.view`, `visit.view`.
 
 ## API (additive, `/api/v1`)
-- `GET/POST /staff`, `GET/PUT /staff/{uuid}`, `POST /staff/{uuid}/status`, `POST /staff/import` (csv/xlsx, same
+- `GET/POST /staff`, `GET/PUT /staff/{uuid}`, `POST /staff/{uuid}/status`, `POST /staff/import` (CSV, same
   wizard as students)
 - `GET /students/{uuid}/guardians`, `POST /students/{uuid}/guardians`, `DELETE /guardian-links/{uuid}`,
   `GET/POST /guardians`, `GET/PUT /guardians/{uuid}`

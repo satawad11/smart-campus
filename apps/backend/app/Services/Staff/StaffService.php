@@ -48,13 +48,17 @@ class StaffService
      *     email?: ?string
      * }  $data
      */
-    public function createStaff(array $data, ?User $actor, ?AuditRequestContext $context): StaffProfile
-    {
+    public function createStaff(
+        array $data,
+        ?User $actor,
+        ?AuditRequestContext $context,
+        StatusChangeSource $source = StatusChangeSource::MANUAL,
+    ): StaffProfile {
         $department = $this->resolveDepartment($data['department_uuid'] ?? null);
         $personType = PersonType::from($data['person_type'] ?? PersonType::STAFF->value);
         $now = CarbonImmutable::now();
 
-        return DB::transaction(function () use ($data, $department, $personType, $now, $actor, $context) {
+        return DB::transaction(function () use ($data, $department, $personType, $now, $actor, $context, $source) {
             $this->assertStaffCodeAvailable($data['staff_code']);
 
             $person = Person::create([
@@ -85,7 +89,7 @@ class StaffService
                 'effective_from' => $now,
                 'effective_to' => null,
                 'reason' => null,
-                'source' => StatusChangeSource::MANUAL,
+                'source' => $source,
                 'changed_by_user_id' => $actor?->id,
             ]);
 
@@ -98,6 +102,7 @@ class StaffService
                     'position' => $profile->position,
                     'person_uuid' => $person->uuid,
                     'department_uuid' => $department?->uuid,
+                    'source' => $source->value,
                 ],
                 context: $context, module: 'staff',
             );
@@ -156,10 +161,11 @@ class StaffService
         ?string $reason,
         ?User $actor,
         ?AuditRequestContext $context,
+        StatusChangeSource $source = StatusChangeSource::API,
     ): StaffProfile {
         $effective = CarbonImmutable::now();
 
-        return DB::transaction(function () use ($profile, $newStatus, $reason, $effective, $actor, $context) {
+        return DB::transaction(function () use ($profile, $newStatus, $reason, $effective, $actor, $context, $source) {
             /** @var StaffProfile $locked */
             $locked = StaffProfile::whereKey($profile->getKey())->lockForUpdate()->firstOrFail();
             $oldStatus = $locked->employment_status;
@@ -188,7 +194,7 @@ class StaffService
                 'effective_from' => $effective,
                 'effective_to' => null,
                 'reason' => $reason,
-                'source' => StatusChangeSource::API,
+                'source' => $source,
                 'changed_by_user_id' => $actor?->id,
             ]);
 
@@ -198,6 +204,7 @@ class StaffService
                 newValues: [
                     'employment_status' => $newStatus->value,
                     'reason' => $reason,
+                    'source' => $source->value,
                     'effective_from' => $effective->toIso8601String(),
                 ],
                 context: $context, module: 'staff',

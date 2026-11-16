@@ -108,6 +108,8 @@ Teachers and staff (Module 09, PPL-003; additive, docs/12-module-09-people-visit
 - PUT `/staff/{uuid}` (`staff.update`): names, position, department, phone, email; `staff_code`, `person_type` and status are rejected
 - PATCH `/staff/{uuid}/status` (`staff.status.change`): `{ status: ACTIVE|LEAVE|SUSPENDED|RESIGNED|RETIRED, reason? }`
 - GET `/staff/{uuid}/status-history` (`staff.view`)
+- POST `/staff/import` (`staff.import`): CSV `file`, `conflict_mode` CREATE_ONLY|SKIP_EXISTING|UPDATE_EXISTING. Columns: required `staff_code, first_name, last_name`; optional `person_type, display_name, gender, person_code, position, department_code, phone, email, employment_status`
+- GET `/staff/imports/{uuid}`, `/staff/imports/{uuid}/errors`, `/staff/imports/{uuid}/preview`; POST `/staff/imports/{uuid}/process` (`staff.import`). Staff import jobs are not reachable through the student import endpoints (404).
 
 Staff error codes: `STAFF_CODE_ALREADY_EXISTS` (409), `STAFF_STATUS_NO_OP` (422), `DEPARTMENT_NOT_FOUND`, `DEPARTMENT_INACTIVE` (422).
 
