@@ -101,6 +101,16 @@ Student list filters:
 - sort
 - order
 
+Teachers and staff (Module 09, PPL-003; additive, docs/12-module-09-people-visitor.md):
+- GET `/staff` (`staff.view`): filters `keyword, employment_status, person_type (TEACHER|STAFF), department_uuid, sort, order`
+- POST `/staff` (`staff.create`): `{ person: {first_name, last_name, display_name?, gender?, person_code?}, person_type?, staff_code, position?, department_uuid?, phone?, email? }`; status starts ACTIVE
+- GET `/staff/{uuid}` (`staff.view`)
+- PUT `/staff/{uuid}` (`staff.update`): names, position, department, phone, email; `staff_code`, `person_type` and status are rejected
+- PATCH `/staff/{uuid}/status` (`staff.status.change`): `{ status: ACTIVE|LEAVE|SUSPENDED|RESIGNED|RETIRED, reason? }`
+- GET `/staff/{uuid}/status-history` (`staff.view`)
+
+Staff error codes: `STAFF_CODE_ALREADY_EXISTS` (409), `STAFF_STATUS_NO_OP` (422), `DEPARTMENT_NOT_FOUND`, `DEPARTMENT_INACTIVE` (422).
+
 ## 6. Academic Master Data
 
 - GET/POST `/departments`

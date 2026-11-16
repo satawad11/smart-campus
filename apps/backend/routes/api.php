@@ -34,6 +34,7 @@ use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Report\ReportExportController;
+use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use App\Http\Controllers\System\FeatureFlagController;
@@ -194,6 +195,20 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/imports/{importJob}', [StudentImportController::class, 'show'])->middleware('permission:student.import');
     Route::get('/imports/{importJob}/errors', [StudentImportController::class, 'errors'])->middleware('permission:student.import');
     Route::post('/imports/{importJob}/process', [StudentImportController::class, 'process'])->middleware('permission:student.import');
+});
+
+/*
+| Teachers and staff (Module 09, PPL-003). {staff} binds by StaffProfile uuid.
+| Employment status changes go through the dedicated status endpoint and are
+| recorded in the status history. No DELETE.
+*/
+Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/staff', [StaffController::class, 'index'])->middleware('permission:staff.view');
+    Route::post('/staff', [StaffController::class, 'store'])->middleware('permission:staff.create');
+    Route::get('/staff/{staff}', [StaffController::class, 'show'])->middleware('permission:staff.view');
+    Route::put('/staff/{staff}', [StaffController::class, 'update'])->middleware('permission:staff.update');
+    Route::patch('/staff/{staff}/status', [StaffController::class, 'changeStatus'])->middleware('permission:staff.status.change');
+    Route::get('/staff/{staff}/status-history', [StaffController::class, 'statusHistory'])->middleware('permission:staff.view');
 });
 
 /*
