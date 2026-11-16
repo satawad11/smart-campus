@@ -378,3 +378,16 @@ ALPR module is off (`feature.alpr` false or `FEATURE_ALPR_ENABLED=false`) is rej
 
 `GET /internal/v1/ai-nodes/{node_uuid}/config` sends each camera's **effective** value: the camera
 switch AND `feature.alpr`. Nodes treat anything other than a literal `true` as off.
+
+### 25.2 Plate event types (VEH-006)
+
+Seeded by `EventTypeSeeder` (category `PLATE`), also on upgrades:
+
+| Code | Meaning | Severity |
+|---|---|---|
+| `PLATE_RECOGNIZED` | Plate read clearly and it matches a registered vehicle | INFO |
+| `PLATE_UNKNOWN` | Plate read clearly but no registered vehicle has it | WARNING |
+| `PLATE_LOW_CONFIDENCE` | Plate read, but OCR confidence is below the threshold chosen in VEH-007 | INFO |
+
+The backend picks the type when it ingests a plate result (VEH-010); nodes never set it. Plate events
+are records only: no default access policy uses them until the Smart Gate tasks (GATE-006).

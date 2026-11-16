@@ -288,7 +288,7 @@ per-camera `plate_recognition_enabled`, both fail closed.
 [x] VEH-003 Thai plate normalisation and province code list (shared backend/AI rules + tests)
 [x] VEH-004 Vehicle registry APIs + permissions vehicle.view / vehicle.manage, audited
 [x] VEH-005 Add cameras.plate_recognition_enabled and sync it to nodes (CAM-015 path)
-[ ] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
+[x] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
 [ ] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)
 [ ] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle)
 [ ] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
