@@ -147,6 +147,11 @@ Only mark `[x]` when the relevant tests pass.
     group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
     private user.{uuid} (polling stays as fallback)
 
+# UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
+
+[x] UIX-001 ข้อมูลการศึกษา page: departments / programs / classrooms list, search, add, edit, deactivate (existing API)
+[x] UIX-002 สถานที่และโซน: sites/zones API (system.view/manage) + page; add, edit, deactivate
+
 # MODULE 06 — HISTORY + REPORTING
 
 [x] RPT-001 Implement historical search API

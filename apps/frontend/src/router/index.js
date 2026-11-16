@@ -118,6 +118,13 @@ const routes = [
         meta: { requiresAuth: true, permission: 'student.update' },
       },
       {
+        // Departments, programs and classrooms (add/edit needs academic.manage).
+        path: 'academics',
+        name: 'academics.index',
+        component: () => import('@/views/academics/AcademicDataView.vue'),
+        meta: { requiresAuth: true, permission: 'academic.view' },
+      },
+      {
         path: 'roles',
 
         name: 'roles.index',
@@ -177,6 +184,13 @@ const routes = [
         name: 'faces.show',
         component: () => import('@/views/face/FaceProfileDetailView.vue'),
         meta: { requiresAuth: true, permission: 'face.view' },
+      },
+      {
+        // Sites and zones (UIX-002); add/edit needs system.manage.
+        path: 'locations',
+        name: 'locations.index',
+        component: () => import('@/views/locations/LocationsView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
       },
       {
         path: 'cameras',
