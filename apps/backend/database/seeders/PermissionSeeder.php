@@ -350,6 +350,73 @@ class PermissionSeeder extends Seeder
                 'name' => 'Manage External Integrations',
                 'description' => 'Set and test external API connections (RMS) and their API keys',
             ],
+            // Module 09 people (PPL-002, OWNER-DECISIONS-2026-11-16): staff, guardians, visitors, visits.
+            [
+                'code' => 'staff.view',
+                'module' => 'staff',
+                'name' => 'View Staff',
+                'description' => 'View teacher and staff profiles',
+            ],
+            [
+                'code' => 'staff.create',
+                'module' => 'staff',
+                'name' => 'Create Staff',
+                'description' => 'Create teacher and staff profiles',
+            ],
+            [
+                'code' => 'staff.update',
+                'module' => 'staff',
+                'name' => 'Update Staff',
+                'description' => 'Update teacher and staff profile details',
+            ],
+            [
+                'code' => 'staff.status.change',
+                'module' => 'staff',
+                'name' => 'Change Staff Status',
+                'description' => 'Change the employment status of a teacher or staff member',
+            ],
+            [
+                'code' => 'staff.import',
+                'module' => 'staff',
+                'name' => 'Import Staff',
+                'description' => 'Batch import teachers and staff from a file',
+            ],
+            [
+                'code' => 'guardian.view',
+                'module' => 'guardian',
+                'name' => 'View Guardians',
+                'description' => 'View parents/guardians and their student links',
+            ],
+            [
+                'code' => 'guardian.manage',
+                'module' => 'guardian',
+                'name' => 'Manage Guardians',
+                'description' => 'Create guardians and link them to students',
+            ],
+            [
+                'code' => 'visitor.view',
+                'module' => 'visitor',
+                'name' => 'View Visitors',
+                'description' => 'View visitor and contractor profiles',
+            ],
+            [
+                'code' => 'visitor.manage',
+                'module' => 'visitor',
+                'name' => 'Manage Visitors',
+                'description' => 'Create and update visitor and contractor profiles',
+            ],
+            [
+                'code' => 'visit.view',
+                'module' => 'visitor',
+                'name' => 'View Visits',
+                'description' => 'View planned and current visits',
+            ],
+            [
+                'code' => 'visit.manage',
+                'module' => 'visitor',
+                'name' => 'Manage Visits',
+                'description' => 'Create visits and check visitors in and out',
+            ],
         ];
     }
 }

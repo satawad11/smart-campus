@@ -149,6 +149,10 @@ class RbacSeederTest extends TestCase
                 'system.update', // ACR-OPS-01
                 'integration.manage', // ACR-INT-02
             ],
+            // Module 09 people (PPL-002, OWNER-DECISIONS-2026-11-16).
+            'staff' => ['staff.view', 'staff.create', 'staff.update', 'staff.status.change', 'staff.import'],
+            'guardian' => ['guardian.view', 'guardian.manage'],
+            'visitor' => ['visitor.view', 'visitor.manage', 'visit.view', 'visit.manage'],
         ];
 
         $totalExpected = 0;
@@ -162,14 +166,14 @@ class RbacSeederTest extends TestCase
             }
         }
 
-        $this->assertSame(47, $totalExpected);
-        $this->assertCount(47, Permission::all());
+        $this->assertSame(58, $totalExpected);
+        $this->assertCount(58, Permission::all());
     }
 
     public function test_permission_codes_are_unique(): void
     {
         $codes = Permission::pluck('code')->all();
-        $this->assertCount(47, $codes);
+        $this->assertCount(58, $codes);
         $this->assertSame($codes, array_unique($codes));
     }
 
@@ -178,7 +182,7 @@ class RbacSeederTest extends TestCase
         $superAdmin = Role::where('code', 'SUPER_ADMIN')->firstOrFail();
         $permissions = $superAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(47, $permissions);
+        $this->assertCount(58, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -190,7 +194,7 @@ class RbacSeederTest extends TestCase
 
         // Everything except the SUPER_ADMIN-only system.update (ACR-OPS-01)
         // and integration.manage (ACR-INT-02).
-        $this->assertCount(45, $permissions);
+        $this->assertCount(56, $permissions);
         $allPermissions = Permission::whereNotIn('code', ['system.update', 'integration.manage'])->pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
         $this->assertNotContains('system.update', $permissions);
@@ -216,6 +220,9 @@ class RbacSeederTest extends TestCase
             'report.view',
             'report.export',
             'academic.view',
+            'staff.view',
+            'guardian.view',
+            'visit.view',
         ];
 
         $this->assertCount(count($expected), $permissions);
@@ -265,6 +272,12 @@ class RbacSeederTest extends TestCase
             'camera.view',
             'camera.live',
             'event.view',
+            'staff.view',
+            'guardian.view',
+            'visitor.view',
+            'visitor.manage',
+            'visit.view',
+            'visit.manage',
         ];
 
         $this->assertCount(count($expected), $permissions);
@@ -359,8 +372,8 @@ class RbacSeederTest extends TestCase
         $initialRoleUuids = Role::pluck('uuid', 'code')->all();
 
         $this->assertSame(5, $initialRoleCount);
-        $this->assertSame(47, $initialPermCount);
-        $this->assertSame(47 + 45 + 13 + 6 + 3, $initialPivotCount); // 114 assignments (SUPER_ADMIN-only system.update, integration.manage)
+        $this->assertSame(58, $initialPermCount);
+        $this->assertSame(58 + 56 + 16 + 12 + 3, $initialPivotCount); // 145 assignments (SUPER_ADMIN-only system.update, integration.manage)
 
         // Run seeders again
         $this->seed(DatabaseSeeder::class);
@@ -429,7 +442,9 @@ class RbacSeederTest extends TestCase
 
     public function test_future_disabled_module_permissions_are_not_seeded(): void
     {
-        $disallowedPrefixes = ['door.', 'visitor.', 'vehicle.', 'alpr.', 'ai_assistant.'];
+        // visitor.* left this list when the owner approved Module 09 (OWNER-DECISIONS-2026-11-16, PPL-002).
+        // The other phases are approved too, but have no permissions until their own module is built.
+        $disallowedPrefixes = ['door.', 'vehicle.', 'alpr.', 'ai_assistant.'];
 
         foreach ($disallowedPrefixes as $prefix) {
             $matching = Permission::where('code', 'like', "{$prefix}%")->get();
@@ -475,7 +490,7 @@ class RbacSeederTest extends TestCase
         // Verification: student.update was NOT restored
         $disciplineOfficer->refresh();
         $this->assertFalse($disciplineOfficer->permissions()->where('code', 'student.update')->exists());
-        $this->assertCount(12, $disciplineOfficer->permissions);
+        $this->assertCount(15, $disciplineOfficer->permissions); // 16 seeded (incl. Module 09) minus the removed one
     }
 
     public function test_seeder_preserves_intentionally_emptied_role_matrix(): void

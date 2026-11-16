@@ -8,6 +8,7 @@ use App\Enums\PersonType;
 use Database\Factories\PersonFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -75,5 +76,35 @@ class Person extends Model
     public function faceProfile(): HasOne
     {
         return $this->hasOne(FaceProfile::class);
+    }
+
+    /** Teacher/staff employment profile (Module 09, PPL-002). Canonical 0..1:1. */
+    public function staffProfile(): HasOne
+    {
+        return $this->hasOne(StaffProfile::class);
+    }
+
+    /** Visitor/contractor profile (Module 09, PPL-002). Canonical 0..1:1. */
+    public function visitorProfile(): HasOne
+    {
+        return $this->hasOne(VisitorProfile::class);
+    }
+
+    /** Students this person is a guardian of (Module 09, PPL-002). */
+    public function guardianOf(): HasMany
+    {
+        return $this->hasMany(GuardianLink::class, 'guardian_person_id');
+    }
+
+    /** Guardians of this (student) person (Module 09, PPL-002). */
+    public function guardians(): HasMany
+    {
+        return $this->hasMany(GuardianLink::class, 'student_person_id');
+    }
+
+    /** Visits made by this (visitor) person (Module 09, PPL-002). */
+    public function visits(): HasMany
+    {
+        return $this->hasMany(Visit::class, 'visitor_person_id');
     }
 }

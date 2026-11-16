@@ -248,9 +248,28 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
     timeout, daily sync time, connection test — ACR-INT-02 APPROVED 2026-11-12
     (docs/decisions/ACR-INT-02-INTEGRATION-SETTINGS-UI.md); live test against RMS still PENDING HOST
 
-# FUTURE — LOCKED UNTIL APPROVAL
+# FUTURE PHASES — APPROVED 2026-11-16, BUILT ONE AT A TIME
 
-[ ] [R] DOOR-* Door Access Control
-[ ] [R] VIS-* Visitor/Parent
-[ ] [R] VEH-* Vehicle + ALPR
-[ ] [R] AIA-* AI Assistant + Advanced Analytics
+Approved by the owner (docs/decisions/OWNER-DECISIONS-2026-11-16.md). Each module needs an accepted spec before code;
+feature flags stay false until the module is complete.
+
+[ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
+[~] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — spec ACCEPTED: docs/12-module-09-people-visitor.md
+[ ] [R] VEH-* Vehicle + ALPR (module 10) — needs plate model chosen and licence-checked
+[ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
+
+## Module 09 — People: staff, visitors, parents
+
+[x] PPL-001 Owner accepts docs/12-module-09-people-visitor.md — ACCEPTED 2026-11-16 with default answers
+[x] PPL-002 Migrations + models: staff_profiles (+ status histories), guardian_links, visitor_profiles, visits;
+    11 permissions + role matrix (fresh seed and migration for existing installs)
+[ ] PPL-003 Staff API: CRUD, status change workflow + history, audit
+[ ] PPL-004 Staff import (csv/xlsx) reusing the student import wizard
+[ ] PPL-005 Guardian links API + student detail tab
+[ ] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
+[ ] PPL-007 Person search API (all person types) for face enrollment and pickers
+[ ] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
+[ ] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
+[ ] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
+[ ] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
+[ ] PPL-012 Events/history/reports show person group and status; acceptance tests
