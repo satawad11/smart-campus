@@ -12,14 +12,19 @@ const stopListeningMock = vi.fn().mockReturnThis()
 const leaveMock = vi.fn()
 const privateChannelMock = { name: '', listen: listenMock, stopListening: stopListeningMock }
 
+let echoFailure = null
+
 vi.mock('@/services/echo', () => ({
-  getEcho: () => ({
-    private: (name) => {
-      privateChannelMock.name = `private-${name}`
-      return privateChannelMock
-    },
-    leave: leaveMock,
-  }),
+  getEcho: () => {
+    if (echoFailure) throw echoFailure
+    return {
+      private: (name) => {
+        privateChannelMock.name = `private-${name}`
+        return privateChannelMock
+      },
+      leave: leaveMock,
+    }
+  },
   disconnectEcho: vi.fn(),
 }))
 
@@ -32,6 +37,7 @@ describe('EVT-016: Live Monitor UI', () => {
     listenMock.mockClear()
     stopListeningMock.mockClear()
     leaveMock.mockClear()
+    echoFailure = null
 
     router = createRouter({
       history: createMemoryHistory(),
@@ -252,5 +258,39 @@ describe('EVT-016: Live Monitor UI', () => {
       'data:image/jpeg;base64,AAAA',
     )
     wrapper.unmount()
+  })
+
+  it('still lists sites and cameras when the realtime client cannot start', async () => {
+    const authStore = useAuthStore()
+    authStore.user = {
+      uuid: 'u-9',
+      username: 'officer9',
+      permissions: ['monitor.view', 'camera.view', 'event.view'],
+    }
+    echoFailure = new Error('VITE_REVERB_APP_KEY is not set')
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    vi.spyOn(api, 'get').mockImplementation((url) => {
+      if (url === '/cameras') {
+        return Promise.resolve({
+          data: {
+            data: [
+              { uuid: 'cam-1', name: 'Gate 1', site: { uuid: 'site-1', name: 'Main Campus' } },
+            ],
+            meta: null,
+          },
+        })
+      }
+      return Promise.resolve({ data: { data: [], meta: null } })
+    })
+
+    const wrapper = mount(LiveMonitorView, { global: { plugins: [router] } })
+    await flushPromises()
+    await flushPromises()
+
+    expect(wrapper.find('select').element.value).toBe('site-1')
+    expect(wrapper.text()).toContain('Main Campus')
+    expect(wrapper.text()).not.toContain('กำลังโหลด...')
+    expect(wrapper.find('[data-test="realtime-error"]').exists()).toBe(true)
   })
 })

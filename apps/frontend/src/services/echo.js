@@ -26,11 +26,17 @@ let echoInstance = null
 export function getEcho() {
   if (echoInstance) return echoInstance
 
+  const key = import.meta.env.VITE_REVERB_APP_KEY
+  if (!key) {
+    // pusher-js would throw an opaque error; say what is missing instead.
+    throw new Error('VITE_REVERB_APP_KEY is not set: realtime events are unavailable')
+  }
+
   const useTLS = window.location.protocol === 'https:'
 
   echoInstance = new Echo({
     broadcaster: 'reverb',
-    key: import.meta.env.VITE_REVERB_APP_KEY,
+    key,
     wsHost: window.location.hostname,
     wsPort: window.location.port || (useTLS ? 443 : 80),
     wssPort: window.location.port || 443,
