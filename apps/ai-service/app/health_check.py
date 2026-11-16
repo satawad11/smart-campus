@@ -27,6 +27,7 @@ import sqlite3
 import sys
 import time
 import urllib.parse
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -35,6 +36,9 @@ from app.detection.factory import get_face_detector
 from app.embeddings.factory import get_face_embedder
 from app.liveness.minifasnet import MiniFASNetLivenessDetector
 from app.orchestration.node_client import HttpAiNodeClient
+from app.orchestration.orchestrator import _build_authenticated_rtsp_url
+from app.streams.exceptions import VideoSourceError
+from app.streams.rtsp import RTSPVideoSource, mask_rtsp_url
 
 
 @dataclass
@@ -172,8 +176,26 @@ def check_config_sync() -> tuple[CheckResult, list[dict[str, Any]]]:
         return CheckResult("config_sync", "FAIL", f"Config sync failed: {exc}"), []
 
 
+def _probe_rtsp_stream(stream_url: str, name: str) -> str | None:
+    """Open the stream and read one frame. Returns None when a frame arrived,
+    otherwise a sanitized (URL-masked) reason. Never retries: the probe must
+    finish within the source's bounded connect/read timeouts."""
+    source = RTSPVideoSource(rtsp_url=stream_url, name=name, max_reconnect_attempts=0)
+    try:
+        source.open()
+        source.read()
+        return None
+    except VideoSourceError as exc:
+        return str(exc)
+    except Exception as exc:  # noqa: BLE001 — a probe never crashes the report.
+        return f"RTSP source '{name}' ({mask_rtsp_url(stream_url)}) failed: {type(exc).__name__}"
+    finally:
+        source.close()
+
+
 def check_camera_reachability_and_rtsp(
     cameras: list[dict[str, Any]],
+    rtsp_probe: Callable[[str, str], str | None] | None = None,
 ) -> tuple[CheckResult, CheckResult]:
     if not cameras:
         return (
@@ -183,10 +205,11 @@ def check_camera_reachability_and_rtsp(
             CheckResult("rtsp", "WARNING", "No RTSP streams to verify"),
         )
 
+    probe = rtsp_probe or _probe_rtsp_stream
     reachable = 0
     unreachable = 0
     rtsp_open_ok = 0
-    rtsp_open_fail = 0
+    rtsp_failures: list[str] = []
 
     for cam in cameras:
         raw_url = cam.get("rtsp_url")
@@ -195,24 +218,41 @@ def check_camera_reachability_and_rtsp(
             rtsp_open_ok += 1
             continue
 
+        name = str(cam.get("camera_code") or "camera")
         try:
             parsed = urllib.parse.urlsplit(raw_url)
             host = parsed.hostname
             port = parsed.port or 554
-            if host:
-                s = socket.create_connection((host, port), timeout=3.0)
-                s.close()
-                reachable += 1
-            else:
+            if not host:
                 unreachable += 1
+                rtsp_failures.append(f"{name}: invalid RTSP URL")
+                continue
+            s = socket.create_connection((host, port), timeout=3.0)
+            s.close()
+            reachable += 1
         except Exception:
             unreachable += 1
+            rtsp_failures.append(f"{name}: camera host unreachable")
+            continue
+
+        # The host answers: open the stream with the node's credentials and
+        # read one frame, the same way the camera pipeline does.
+        stream_url = _build_authenticated_rtsp_url(
+            raw_url, cam.get("username"), cam.get("password")
+        )
+        failure = probe(stream_url, name)
+        if failure is None:
+            rtsp_open_ok += 1
+        else:
+            rtsp_failures.append(failure)
 
     reach_status = "PASS" if unreachable == 0 else ("WARNING" if reachable > 0 else "FAIL")
     reach_msg = f"{reachable}/{len(cameras)} camera hosts reachable via network"
 
-    rtsp_status = "PASS" if rtsp_open_fail == 0 else "WARNING"
+    rtsp_status = "PASS" if not rtsp_failures else ("WARNING" if rtsp_open_ok > 0 else "FAIL")
     rtsp_msg = f"{rtsp_open_ok}/{len(cameras)} RTSP sources ready"
+    if rtsp_failures:
+        rtsp_msg += " (" + "; ".join(rtsp_failures) + ")"
 
     return (
         CheckResult("camera_reachability", reach_status, reach_msg),
