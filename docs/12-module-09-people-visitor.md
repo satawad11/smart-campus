@@ -81,7 +81,7 @@ Policies stay editable like today's student policies.
 - Staff and parent faces follow the same rules as student faces.
 
 ## Permissions
-`staff.view, staff.create, staff.update, staff.status_change` · `guardian.view, guardian.manage` ·
+`staff.view, staff.create, staff.update, staff.status.change, staff.import` (named like the `student.*` set) · `guardian.view, guardian.manage` ·
 `visitor.view, visitor.manage, visit.view, visit.manage`.
 Default roles: SUPER_ADMIN/SYSTEM_ADMIN all; SECURITY_OFFICER `visitor.*`, `visit.*`, `staff.view`, `guardian.view`;
 DISCIPLINE_OFFICER `staff.view`, `guardian.view`, `visit.view`.

@@ -110,8 +110,9 @@ class RoleManagementTest extends TestCase
         foreach ($userMod->json('data') as $row) {
             $this->assertSame('user', $row['module']);
         }
-        // 15 future disabled-module permissions absent
-        foreach (['door.', 'visitor.', 'vehicle.', 'alpr.', 'ai_assistant.'] as $future) {
+        // 15 future disabled-module permissions absent. visitor.* left this list when the
+        // owner approved Module 09 (OWNER-DECISIONS-2026-11-16, PPL-002).
+        foreach (['door.', 'vehicle.', 'alpr.', 'ai_assistant.'] as $future) {
             foreach ($codes as $code) {
                 $this->assertStringStartsNotWith($future, $code);
             }

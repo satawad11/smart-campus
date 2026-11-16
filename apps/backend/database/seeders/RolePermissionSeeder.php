@@ -88,6 +88,10 @@ class RolePermissionSeeder extends Seeder
                 'report.view',
                 'report.export',
                 'academic.view',
+                // Module 09 (PPL-002): read staff/guardians, see visits.
+                'staff.view',
+                'guardian.view',
+                'visit.view',
             ],
 
             // SECURITY_OFFICER: Live security monitoring, camera viewing, and event viewing.
@@ -98,6 +102,13 @@ class RolePermissionSeeder extends Seeder
                 'camera.view',
                 'camera.live',
                 'event.view',
+                // Module 09 (PPL-002): gate desk registers visitors and checks them in/out.
+                'staff.view',
+                'guardian.view',
+                'visitor.view',
+                'visitor.manage',
+                'visit.view',
+                'visit.manage',
             ],
 
             // EXECUTIVE_VIEWER: Read-only aggregated metrics and executive reports.

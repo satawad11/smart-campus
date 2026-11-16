@@ -261,7 +261,8 @@ feature flags stay false until the module is complete.
 ## Module 09 — People: staff, visitors, parents
 
 [x] PPL-001 Owner accepts docs/12-module-09-people-visitor.md — ACCEPTED 2026-11-16 with default answers
-[ ] PPL-002 Migrations + models: staff_profiles, guardian_links, visitor_profiles, visits; permissions + role matrix
+[x] PPL-002 Migrations + models: staff_profiles (+ status histories), guardian_links, visitor_profiles, visits;
+    11 permissions + role matrix (fresh seed and migration for existing installs)
 [ ] PPL-003 Staff API: CRUD, status change workflow + history, audit
 [ ] PPL-004 Staff import (csv/xlsx) reusing the student import wizard
 [ ] PPL-005 Guardian links API + student detail tab
