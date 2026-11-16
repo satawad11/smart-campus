@@ -65,6 +65,13 @@ class AccessEventBroadcast implements ShouldBroadcastNow
                 // flattened here since a broadcast payload has no eager-load
                 // step a client can ask for.
                 'person_display_name' => $this->event->person?->display_name,
+                // Name with a first/last fallback (display_name is often empty),
+                // the person's group and code, and the similarity score.
+                'person_name' => $this->event->person?->displayLabel(),
+                'person_type' => $this->event->person?->person_type?->value,
+                'person_code' => $this->event->person?->studentProfile?->student_code
+                    ?? $this->event->person?->staffProfile?->staff_code,
+                'face_score' => $this->event->face_score,
             ],
             'decision' => [
                 'uuid' => $this->decision->uuid,

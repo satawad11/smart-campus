@@ -30,11 +30,13 @@ use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
 use App\Http\Controllers\Integration\RmsSyncController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Report\AttendanceController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Report\ReportController;
 use App\Http\Controllers\Report\ReportExportController;
 use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Staff\StaffImportController;
 use App\Http\Controllers\Student\StudentController;
 use App\Http\Controllers\Student\StudentImportController;
 use App\Http\Controllers\System\FeatureFlagController;
@@ -209,6 +211,13 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::put('/staff/{staff}', [StaffController::class, 'update'])->middleware('permission:staff.update');
     Route::patch('/staff/{staff}/status', [StaffController::class, 'changeStatus'])->middleware('permission:staff.status.change');
     Route::get('/staff/{staff}/status-history', [StaffController::class, 'statusHistory'])->middleware('permission:staff.view');
+
+    // CSV import (PPL-004): same upload -> validate -> preview -> process flow as students.
+    Route::post('/staff/import', [StaffImportController::class, 'upload'])->middleware('permission:staff.import');
+    Route::get('/staff/imports/{importJob}', [StaffImportController::class, 'show'])->middleware('permission:staff.import');
+    Route::get('/staff/imports/{importJob}/errors', [StaffImportController::class, 'errors'])->middleware('permission:staff.import');
+    Route::get('/staff/imports/{importJob}/preview', [StaffImportController::class, 'preview'])->middleware('permission:staff.import');
+    Route::post('/staff/imports/{importJob}/process', [StaffImportController::class, 'process'])->middleware('permission:staff.import');
 });
 
 /*
@@ -376,6 +385,8 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/reports/daily', [ReportController::class, 'daily'])->middleware('permission:report.view');
+    // Daily time-in / time-out from ALLOW recognition events.
+    Route::get('/reports/attendance', [AttendanceController::class, 'index'])->middleware('permission:report.view');
     Route::get('/reports/weekly', [ReportController::class, 'weekly'])->middleware('permission:report.view');
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->middleware('permission:report.view');
     Route::get('/reports/yearly', [ReportController::class, 'yearly'])->middleware('permission:report.view');

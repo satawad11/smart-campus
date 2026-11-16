@@ -143,6 +143,9 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-021 Load test event ingestion/realtime
 [x] EVT-022 Unknown-person / denied alerts in the console: header bell (unread count, inbox, read/read-all),
     on-screen alert + optional sound for new UNKNOWN/DENY notifications; notification data gains camera and time
+[x] EVT-023 Real-time verification, automatic time in/out, instant alerts: monitor shows name (first/last fallback),
+    group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
+    private user.{uuid} (polling stays as fallback)
 
 # MODULE 06 — HISTORY + REPORTING
 
@@ -264,7 +267,7 @@ feature flags stay false until the module is complete.
 [x] PPL-002 Migrations + models: staff_profiles (+ status histories), guardian_links, visitor_profiles, visits;
     11 permissions + role matrix (fresh seed and migration for existing installs)
 [x] PPL-003 Staff API: CRUD, status change workflow + history, audit (/staff, docs/02 §5)
-[ ] PPL-004 Staff import (csv/xlsx) reusing the student import wizard
+[x] PPL-004 Staff import (CSV, like the student import) — /staff/import + /staff/imports/{uuid}/…
 [ ] PPL-005 Guardian links API + student detail tab
 [ ] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
 [ ] PPL-007 Person search API (all person types) for face enrollment and pickers

@@ -27,6 +27,9 @@ class AccessEventResource extends JsonResource
             'person' => $this->person === null ? null : [
                 'uuid' => $this->person->uuid,
                 'display_name' => $this->person->display_name,
+                // Additive: name with first/last fallback and the person's group.
+                'name' => $this->person->displayLabel(),
+                'person_type' => $this->person->person_type?->value,
             ],
             'site' => $this->site === null ? null : [
                 'uuid' => $this->site->uuid,

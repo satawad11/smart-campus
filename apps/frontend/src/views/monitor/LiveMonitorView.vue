@@ -194,8 +194,33 @@ function decisionBadgeClass(decision) {
   )
 }
 
+// display_name is often empty; the backend also sends a name with a first/last fallback.
 function personLabel(event) {
-  return event.person?.display_name || event.person_display_name || 'ไม่ทราบตัวตน'
+  return (
+    event.person?.name ||
+    event.person_name ||
+    event.person?.display_name ||
+    event.person_display_name ||
+    'ไม่ทราบตัวตน'
+  )
+}
+
+const PERSON_TYPE_LABELS = {
+  STUDENT: 'ผู้เรียน',
+  TEACHER: 'ครู',
+  STAFF: 'บุคลากร',
+  PARENT: 'ผู้ปกครอง',
+  VISITOR: 'ผู้มาติดต่อ',
+  CONTRACTOR: 'ผู้รับเหมา',
+}
+
+function personMeta(event) {
+  const type = event.person?.person_type || event.person_type
+  const parts = []
+  if (type) parts.push(PERSON_TYPE_LABELS[type] || type)
+  if (event.person_code) parts.push(event.person_code)
+  if (typeof event.face_score === 'number') parts.push(`ความเหมือน ${event.face_score.toFixed(2)}`)
+  return parts.join(' · ')
 }
 </script>
 
@@ -346,6 +371,9 @@ function personLabel(event) {
               <div>
                 <div class="font-medium text-gray-900 text-sm">
                   {{ personLabel(event) }}
+                </div>
+                <div v-if="personMeta(event)" data-test="person-meta" class="text-xs text-blue-700">
+                  {{ personMeta(event) }}
                 </div>
                 <div class="text-xs text-gray-500">
                   {{ event.event_type }} · {{ event.camera_name || event.camera?.name || '-' }} ·
