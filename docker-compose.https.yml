@@ -1,0 +1,25 @@
+# AI Smart Campus — HTTPS gateway for the development stack (lab use)
+#
+# Browsers allow webcam access (face enrollment / scan pages) only on a secure
+# origin, and AI nodes should not send tokens and face embeddings over plain
+# HTTP. This overlay swaps the development gateway for the pilot TLS gateway
+# (infrastructure/pilot/nginx: HTTP :80 redirects to HTTPS :443) while keeping
+# every other development service as it is. It is NOT a production setup —
+# production uses docker-compose.pilot.yml.
+#
+# Certificate first (campus LAN without public DNS):
+#   COMPOSE="docker compose -f docker-compose.yml -f docker-compose.https.yml" \
+#     scripts/tls-setup.sh internal-ca <server-ip-or-name>
+# Then:
+#   docker compose -f docker-compose.yml -f docker-compose.https.yml up -d nginx
+# Clients and AI nodes must trust infrastructure/pilot/ca/ca.crt.
+
+services:
+  nginx:
+    ports: !override
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes: !override
+      - ./infrastructure/pilot/nginx:/etc/nginx/conf.d:ro
+      - ${PILOT_CERTS_DIR:-./infrastructure/pilot/certs}:/etc/nginx/certs:ro
+      - ${PILOT_ACME_DIR:-./infrastructure/pilot/acme}:/var/www/acme:ro

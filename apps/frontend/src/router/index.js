@@ -167,6 +167,12 @@ const routes = [
         meta: { requiresAuth: true, permission: 'face.test' },
       },
       {
+        path: 'faces/scan',
+        name: 'faces.scan',
+        component: () => import('@/views/face/FaceScanView.vue'),
+        meta: { requiresAuth: true, permission: 'face.test' },
+      },
+      {
         path: 'faces/:uuid',
         name: 'faces.show',
         component: () => import('@/views/face/FaceProfileDetailView.vue'),

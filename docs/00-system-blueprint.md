@@ -315,3 +315,6 @@ Phase 5:
 Face+plate Smart Gate + AI Assistant + anomaly/analytics
 
 Future phases must not be activated before human approval.
+
+Approved by the owner on 2026-11-16 (docs/decisions/OWNER-DECISIONS-2026-11-16.md): all phases above, built one module
+at a time, each after its spec is accepted. Feature flags stay off until the module is complete.

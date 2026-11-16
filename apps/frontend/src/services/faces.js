@@ -92,6 +92,32 @@ export default {
   },
 
   /**
+   * Live capture feedback for one webcam frame: face boxes + quality metrics, no
+   * embedding (FACE-022, POST /faces/check-quality).
+   */
+  async checkQuality(imageBlob) {
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'frame.jpg')
+    const response = await api.post('/faces/check-quality', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  /**
+   * Identify one webcam frame against enrolled faces: MATCH / REVIEW / UNKNOWN
+   * (FACE-022, POST /faces/recognize).
+   */
+  async recognize(imageBlob) {
+    const formData = new FormData()
+    formData.append('image', imageBlob, 'scan.jpg')
+    const response = await api.post('/faces/recognize', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return response.data
+  },
+
+  /**
    * Revoke face profile (FACE-014, FACE-017).
    */
   async revokeProfile(uuid, reason) {

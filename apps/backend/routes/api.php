@@ -24,6 +24,7 @@ use App\Http\Controllers\Face\FaceEnrollmentController;
 use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
 use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
+use App\Http\Controllers\Face\FaceScanController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
@@ -240,6 +241,13 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     // FACE-012: Restricted Recognition Diagnostic Test
     Route::post('/faces/recognition-test', [FaceRecognitionTestController::class, 'test'])
         ->middleware(['permission:face.test', 'throttle:60,1']);
+
+    // FACE-022: Webcam scanning (contract §8). check-quality returns face boxes and
+    // quality metrics only (polled during capture); recognize classifies one frame.
+    Route::post('/faces/check-quality', [FaceScanController::class, 'checkQuality'])
+        ->middleware(['permission:face.enroll,face.test', 'throttle:120,1']);
+    Route::post('/faces/recognize', [FaceScanController::class, 'recognize'])
+        ->middleware(['permission:face.test', 'throttle:30,1']);
 
     // FACE-014 / FACE-017: Face Profile Query & Lifecycle (Revoke / Re-enroll)
     Route::get('/faces', [FaceLifecycleController::class, 'index'])->middleware('permission:face.view');

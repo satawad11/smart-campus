@@ -70,6 +70,10 @@ services:
     image: smart-campus/frontend:dev
     environment:
       NODE_ENV: ${NODE_ENV:-development}
+      # Public Reverb app key for the browser's realtime client (Live Monitor).
+      # Must equal REVERB_APP_KEY in apps/backend/.env; without it there is no
+      # live event feed.
+      VITE_REVERB_APP_KEY: ${REVERB_APP_KEY:-}
     expose:
       - "5173"
     networks: [smartcampus]

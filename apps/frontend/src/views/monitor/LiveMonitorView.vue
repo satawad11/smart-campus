@@ -66,6 +66,11 @@ let currentChannel = null
 // prefix itself internally, so leaving must use the same bare name private()
 // was given, not whatever the underlying channel object reports as `.name`.
 let currentChannelName = ''
+// Reactive mirror of the subscription state for the template (currentChannel is a
+// plain variable). realtimeError: the live feed is unavailable, but the site picker,
+// KPIs and backfill keep working — a realtime failure must never block the page.
+const realtimeConnected = ref(false)
+const realtimeError = ref('')
 
 function pushLiveEvent(payload) {
   liveEvents.value = [
@@ -78,9 +83,18 @@ function subscribeToSite(siteUuid) {
   unsubscribeFromSite()
   if (!siteUuid) return
 
-  currentChannelName = `site.${siteUuid}`
-  currentChannel = getEcho().private(currentChannelName)
-  currentChannel.listen('.event.decided', pushLiveEvent)
+  try {
+    const channel = getEcho().private(`site.${siteUuid}`)
+    channel.listen('.event.decided', pushLiveEvent)
+    currentChannel = channel
+    currentChannelName = `site.${siteUuid}`
+    realtimeConnected.value = true
+    realtimeError.value = ''
+  } catch (err) {
+    console.error('Live event feed unavailable:', err)
+    realtimeError.value =
+      'การแจ้งเหตุการณ์แบบสดไม่พร้อมใช้งาน (ตรวจสอบการตั้งค่า Reverb) — กดรีเฟรชเพื่อดูเหตุการณ์ล่าสุด'
+  }
 }
 
 function unsubscribeFromSite() {
@@ -90,6 +104,7 @@ function unsubscribeFromSite() {
     currentChannel = null
     currentChannelName = ''
   }
+  realtimeConnected.value = false
 }
 
 // --- Historical backfill (also doubles as EVT-015 recovery on (re)connect) ---
@@ -237,7 +252,13 @@ function personLabel(event) {
         </span>
         <span v-else-if="sites.length === 0" class="text-xs text-gray-400">ไม่พบสถานที่/กล้อง</span>
 
-        <div v-if="currentChannel" class="ml-auto flex items-center gap-1.5 text-xs text-green-600">
+        <div v-if="realtimeError" data-test="realtime-error" class="ml-auto text-xs text-amber-700">
+          {{ realtimeError }}
+        </div>
+        <div
+          v-else-if="realtimeConnected"
+          class="ml-auto flex items-center gap-1.5 text-xs text-green-600"
+        >
           <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
           เชื่อมต่อสดแล้ว
         </div>
