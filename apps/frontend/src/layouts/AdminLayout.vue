@@ -138,6 +138,7 @@ const NAV_SECTIONS = [
   {
     title: 'อุปกรณ์',
     items: [
+      { to: '/locations', label: 'สถานที่และโซน', icon: 'home', perm: 'system.view' },
       { to: '/cameras', label: 'จัดการกล้อง', icon: 'camera', perm: 'camera.view' },
       {
         to: '/ai-nodes',

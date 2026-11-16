@@ -186,6 +186,13 @@ const routes = [
         meta: { requiresAuth: true, permission: 'face.view' },
       },
       {
+        // Sites and zones (UIX-002); add/edit needs system.manage.
+        path: 'locations',
+        name: 'locations.index',
+        component: () => import('@/views/locations/LocationsView.vue'),
+        meta: { requiresAuth: true, permission: 'system.view' },
+      },
+      {
         path: 'cameras',
         name: 'cameras.index',
         component: () => import('@/views/cameras/CameraListView.vue'),

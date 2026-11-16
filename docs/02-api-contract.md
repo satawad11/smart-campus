@@ -152,6 +152,15 @@ Raw embeddings must never be returned to frontend.
 
 ## 9. Cameras
 
+Sites and zones (UIX-002, additive; previously CLI `locations:provision` only):
+- GET `/sites` (`system.view`): sites with their zones and camera counts; filter `status`
+- POST `/sites` (`system.manage`): `{ code, name, address?, timezone? (default Asia/Bangkok) }`
+- PUT `/sites/{uuid}` (`system.manage`): `name, address, timezone, status`; `code` is rejected
+- POST `/sites/{uuid}/zones` (`system.manage`): `{ code (unique per site), name, zone_type? }`
+- PUT `/zones/{uuid}` (`system.manage`): `name, zone_type, status`; `code` and site are rejected
+- Audit: `location.site_created|site_updated|zone_created|zone_updated`
+
+
 - GET `/cameras`
 - POST `/cameras`
 - GET `/cameras/{uuid}`

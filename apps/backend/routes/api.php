@@ -29,6 +29,7 @@ use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
 use App\Http\Controllers\Integration\RmsSyncController;
+use App\Http\Controllers\Location\LocationController;
 use App\Http\Controllers\Notification\NotificationController;
 use App\Http\Controllers\Report\AttendanceController;
 use App\Http\Controllers\Report\DashboardChartsController;
@@ -413,6 +414,13 @@ Route::get('/features', [FeatureFlagController::class, 'index']);
 | System Settings Management & Health Monitoring (SEC-001, SEC-011, SEC-012, SEC-014, docs/02-api-contract.md §18).
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    // Sites and zones (UIX-002): previously CLI only (locations:provision).
+    Route::get('/sites', [LocationController::class, 'index'])->middleware('permission:system.view');
+    Route::post('/sites', [LocationController::class, 'storeSite'])->middleware('permission:system.manage');
+    Route::put('/sites/{site}', [LocationController::class, 'updateSite'])->middleware('permission:system.manage');
+    Route::post('/sites/{site}/zones', [LocationController::class, 'storeZone'])->middleware('permission:system.manage');
+    Route::put('/zones/{zone}', [LocationController::class, 'updateZone'])->middleware('permission:system.manage');
+
     Route::get('/settings', [SystemSettingController::class, 'index'])->middleware('permission:system.view');
     Route::get('/settings/{group}', [SystemSettingController::class, 'show'])->middleware('permission:system.view');
     Route::put('/settings/{group}', [SystemSettingController::class, 'update'])->middleware('permission:system.manage');
