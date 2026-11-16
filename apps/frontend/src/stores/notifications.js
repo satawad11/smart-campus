@@ -1,6 +1,7 @@
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import notificationsService from '@/services/notifications'
+import { getEcho } from '@/services/echo'
 
 /**
  * Notification inbox + live alerts (EVT-022).
@@ -92,13 +93,45 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
-  function start() {
+  // Realtime push (private channel user.{uuid}): a new notification triggers an
+  // immediate refresh, so the alert shows within about a second. Polling stays on
+  // as the fallback when the socket or the Reverb key is unavailable.
+  let pushChannelName = ''
+  const realtime = ref(false)
+
+  function subscribe(userUuid) {
+    if (!userUuid || pushChannelName) return
+    try {
+      getEcho()
+        .private(`user.${userUuid}`)
+        .listen('.notification.created', () => refresh())
+      pushChannelName = `user.${userUuid}`
+      realtime.value = true
+    } catch (err) {
+      console.warn('Realtime alerts unavailable, using polling:', err?.message || err)
+    }
+  }
+
+  function unsubscribe() {
+    if (!pushChannelName) return
+    try {
+      getEcho().leave(pushChannelName)
+    } catch {
+      // Socket already gone.
+    }
+    pushChannelName = ''
+    realtime.value = false
+  }
+
+  function start(userUuid = null) {
     if (timer) return
     refresh()
     timer = setInterval(refresh, POLL_INTERVAL_MS)
+    subscribe(userUuid)
   }
 
   function stop() {
+    unsubscribe()
     if (timer) clearInterval(timer)
     timer = null
     baselineLoaded = false
@@ -152,6 +185,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     unreadCount,
     alerts,
     soundEnabled,
+    realtime,
     refresh,
     start,
     stop,

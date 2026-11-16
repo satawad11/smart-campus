@@ -143,6 +143,9 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-021 Load test event ingestion/realtime
 [x] EVT-022 Unknown-person / denied alerts in the console: header bell (unread count, inbox, read/read-all),
     on-screen alert + optional sound for new UNKNOWN/DENY notifications; notification data gains camera and time
+[x] EVT-023 Real-time verification, automatic time in/out, instant alerts: monitor shows name (first/last fallback),
+    group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
+    private user.{uuid} (polling stays as fallback)
 
 # MODULE 06 — HISTORY + REPORTING
 

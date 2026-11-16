@@ -30,6 +30,7 @@ use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
 use App\Http\Controllers\Integration\RmsSyncController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Report\AttendanceController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
 use App\Http\Controllers\Report\ReportController;
@@ -384,6 +385,8 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/reports/daily', [ReportController::class, 'daily'])->middleware('permission:report.view');
+    // Daily time-in / time-out from ALLOW recognition events.
+    Route::get('/reports/attendance', [AttendanceController::class, 'index'])->middleware('permission:report.view');
     Route::get('/reports/weekly', [ReportController::class, 'weekly'])->middleware('permission:report.view');
     Route::get('/reports/monthly', [ReportController::class, 'monthly'])->middleware('permission:report.view');
     Route::get('/reports/yearly', [ReportController::class, 'yearly'])->middleware('permission:report.view');

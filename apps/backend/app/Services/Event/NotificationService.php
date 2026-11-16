@@ -4,11 +4,14 @@ namespace App\Services\Event;
 
 use App\Enums\AccessDecisionOutcome;
 use App\Enums\UserStatus;
+use App\Events\NotificationCreated;
 use App\Models\AccessDecision;
 use App\Models\AccessEvent;
 use App\Models\User;
 use App\Services\Auth\PermissionService;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Fans a qualifying AccessDecision out to every recipient currently
@@ -69,13 +72,21 @@ class NotificationService
                 continue; // a reviewer doesn't need a notification about their own review
             }
 
-            $recipient->appNotifications()->create([
+            $notification = $recipient->appNotifications()->create([
                 'type' => $type,
                 'title' => $title,
                 'body' => null,
                 'data' => $data,
                 'read_at' => null,
             ]);
+
+            // Realtime push to the recipient's console. Best effort: the inbox row is
+            // already saved and the console still polls it if the socket is down.
+            try {
+                broadcast(new NotificationCreated($notification, $recipient->uuid));
+            } catch (Throwable $e) {
+                Log::warning('Notification push failed', ['notification' => $notification->uuid, 'error' => $e->getMessage()]);
+            }
         }
     }
 

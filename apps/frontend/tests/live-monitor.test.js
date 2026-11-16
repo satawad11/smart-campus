@@ -181,6 +181,29 @@ describe('EVT-016: Live Monitor UI', () => {
 
     expect(wrapper.text()).toContain('ไม่ทราบตัวตน')
     expect(wrapper.text()).toContain('UNKNOWN')
+
+    // A matched student with no display_name shows the fallback name, group, code and score.
+    handler({
+      event: {
+        uuid: 'evt-live-2',
+        event_type: 'FACE_RECOGNIZED',
+        occurred_at: new Date().toISOString(),
+        camera_name: 'Gate 1',
+        person_display_name: null,
+        person_name: 'Mali Dee',
+        person_type: 'STUDENT',
+        person_code: '6599999',
+        face_score: 0.523,
+      },
+      decision: { decision: 'ALLOW', reason_code: 'STUDENT_ACTIVE' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Mali Dee')
+    const meta = wrapper.find('[data-test="person-meta"]').text()
+    expect(meta).toContain('ผู้เรียน')
+    expect(meta).toContain('6599999')
+    expect(meta).toContain('ความเหมือน 0.52')
   })
 
   it('unsubscribes from the channel on unmount', async () => {

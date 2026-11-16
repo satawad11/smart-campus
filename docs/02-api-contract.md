@@ -241,6 +241,7 @@ Filters:
 
 ## 16. Reports
 
+- GET `/reports/attendance` (`report.view`, EVT-023): daily time in / time out per person from ALLOW recognition events. Params `date` (YYYY-MM-DD, default today), `tz` (default Asia/Bangkok), `person_type`, `keyword`, `site_uuid`. Rows: `person {uuid, name, person_type, code}, time_in, time_in_camera, time_out (null if seen once), time_out_camera, sightings`
 - GET `/reports/daily`
 - GET `/reports/weekly`
 - GET `/reports/monthly`
@@ -256,6 +257,8 @@ Exports:
 - GET `/reports/exports/{uuid}`
 
 ## 17. Notifications
+
+Realtime push (EVT-023): every new notification is also broadcast on the private channel `user.{userUuid}` as `notification.created` (only that user may subscribe). The inbox below stays the source of truth.
 
 - GET `/notifications`
 - PATCH `/notifications/{uuid}/read`

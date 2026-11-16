@@ -78,6 +78,17 @@ class Person extends Model
         return $this->hasOne(FaceProfile::class);
     }
 
+    /**
+     * Name to show on screens: display_name when set, otherwise "first last".
+     * Many records (imports, RMS sync) have no display_name.
+     */
+    public function displayLabel(): string
+    {
+        $display = trim((string) $this->display_name);
+
+        return $display !== '' ? $display : trim($this->first_name.' '.$this->last_name);
+    }
+
     /** Teacher/staff employment profile (Module 09, PPL-002). Canonical 0..1:1. */
     public function staffProfile(): HasOne
     {
