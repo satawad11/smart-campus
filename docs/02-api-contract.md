@@ -391,3 +391,22 @@ Seeded by `EventTypeSeeder` (category `PLATE`), also on upgrades:
 
 The backend picks the type when it ingests a plate result (VEH-010); nodes never set it. Plate events
 are records only: no default access policy uses them until the Smart Gate tasks (GATE-006).
+
+### 25.3 Plate-read ingestion (VEH-010)
+
+`POST /internal/v1/events/plate` (node bearer token). Body: `event_uuid`, `camera_uuid`,
+`ai_node_uuid`, `track_id`, `occurred_at`, `plate_text` (raw OCR), optional `province_text` (raw OCR),
+`ocr_score` (0–1), optional `detection_score`, `frames_voted`, `model_code`, `model_version`, optional
+`reasons[]`. The node may not send `event_type`, `vehicle_*`, `person_*`, `decision` or internal ids.
+
+The backend normalises the text (`contracts/thai-plates.json`), resolves the province, and picks the
+type: `PLATE_LOW_CONFIDENCE` when the text is not a valid Thai plate or `ocr_score` is below
+`ALPR_OCR_MIN_CONFIDENCE` (provisional 0.90 until VEH-007 is approved); otherwise `PLATE_RECOGNIZED`
+when a registered vehicle has the plate (province must match; with no readable province only a
+plate held by exactly one vehicle matches), else `PLATE_UNKNOWN`.
+
+Plate events have no person and **never get an access decision**. They are broadcast on the site
+channel as `plate.read`. Rejections: `422 ALPR_DISABLED`, `422 PLATE_RECOGNITION_DISABLED` (camera
+switch off), `AI_NODE_IDENTITY_MISMATCH`, `CAMERA_NOT_FOUND`, `CAMERA_NOT_ASSIGNED_TO_NODE`,
+`409 EVENT_ALREADY_EXISTS`. A retried `event_uuid` answers 200; the same readable plate at the same
+camera within `ALPR_PLATE_COOLDOWN_SECONDS` (30) is one pass and answers 200 with the first event.
