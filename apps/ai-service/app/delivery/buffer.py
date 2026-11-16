@@ -17,18 +17,19 @@ import time
 from collections.abc import Callable
 from dataclasses import asdict, dataclass
 from datetime import datetime
+from typing import Any
 
 from app.delivery.schemas import RecognitionEventPayload
 
 _SCHEMA = """
-CREATE TABLE IF NOT EXISTS pending_events (
+CREATE TABLE IF NOT EXISTS {pending} (
     event_uuid TEXT PRIMARY KEY,
     payload_json TEXT NOT NULL,
     attempts INTEGER NOT NULL DEFAULT 0,
     next_retry_at REAL NOT NULL,
     enqueued_at REAL NOT NULL
 );
-CREATE TABLE IF NOT EXISTS rejected_events (
+CREATE TABLE IF NOT EXISTS {rejected} (
     event_uuid TEXT PRIMARY KEY,
     payload_json TEXT NOT NULL,
     status_code INTEGER NOT NULL,
@@ -40,20 +41,20 @@ CREATE TABLE IF NOT EXISTS rejected_events (
 
 @dataclass(frozen=True)
 class BufferedEvent:
-    payload: RecognitionEventPayload
+    payload: Any
     attempts: int
 
 
-def _serialize(payload: RecognitionEventPayload) -> str:
+def _serialize(payload: Any) -> str:
     data = asdict(payload)
     data["occurred_at"] = payload.occurred_at.isoformat()
     return json.dumps(data)
 
 
-def _deserialize(raw: str) -> RecognitionEventPayload:
+def _deserialize(raw: str, payload_cls: type) -> Any:
     data = json.loads(raw)
     data["occurred_at"] = datetime.fromisoformat(data["occurred_at"])
-    return RecognitionEventPayload(**data)
+    return payload_cls(**data)
 
 
 class OfflineEventBuffer:
@@ -69,7 +70,16 @@ class OfflineEventBuffer:
     updates, and status endpoints read `size`, all on one SQLite connection.
     Every use of the connection holds `_lock`; unsynchronised sharing
     returned corrupt reads and could make `enqueue` raise, losing the event.
+
+    Subclasses buffer other payload types in their own tables of the same file
+    (e.g. PlateEventBuffer, VEH-009): set PAYLOAD_CLS, PENDING_TABLE and
+    REJECTED_TABLE. Payloads must be dataclasses with an `event_uuid` and a
+    datetime `occurred_at`.
     """
+
+    PAYLOAD_CLS: type = RecognitionEventPayload
+    PENDING_TABLE = "pending_events"
+    REJECTED_TABLE = "rejected_events"
 
     def __init__(
         self,
@@ -91,24 +101,26 @@ class OfflineEventBuffer:
         self._lock = threading.RLock()
         self._conn = sqlite3.connect(db_path, check_same_thread=False)
         with self._lock:
-            self._conn.executescript(_SCHEMA)
+            self._conn.executescript(
+                _SCHEMA.format(pending=self.PENDING_TABLE, rejected=self.REJECTED_TABLE)
+            )
             self._conn.commit()
 
     @property
     def size(self) -> int:
         with self._lock:
-            row = self._conn.execute("SELECT COUNT(*) FROM pending_events").fetchone()
+            row = self._conn.execute(f"SELECT COUNT(*) FROM {self.PENDING_TABLE}").fetchone()
         return row[0]
 
-    def enqueue(self, payload: RecognitionEventPayload) -> None:
+    def enqueue(self, payload: Any) -> None:
         """Idempotent on event_uuid: re-enqueuing an already-buffered event
         (e.g. the caller retried before the buffer confirmed the insert)
         does not create a duplicate or reset its retry backoff."""
         now = self._clock_fn()
         with self._lock:
             self._conn.execute(
-                """
-                INSERT INTO pending_events
+                f"""
+                INSERT INTO {self.PENDING_TABLE}
                     (event_uuid, payload_json, attempts, next_retry_at, enqueued_at)
                 VALUES (?, ?, 0, ?, ?)
                 ON CONFLICT(event_uuid) DO NOTHING
@@ -122,8 +134,8 @@ class OfflineEventBuffer:
         now = self._clock_fn()
         with self._lock:
             rows = self._conn.execute(
-                """
-                SELECT payload_json, attempts FROM pending_events
+                f"""
+                SELECT payload_json, attempts FROM {self.PENDING_TABLE}
                 WHERE next_retry_at <= ?
                 ORDER BY enqueued_at ASC
                 LIMIT ?
@@ -131,12 +143,15 @@ class OfflineEventBuffer:
                 (now, limit),
             ).fetchall()
         return [
-            BufferedEvent(payload=_deserialize(raw), attempts=attempts) for raw, attempts in rows
+            BufferedEvent(payload=_deserialize(raw, self.PAYLOAD_CLS), attempts=attempts)
+            for raw, attempts in rows
         ]
 
     def mark_delivered(self, event_uuid: str) -> None:
         with self._lock:
-            self._conn.execute("DELETE FROM pending_events WHERE event_uuid = ?", (event_uuid,))
+            self._conn.execute(
+                f"DELETE FROM {self.PENDING_TABLE} WHERE event_uuid = ?", (event_uuid,)
+            )
             self._conn.commit()
 
     def mark_failed(self, event_uuid: str) -> None:
@@ -145,7 +160,7 @@ class OfflineEventBuffer:
 
     def _mark_failed_locked(self, event_uuid: str) -> None:
         row = self._conn.execute(
-            "SELECT attempts FROM pending_events WHERE event_uuid = ?", (event_uuid,)
+            f"SELECT attempts FROM {self.PENDING_TABLE} WHERE event_uuid = ?", (event_uuid,)
         ).fetchone()
         if row is None:
             return
@@ -159,7 +174,7 @@ class OfflineEventBuffer:
         next_retry_at = self._clock_fn() + backoff
 
         self._conn.execute(
-            "UPDATE pending_events SET attempts = ?, next_retry_at = ? WHERE event_uuid = ?",
+            f"UPDATE {self.PENDING_TABLE} SET attempts = ?, next_retry_at = ? WHERE event_uuid = ?",
             (attempts, next_retry_at, event_uuid),
         )
         self._conn.commit()
@@ -167,18 +182,16 @@ class OfflineEventBuffer:
     @property
     def rejected_count(self) -> int:
         with self._lock:
-            row = self._conn.execute("SELECT COUNT(*) FROM rejected_events").fetchone()
+            row = self._conn.execute(f"SELECT COUNT(*) FROM {self.REJECTED_TABLE}").fetchone()
         return row[0]
 
-    def reject(
-        self, payload: RecognitionEventPayload, status_code: int, error_code: str | None
-    ) -> None:
+    def reject(self, payload: Any, status_code: int, error_code: str | None) -> None:
         """Quarantine an event the backend permanently refused: kept for
         inspection (never silently dropped) and removed from the retry queue."""
         with self._lock:
             self._conn.execute(
-                """
-                INSERT INTO rejected_events
+                f"""
+                INSERT INTO {self.REJECTED_TABLE}
                     (event_uuid, payload_json, status_code, error_code, rejected_at)
                 VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT(event_uuid) DO NOTHING
@@ -192,7 +205,7 @@ class OfflineEventBuffer:
                 ),
             )
             self._conn.execute(
-                "DELETE FROM pending_events WHERE event_uuid = ?", (payload.event_uuid,)
+                f"DELETE FROM {self.PENDING_TABLE} WHERE event_uuid = ?", (payload.event_uuid,)
             )
             self._conn.commit()
 

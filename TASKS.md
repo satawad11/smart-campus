@@ -291,9 +291,11 @@ per-camera `plate_recognition_enabled`, both fail closed.
 [x] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
 [~] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)
     licence check DONE 2026-11-16 (docs/decisions/VEH-007-ALPR-LICENCE-CHECK.md); evaluation needs plate photos from the owner
-[ ] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle)
-[ ] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
-[ ] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
+[ ] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle);
+    wire BufferedPlateEventDeliveryService + PlateEventBuffer.retry_pending into the node loop
+[x] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
+    (app/delivery/plate.py; the node's retry loop starts calling it in VEH-008, when plate reads exist)
+[x] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
 [ ] VEH-011 Vehicle management UI (จัดการยานพาหนะ) and camera toggle "อ่านป้ายทะเบียน"
 [ ] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
 [ ] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
