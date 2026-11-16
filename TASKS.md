@@ -141,6 +141,8 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-019 Build person event timeline integration
 [x] EVT-020 Add event/policy/realtime acceptance tests
 [x] EVT-021 Load test event ingestion/realtime
+[x] EVT-022 Unknown-person / denied alerts in the console: header bell (unread count, inbox, read/read-all),
+    on-screen alert + optional sound for new UNKNOWN/DENY notifications; notification data gains camera and time
 
 # MODULE 06 — HISTORY + REPORTING
 
