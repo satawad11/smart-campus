@@ -160,3 +160,10 @@ APPROVED 2026-11-12 by the project owner in chat ("Approve as recommended"):
 - D1–D6 exactly as in the "Recommended" column above.
 - Still requiring separate human approval later: the ALPR model and its thresholds (VEH-007,
   after the Thai-plate evaluation and licence check), and any physical barrier control (Phase 2).
+
+## Ordering with Module 09 (2026-11-16)
+
+OWNER-DECISIONS-2026-11-16 (U2) says to build one module at a time, starting with Module 09 (people).
+When this branch was merged with that decision, the owner was asked whether to pause the vehicle work
+and chose in chat to **continue VEH-004** in parallel. U4 still applies: `feature.vehicle` and
+`feature.alpr` stay off until the module is complete and accepted.

@@ -58,3 +58,7 @@ permissions:
   system:
     - system.view
     - system.manage
+  # ACR-VEH-01 (VEH-004): vehicle registry; routes also need feature.vehicle on.
+  vehicle:
+    - vehicle.view
+    - vehicle.manage

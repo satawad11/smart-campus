@@ -283,7 +283,7 @@ per-camera `plate_recognition_enabled`, both fail closed.
 [x] VEH-001 Unlock `vehicle`/`alpr` from LOCKED_V1_FEATURES (kill switches stay); update preflight, SEC-024 and DEPLOYMENT flag lists
 [x] VEH-002 Create vehicles and vehicle_ownership_histories schemas (append-only history, UUIDs)
 [x] VEH-003 Thai plate normalisation and province code list (shared backend/AI rules + tests)
-[ ] VEH-004 Vehicle registry APIs + permissions vehicle.view / vehicle.manage, audited
+[x] VEH-004 Vehicle registry APIs + permissions vehicle.view / vehicle.manage, audited
 [ ] VEH-005 Add cameras.plate_recognition_enabled and sync it to nodes (CAM-015 path)
 [ ] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
 [ ] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)

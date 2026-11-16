@@ -322,3 +322,34 @@ Propagate it to logs/internal calls/audit where relevant.
 Recognition event ingestion uses unique `event_uuid`.
 
 Retrying the same event must not duplicate Event or Decision records.
+
+## 25. Vehicles (ACR-VEH-01, VEH-004)
+
+Behind `feature:vehicle` (off by default; `FEATURE_VEHICLE_ENABLED=false` forces it off). The feature
+gate is checked before permissions, so a disabled module answers `403 FEATURE_DISABLED`.
+
+```
+GET  /api/v1/vehicles                               vehicle.view
+POST /api/v1/vehicles                               vehicle.manage
+GET  /api/v1/vehicles/{vehicle_uuid}                vehicle.view   (includes links, newest first)
+PUT  /api/v1/vehicles/{vehicle_uuid}                vehicle.manage
+POST /api/v1/vehicles/{vehicle_uuid}/links          vehicle.manage (link a person)
+POST /api/v1/vehicles/{vehicle_uuid}/links/{link_uuid}/end   vehicle.manage (end a link)
+```
+
+List filters: `plate` (exact, normalised), `province` (code or Thai name), `keyword` (plate, brand,
+model, colour), `status`, `vehicle_type`, `person_uuid` (current links only), `sort`, `order`, paging.
+
+Create body: `plate_number`, `plate_province` (ISO 3166-2:TH code or Thai name), optional
+`vehicle_type`, `brand`, `model`, `color`, `status`, `notes`. Plates are normalised with the rules in
+`contracts/thai-plates.json`. The plate and province cannot change after registration.
+
+Update body: `vehicle_type`, `brand`, `model`, `color`, `status` (`ACTIVE|INACTIVE|BLOCKED`), `notes`.
+
+Link body: `person_uuid`, `relation` (`OWNER|DRIVER|AUTHORIZED`), optional `effective_from`, `reason`.
+End body: optional `effective_to`, `reason`. Links are never deleted.
+
+No DELETE routes. Every create, update, link and end is written to the audit log (module `vehicle`).
+
+Error codes: `VEHICLE_PLATE_EXISTS` (409), `VEHICLE_PROVINCE_INVALID` (422), `VEHICLE_LINK_EXISTS` (409),
+`VEHICLE_LINK_ENDED` (409), `VEHICLE_LINK_END_BEFORE_START` (422), `PERSON_NOT_FOUND` (422).
