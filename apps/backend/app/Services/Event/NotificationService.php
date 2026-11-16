@@ -58,6 +58,10 @@ class NotificationService
             'event_type' => $event->event_type,
             'decision' => $decision->decision->value,
             'reason_code' => $decision->reason_code,
+            // Display context for the alert popup (EVT-022): where and when.
+            'camera_code' => $event->camera?->camera_code,
+            'camera_name' => $event->camera?->name,
+            'occurred_at' => $event->occurred_at?->toISOString(),
         ];
 
         foreach ($this->recipients() as $recipient) {

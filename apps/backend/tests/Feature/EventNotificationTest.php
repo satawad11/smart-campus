@@ -100,6 +100,11 @@ class EventNotificationTest extends TestCase
         $this->assertDatabaseMissing('app_notifications', [
             'user_id' => $bystander->id,
         ]);
+
+        $notification = $watcher->appNotifications()->firstOrFail();
+        $this->assertSame($camera->camera_code, $notification->data['camera_code']);
+        $this->assertSame($camera->name, $notification->data['camera_name']);
+        $this->assertNotNull($notification->data['occurred_at']);
     }
 
     public function test_an_allow_decision_notifies_no_one(): void

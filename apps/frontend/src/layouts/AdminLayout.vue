@@ -1,15 +1,28 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onBeforeUnmount } from 'vue'
 import { useRouter, RouterView } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { roleLabel } from '@/constants/labels'
 import ThemeToggle from '@/components/common/ThemeToggle.vue'
+import NotificationBell from '@/components/notifications/NotificationBell.vue'
+import AlertToasts from '@/components/notifications/AlertToasts.vue'
+import { useNotificationsStore } from '@/stores/notifications'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const notificationsStore = useNotificationsStore()
 const sidebarOpen = ref(false)
 
+// EVT-022: poll the signed-in user's notification inbox while the console is open.
+watch(
+  () => authStore.isAuthenticated,
+  (signedIn) => (signedIn ? notificationsStore.start() : notificationsStore.stop()),
+  { immediate: true },
+)
+onBeforeUnmount(() => notificationsStore.stop())
+
 async function handleLogout() {
+  notificationsStore.stop()
   await authStore.logout()
   router.push({ name: 'login' })
 }
@@ -295,6 +308,7 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
           </div>
         </div>
         <div class="flex shrink-0 items-center gap-3">
+          <NotificationBell />
           <ThemeToggle />
           <span class="hidden h-6 w-px bg-gray-200 md:block" aria-hidden="true"></span>
           <span class="hidden text-sm font-medium text-gray-700 md:inline">
@@ -319,6 +333,8 @@ const avatarInitial = computed(() => displayName.value.trim().charAt(0).toUpperC
           </button>
         </div>
       </header>
+
+      <AlertToasts />
 
       <main class="flex-1 p-4 sm:p-6 lg:p-8">
         <div class="mx-auto w-full max-w-[1600px]">
