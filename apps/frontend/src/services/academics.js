@@ -35,6 +35,27 @@ export const academicsService = {
     const response = await api.get('/classrooms', { params })
     return response.data.data || []
   },
+
+  /**
+   * Management page (academic data): full envelope with pagination, any status.
+   * @param {'departments'|'programs'|'classrooms'} resource
+   */
+  async page(resource, params = {}) {
+    const response = await api.get(`/${resource}`, { params })
+    return response.data
+  },
+
+  /** Create (academic.manage). */
+  async create(resource, payload) {
+    const response = await api.post(`/${resource}`, payload)
+    return response.data
+  },
+
+  /** Update (academic.manage); codes, year and parent department cannot change. */
+  async update(resource, uuid, payload) {
+    const response = await api.put(`/${resource}/${uuid}`, payload)
+    return response.data
+  },
 }
 
 export default academicsService

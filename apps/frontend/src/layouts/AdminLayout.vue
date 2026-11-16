@@ -121,6 +121,12 @@ const NAV_SECTIONS = [
     title: 'บุคคลและสิทธิ์',
     items: [
       { to: '/students', label: 'จัดการข้อมูลนักเรียน', icon: 'students', perm: 'student.view' },
+      {
+        to: '/academics',
+        label: 'ข้อมูลการศึกษา (แผนก/สาขา/ห้อง)',
+        icon: 'students',
+        perm: 'academic.view',
+      },
       { to: '/users', label: 'จัดการผู้ใช้งาน', icon: 'users', perm: 'user.view' },
       { to: '/roles', label: 'จัดการบทบาทและสิทธิ์', icon: 'shield', perm: 'role.view' },
       { to: '/faces', label: 'ข้อมูลใบหน้าชีวมิติ', icon: 'face', perm: 'face.view' },
