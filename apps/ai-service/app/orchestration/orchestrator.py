@@ -168,6 +168,16 @@ class CameraPipelineRunner:
         self._update_roi(new_config.get("roi"))
 
     @property
+    def plate_recognition_enabled(self) -> bool:
+        """VEH-005: read plates on this camera only when the backend explicitly says so.
+
+        The backend sends the effective value (camera switch AND system flag feature.alpr).
+        Anything other than a literal True — missing key, older backend, "true" string —
+        means off (fail closed). The plate pipeline itself arrives in VEH-008.
+        """
+        return self.config.get("plate_recognition_enabled") is True
+
+    @property
     def reconnect_count(self) -> int:
         if isinstance(self.source, RTSPVideoSource):
             return self.source.reconnect_count

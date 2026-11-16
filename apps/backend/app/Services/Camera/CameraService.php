@@ -22,6 +22,7 @@ use App\Services\Camera\Snapshot\FfmpegCameraSnapshotProvider;
 use App\Services\Camera\Snapshot\FfmpegFrameGrabber;
 use App\Services\Camera\Snapshot\MockCameraSnapshotProvider;
 use App\Services\License\LicenseService;
+use App\Services\System\FeatureFlagService;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
@@ -112,6 +113,7 @@ class CameraService
         $zone = $this->resolveZoneForSite($data['zone_uuid'], $site);
         $data['camera_code'] = ($data['camera_code'] ?? '') !== '' ? $data['camera_code'] : $this->nextCameraCode();
         $aiNode = $this->resolveAiNodeForSite($data['ai_node_uuid'] ?? null, $site);
+        $this->assertPlateRecognitionAllowed($data);
 
         // COM-02: checked before the write transaction so that a refusal's
         // audit record isn't rolled back with it.
@@ -139,6 +141,7 @@ class CameraService
                 'face_recognition_enabled' => $data['face_recognition_enabled'] ?? false,
                 'liveness_enabled' => $data['liveness_enabled'] ?? false,
                 'snapshot_enabled' => $data['snapshot_enabled'] ?? false,
+                'plate_recognition_enabled' => $data['plate_recognition_enabled'] ?? false,
                 'status' => $data['status'] ?? DeviceStatus::ACTIVE->value,
             ]);
 
@@ -166,12 +169,15 @@ class CameraService
      */
     public function updateCamera(Camera $camera, array $data, ?User $actor, ?AuditRequestContext $context): Camera
     {
+        $this->assertPlateRecognitionAllowed($data);
+
         return DB::transaction(function () use ($camera, $data, $actor, $context) {
             $old = [];
             $new = [];
 
             foreach (['name', 'camera_type', 'ip_address', 'stream_protocol', 'onvif_url',
-                'face_detection_enabled', 'face_recognition_enabled', 'liveness_enabled', 'snapshot_enabled'] as $field) {
+                'face_detection_enabled', 'face_recognition_enabled', 'liveness_enabled', 'snapshot_enabled',
+                'plate_recognition_enabled'] as $field) {
                 if (array_key_exists($field, $data) && $camera->{$field} !== $data[$field]) {
                     $old[$field] = $camera->{$field};
                     $new[$field] = $data[$field];
@@ -445,6 +451,20 @@ class CameraService
     }
 
     // ---- Resolution + consistency helpers ----
+
+    /**
+     * VEH-005 (ACR-VEH-01 D1): plate reading can only be switched ON while the ALPR module is
+     * enabled. Switching it off is always allowed.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function assertPlateRecognitionAllowed(array $data): void
+    {
+        $on = filter_var($data['plate_recognition_enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        if ($on && ! app(FeatureFlagService::class)->isEnabled('alpr')) {
+            throw ApiException::unprocessable('ALPR_DISABLED', 'Plate recognition is not enabled for this installation.');
+        }
+    }
 
     private function resolveSite(string $uuid): Site
     {

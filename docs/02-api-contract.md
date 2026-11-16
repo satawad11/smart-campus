@@ -368,3 +368,13 @@ No DELETE routes. Every create, update, link and end is written to the audit log
 
 Error codes: `VEHICLE_PLATE_EXISTS` (409), `VEHICLE_PROVINCE_INVALID` (422), `VEHICLE_LINK_EXISTS` (409),
 `VEHICLE_LINK_ENDED` (409), `VEHICLE_LINK_END_BEFORE_START` (422), `PERSON_NOT_FOUND` (422).
+
+### 25.1 Per-camera plate reading (VEH-005)
+
+`plate_recognition_enabled` (boolean, default `false`) is accepted by `POST /api/v1/cameras` and
+`PUT /api/v1/cameras/{camera_uuid}` and returned by the camera resource. Turning it **on** while the
+ALPR module is off (`feature.alpr` false or `FEATURE_ALPR_ENABLED=false`) is rejected with
+`422 ALPR_DISABLED`; turning it off is always allowed. Changes are audited with the camera update.
+
+`GET /internal/v1/ai-nodes/{node_uuid}/config` sends each camera's **effective** value: the camera
+switch AND `feature.alpr`. Nodes treat anything other than a literal `true` as off.
