@@ -263,7 +263,7 @@ feature flags stay false until the module is complete.
 [x] PPL-001 Owner accepts docs/12-module-09-people-visitor.md — ACCEPTED 2026-11-16 with default answers
 [x] PPL-002 Migrations + models: staff_profiles (+ status histories), guardian_links, visitor_profiles, visits;
     11 permissions + role matrix (fresh seed and migration for existing installs)
-[ ] PPL-003 Staff API: CRUD, status change workflow + history, audit
+[x] PPL-003 Staff API: CRUD, status change workflow + history, audit (/staff, docs/02 §5)
 [ ] PPL-004 Staff import (csv/xlsx) reusing the student import wizard
 [ ] PPL-005 Guardian links API + student detail tab
 [ ] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
