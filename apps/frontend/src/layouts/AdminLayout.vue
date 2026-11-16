@@ -109,6 +109,8 @@ const NAV_SECTIONS = [
       { to: '/users', label: 'จัดการผู้ใช้งาน', icon: 'users', perm: 'user.view' },
       { to: '/roles', label: 'จัดการบทบาทและสิทธิ์', icon: 'shield', perm: 'role.view' },
       { to: '/faces', label: 'ข้อมูลใบหน้าชีวมิติ', icon: 'face', perm: 'face.view' },
+      { to: '/faces/enroll', label: 'ลงทะเบียนใบหน้า', icon: 'face', perm: 'face.enroll' },
+      { to: '/faces/scan', label: 'สแกนใบหน้า', icon: 'camera', perm: 'face.test' },
       { to: '/faces/test', label: 'ทดสอบการรู้จำใบหน้า', icon: 'node', perm: 'face.test' },
     ],
   },

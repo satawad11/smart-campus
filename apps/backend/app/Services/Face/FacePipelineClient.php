@@ -110,4 +110,52 @@ class FacePipelineClient
 
         throw new FaceEnrollmentException($message, $errorCode, $statusCode, $detail);
     }
+
+    /**
+     * Live-capture quality check (FACE-022): face boxes + quality metrics, never an embedding.
+     *
+     * @return array<string, mixed> Raw AI response (face_count, faces, image_width,
+     *                              image_height, accepted, rejection_reasons, quality)
+     *
+     * @throws InvalidImageException
+     * @throws FacePipelineUnavailableException
+     * @throws FaceEnrollmentException
+     */
+    public function checkQuality(string $imageBytes, string $mimeType = 'image/jpeg'): array
+    {
+        $url = rtrim($this->baseUrl, '/').'/internal/v1/face/check-quality';
+
+        try {
+            $response = Http::timeout($this->timeoutSeconds)
+                ->attach('file', $imageBytes, 'frame.jpg', ['Content-Type' => $mimeType])
+                ->post($url);
+        } catch (Exception $e) {
+            throw new FacePipelineUnavailableException(
+                "AI perception service request error at [{$url}]: {$e->getMessage()}"
+            );
+        }
+
+        if ($response->successful()) {
+            return (array) $response->json();
+        }
+
+        $statusCode = $response->status();
+        $body = (array) $response->json();
+        $detail = isset($body['detail']) && is_array($body['detail']) ? $body['detail'] : $body;
+        $errorCode = (string) ($detail['error_code'] ?? 'AI_PIPELINE_ERROR');
+        $message = (string) ($detail['message'] ?? 'Face quality check error.');
+
+        if ($statusCode === 422 && $errorCode === 'INVALID_IMAGE') {
+            throw new InvalidImageException($message);
+        }
+
+        if ($statusCode >= 500 || $statusCode === 404) {
+            // 404: an AI service older than FACE-022 has no check-quality route.
+            throw new FacePipelineUnavailableException(
+                "AI perception service returned HTTP {$statusCode}: {$message}"
+            );
+        }
+
+        throw new FaceEnrollmentException($message, $errorCode, $statusCode, $detail);
+    }
 }

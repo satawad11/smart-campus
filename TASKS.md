@@ -89,6 +89,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] FACE-019 Add face AI benchmark/evaluation harness
 [x] FACE-020 Add face security/acceptance tests
 [x] FACE-021 [R] Human review of pilot threshold settings — HUMAN APPROVED (see docs/FACE-021-PILOT-THRESHOLDS-REVIEW.md)
+[x] FACE-022 Webcam scanning: contract §8 POST /faces/check-quality (face boxes + quality, no embedding) and
+    POST /faces/recognize (MATCH/REVIEW/UNKNOWN + person summary, audited, no access decision); webcam
+    enrollment wizard with live capture indicators (docs/03 §10) and "สแกนใบหน้า" page; live check with
+    real YuNet/SFace models and a physical webcam still PENDING HOST
 
 # MODULE 04 — CAMERA + AI NODE + RTSP
 
