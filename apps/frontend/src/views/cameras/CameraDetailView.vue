@@ -2,6 +2,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useFeaturesStore } from '@/stores/features'
 import camerasService from '@/services/cameras'
 import aiNodesService from '@/services/aiNodes'
 import { apiErrorText, statusLabel } from '@/constants/labels'
@@ -18,6 +19,8 @@ const tabLabels = {
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 
 const camera = ref(null)
 const loading = ref(false)
@@ -34,6 +37,7 @@ const aiForm = reactive({
   face_recognition_enabled: false,
   liveness_enabled: false,
   snapshot_enabled: false,
+  plate_recognition_enabled: false,
 })
 const aiSaving = ref(false)
 const aiError = ref('')
@@ -84,6 +88,7 @@ async function fetchCamera() {
     aiForm.face_recognition_enabled = camera.value.face_recognition_enabled
     aiForm.liveness_enabled = camera.value.liveness_enabled
     aiForm.snapshot_enabled = camera.value.snapshot_enabled
+    aiForm.plate_recognition_enabled = !!camera.value.plate_recognition_enabled
     roiPoints.value = (camera.value.roi || []).map((p) => ({ x: p.x, y: p.y }))
   } catch (err) {
     errorMessage.value = apiErrorText(err, 'โหลดข้อมูลกล้องไม่สำเร็จ')
@@ -96,7 +101,11 @@ async function saveAiSettings() {
   aiSaving.value = true
   aiError.value = ''
   try {
-    const res = await camerasService.updateCamera(camera.value.uuid, { ...aiForm })
+    // Leave the plate switch out while ALPR is off: the backend refuses to turn it on then,
+    // and a camera switched on earlier must not block saving the face settings.
+    const payload = { ...aiForm }
+    if (!featuresStore.isOn('alpr')) delete payload.plate_recognition_enabled
+    const res = await camerasService.updateCamera(camera.value.uuid, payload)
     camera.value = res.data
   } catch (err) {
     aiError.value = apiErrorText(err, 'บันทึกการตั้งค่าไม่สำเร็จ')
@@ -555,6 +564,17 @@ onMounted(() => {
         <label class="flex items-center gap-2 text-sm">
           <input v-model="aiForm.snapshot_enabled" type="checkbox" :disabled="!canUpdate" />
           เปิดการบันทึกภาพนิ่ง
+        </label>
+        <!-- VEH-011: shown only while the ALPR module is on (ACR-VEH-01 D1) -->
+        <label v-if="featuresStore.isOn('alpr')" class="flex items-center gap-2 text-sm">
+          <input
+            v-model="aiForm.plate_recognition_enabled"
+            id="plate-recognition-toggle"
+            type="checkbox"
+            :disabled="!canUpdate"
+          />
+          อ่านป้ายทะเบียน
+          <span class="text-xs text-gray-500">(ใบหน้ายังเป็นหลักในการยืนยันตัวตน)</span>
         </label>
 
         <p v-if="aiError" class="text-sm text-red-600">{{ aiError }}</p>

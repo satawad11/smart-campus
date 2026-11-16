@@ -36,6 +36,38 @@ export const ERROR_MESSAGES = {
   FACE_PROFILE_REVOKED: 'ข้อมูลใบหน้านี้ถูกเพิกถอนแล้ว',
   UPLOAD_SCAN_UNAVAILABLE: 'ระบบตรวจไวรัสไม่พร้อมใช้งาน ไม่สามารถรับไฟล์ได้ในขณะนี้',
   AI_NODE_NOT_ACTIVE: 'ต้องเปิดใช้งานหน่วยประมวลผลก่อน',
+  FEATURE_DISABLED: 'โมดูลนี้ยังไม่เปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+  // Vehicles / plate reading (ACR-VEH-01)
+  VEHICLE_PLATE_EXISTS: 'ทะเบียนนี้ลงทะเบียนไว้แล้ว',
+  VEHICLE_PROVINCE_INVALID: 'ไม่พบจังหวัดนี้',
+  VEHICLE_LINK_EXISTS: 'บุคคลนี้ผูกกับรถคันนี้ในฐานะเดียวกันอยู่แล้ว',
+  VEHICLE_LINK_ENDED: 'การผูกนี้สิ้นสุดไปแล้ว',
+  VEHICLE_LINK_END_BEFORE_START: 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม',
+  PERSON_NOT_FOUND: 'ไม่พบบุคคลนี้',
+  ALPR_DISABLED: 'ระบบอ่านป้ายทะเบียนยังไม่เปิดใช้งาน',
+}
+
+/** Vehicle registry labels (ACR-VEH-01). */
+export const VEHICLE_TYPE_LABELS = {
+  CAR: 'รถยนต์',
+  MOTORCYCLE: 'รถจักรยานยนต์',
+  PICKUP: 'รถกระบะ',
+  VAN: 'รถตู้',
+  TRUCK: 'รถบรรทุก',
+  BUS: 'รถโดยสาร',
+  OTHER: 'อื่น ๆ',
+}
+
+export const VEHICLE_STATUS_LABELS = {
+  ACTIVE: 'ใช้งาน',
+  INACTIVE: 'ไม่ใช้งาน',
+  BLOCKED: 'ระงับ',
+}
+
+export const VEHICLE_RELATION_LABELS = {
+  OWNER: 'เจ้าของ',
+  DRIVER: 'ผู้ขับขี่ประจำ',
+  AUTHORIZED: 'ผู้ได้รับอนุญาต',
 }
 
 /** Status/state codes shown across pages (values stay as the API sends them). */
@@ -113,6 +145,11 @@ export function apiErrorText(err, fallback) {
   if (ERROR_MESSAGES[err?.code]) return ERROR_MESSAGES[err.code]
   if (err?.status === 403) return ERROR_MESSAGES.PERMISSION_DENIED
   return fallback
+}
+
+/** True when the backend refused because the module's feature flag is off (SEC-002). */
+export function isFeatureDisabled(err) {
+  return err?.raw?.response?.data?.error_code === 'FEATURE_DISABLED'
 }
 
 export function onOff(value) {

@@ -196,6 +196,19 @@ const routes = [
         component: () => import('@/views/cameras/CameraDetailView.vue'),
         meta: { requiresAuth: true, permission: 'camera.view' },
       },
+      // Vehicle registry (VEH-011, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'vehicles',
+        name: 'vehicles.index',
+        component: () => import('@/views/vehicles/VehicleListView.vue'),
+        meta: { requiresAuth: true, permission: 'vehicle.view' },
+      },
+      {
+        path: 'vehicles/:uuid',
+        name: 'vehicles.show',
+        component: () => import('@/views/vehicles/VehicleDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'vehicle.view' },
+      },
       {
         path: 'ai-nodes',
         name: 'ai-nodes.index',

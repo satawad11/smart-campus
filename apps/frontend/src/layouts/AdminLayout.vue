@@ -7,9 +7,13 @@ import ThemeToggle from '@/components/common/ThemeToggle.vue'
 import NotificationBell from '@/components/notifications/NotificationBell.vue'
 import AlertToasts from '@/components/notifications/AlertToasts.vue'
 import { useNotificationsStore } from '@/stores/notifications'
+import { useFeaturesStore } from '@/stores/features'
 
 const router = useRouter()
 const authStore = useAuthStore()
+// Optional modules (ACR-VEH-01) show in the menu only while their feature flag is on.
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 const notificationsStore = useNotificationsStore()
 const sidebarOpen = ref(false)
 
@@ -29,6 +33,10 @@ async function handleLogout() {
 }
 
 const ICONS = {
+  vehicle: [
+    'M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z',
+    'M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0',
+  ],
   home: [
     'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
   ],
@@ -134,6 +142,13 @@ const NAV_SECTIONS = [
     items: [
       { to: '/cameras', label: 'จัดการกล้อง', icon: 'camera', perm: 'camera.view' },
       {
+        to: '/vehicles',
+        label: 'จัดการยานพาหนะ',
+        icon: 'vehicle',
+        perm: 'vehicle.view',
+        feature: 'vehicle',
+      },
+      {
         to: '/ai-nodes',
         label: 'จัดการหน่วยประมวลผลปัญญาประดิษฐ์',
         icon: 'node',
@@ -167,6 +182,7 @@ const NAV_SECTIONS = [
 ]
 
 function allowed(item) {
+  if (item.feature && !featuresStore.isOn(item.feature)) return false
   if (!item.perm) return true
   const perms = Array.isArray(item.perm) ? item.perm : [item.perm]
   return perms.some((p) => authStore.can(p))

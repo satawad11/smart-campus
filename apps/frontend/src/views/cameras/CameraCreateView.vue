@@ -3,9 +3,12 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import camerasService from '@/services/cameras'
 import aiNodesService from '@/services/aiNodes'
+import { useFeaturesStore } from '@/stores/features'
 import { apiErrorText, onOff } from '@/constants/labels'
 
 const router = useRouter()
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 
 const step = ref(1)
 const steps = ['ข้อมูลทั่วไป', 'การเชื่อมต่อ', 'ตั้งค่าปัญญาประดิษฐ์', 'ตรวจทาน']
@@ -27,6 +30,7 @@ const form = reactive({
   face_recognition_enabled: true,
   liveness_enabled: false,
   snapshot_enabled: true,
+  plate_recognition_enabled: false,
 })
 
 const aiNodes = ref([])
@@ -174,6 +178,7 @@ async function submit() {
     face_recognition_enabled: form.face_recognition_enabled,
     liveness_enabled: form.liveness_enabled,
     snapshot_enabled: form.snapshot_enabled,
+    plate_recognition_enabled: featuresStore.isOn('alpr') && form.plate_recognition_enabled,
   }
 
   try {
@@ -420,6 +425,14 @@ onMounted(() => {
         <label class="flex items-center gap-2 text-sm">
           <input v-model="form.snapshot_enabled" type="checkbox" />
           เปิดการบันทึกภาพนิ่ง
+        </label>
+        <label v-if="featuresStore.isOn('alpr')" class="flex items-center gap-2 text-sm">
+          <input
+            v-model="form.plate_recognition_enabled"
+            id="plate-recognition-toggle"
+            type="checkbox"
+          />
+          อ่านป้ายทะเบียน
         </label>
       </div>
 
