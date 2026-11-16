@@ -278,6 +278,6 @@ feature flags stay false until the module is complete.
 [ ] PPL-007 Person search API (all person types) for face enrollment and pickers
 [ ] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
 [ ] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
-[ ] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
+[x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import) — UIX-003
 [ ] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
 [ ] PPL-012 Events/history/reports show person group and status; acceptance tests

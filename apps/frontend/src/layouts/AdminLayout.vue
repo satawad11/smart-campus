@@ -121,6 +121,7 @@ const NAV_SECTIONS = [
     title: 'บุคคลและสิทธิ์',
     items: [
       { to: '/students', label: 'จัดการข้อมูลนักเรียน', icon: 'students', perm: 'student.view' },
+      { to: '/staff', label: 'จัดการบุคลากร', icon: 'users', perm: 'staff.view' },
       {
         to: '/academics',
         label: 'ข้อมูลการศึกษา (แผนก/สาขา/ห้อง)',
