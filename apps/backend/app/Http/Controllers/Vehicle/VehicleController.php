@@ -14,6 +14,7 @@ use App\Http\Resources\VehicleResource;
 use App\Models\Vehicle;
 use App\Models\VehicleOwnershipHistory;
 use App\Services\Audit\AuditRequestContext;
+use App\Services\Vehicle\PlateSearchAuditor;
 use App\Services\Vehicle\VehicleRegistryService;
 use App\Support\Vehicles\ThaiPlate;
 use App\Support\Vehicles\ThaiProvince;
@@ -52,6 +53,13 @@ class VehicleController extends Controller
         ]);
 
         $query = Vehicle::query();
+
+        // VEH-013: searching the registry by plate or keyword is audited (PDPA).
+        foreach (['plate', 'keyword'] as $field) {
+            if (! empty($validated[$field])) {
+                app(PlateSearchAuditor::class)->record($request, 'vehicles', $validated[$field]);
+            }
+        }
 
         // Exact plate search, normalised the same way as stored plates ("1กข-1234" finds "1กข1234").
         // Unreadable input is a real, empty filter — never a NUL "impossible value",

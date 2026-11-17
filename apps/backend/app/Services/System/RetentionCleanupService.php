@@ -32,6 +32,7 @@ class RetentionCleanupService
             'ai_node_health' => $this->cleanupAiNodeHealthLogs($dryRun),
             'report_exports' => $this->cleanupReportExports($dryRun),
             'login_logs' => $this->cleanupLoginLogs($dryRun),
+            'plate_reads' => $this->redactPlateReads($dryRun),
             'events' => $this->cleanupEvents($dryRun),
         ];
 
@@ -171,6 +172,45 @@ class RetentionCleanupService
         }
 
         return $query->delete();
+    }
+
+    /**
+     * VEH-013 (ACR-VEH-01): wipe the plate text, province and vehicle link from plate events
+     * older than retention.plate_reads_days. The event row (type, time, camera, OCR score) stays
+     * so counts remain correct until retention.events_days deletes it. Idempotent.
+     */
+    public function redactPlateReads(bool $dryRun = false): int
+    {
+        $days = (int) $this->settingsService->get('retention.plate_reads_days', 30);
+        if ($days <= 0) {
+            return 0;
+        }
+
+        $query = AccessEvent::query()
+            ->whereIn('event_type', ['PLATE_RECOGNIZED', 'PLATE_UNKNOWN', 'PLATE_LOW_CONFIDENCE'])
+            ->where('occurred_at', '<', Carbon::now()->subDays($days))
+            ->whereNull('metadata->plate->redacted_at');
+
+        if ($dryRun) {
+            return $query->count();
+        }
+
+        $count = 0;
+        $query->chunkById(500, function ($events) use (&$count) {
+            foreach ($events as $event) {
+                $metadata = $event->metadata ?? [];
+                $plate = $metadata['plate'] ?? [];
+                foreach (['raw_text', 'raw_province', 'plate_number', 'plate_display', 'plate_province', 'vehicle_uuid'] as $field) {
+                    $plate[$field] = null;
+                }
+                $plate['redacted_at'] = now()->toIso8601String();
+                $metadata['plate'] = $plate;
+                $event->forceFill(['metadata' => $metadata])->save();
+                $count++;
+            }
+        });
+
+        return $count;
     }
 
     /**

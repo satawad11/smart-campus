@@ -269,7 +269,7 @@ feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
 [x] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — complete; FEATURE_VISITOR remains disabled by default: docs/12-module-09-people-visitor.md
-[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 009..012 done (PR #18), see PHASE 4/5
+[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 009..013 done (PR #18), see PHASE 4/5
     below; plate model still needs choosing and licence-checking (VEH-007)
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
@@ -309,7 +309,7 @@ per-camera `plate_recognition_enabled`, both fail closed.
 [x] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
 [x] VEH-011 Vehicle management UI (จัดการยานพาหนะ) and camera toggle "อ่านป้ายทะเบียน"
 [x] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
-[ ] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
+[x] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
 [ ] VEH-014 Benchmark face+plate load per node; Phase 4 acceptance tests
 
 # PHASE 5 — FACE-FIRST SMART GATE (ACR-VEH-01 APPROVED 2026-11-12 — one task at a time)

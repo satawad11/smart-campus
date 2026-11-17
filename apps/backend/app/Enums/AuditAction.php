@@ -165,6 +165,8 @@ enum AuditAction: string
     case VEHICLE_UPDATED = 'VEHICLE_UPDATED';
     case VEHICLE_PERSON_LINKED = 'VEHICLE_PERSON_LINKED';
     case VEHICLE_PERSON_UNLINKED = 'VEHICLE_PERSON_UNLINKED';
+    // VEH-013: who searched for which plate (plates linked to people are personal data)
+    case PLATE_SEARCHED = 'PLATE_SEARCHED';
 
     // Web system update (ACR-OPS-01)
     case SYSTEM_UPDATE_CHECK_REQUESTED = 'SYSTEM_UPDATE_CHECK_REQUESTED';

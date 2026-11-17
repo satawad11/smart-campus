@@ -260,6 +260,16 @@ class SystemSettingSeeder extends Seeder
                 'is_public' => false,
             ],
             [
+                // VEH-013 (ACR-VEH-01): after this many days the plate text and vehicle link
+                // are wiped from plate events; the event row stays until retention.events_days.
+                'key' => 'retention.plate_reads_days',
+                'group' => 'RETENTION',
+                'type' => 'integer',
+                'value' => '30',
+                'description' => 'Days to keep licence plate text on plate read events before it is wiped',
+                'is_public' => false,
+            ],
+            [
                 'key' => 'retention.snapshots_days',
                 'group' => 'RETENTION',
                 'type' => 'integer',

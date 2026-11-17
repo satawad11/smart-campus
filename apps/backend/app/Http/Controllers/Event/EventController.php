@@ -12,6 +12,7 @@ use App\Models\AccessEvent;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Event\EventReviewService;
 use App\Services\Event\EventSearchQuery;
+use App\Services\Vehicle\PlateSearchAuditor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -81,6 +82,10 @@ class EventController extends Controller
         $order = $validated['order'] ?? $defaultOrder;
 
         $query = $this->scopeQuery($this->searchQuery->build($validated), $request, 'event.view');
+        // VEH-013: plate searches are audited (PDPA).
+        if (! empty($validated['plate'])) {
+            app(PlateSearchAuditor::class)->record($request, 'events', $validated['plate']);
+        }
 
         $paginator = $query->orderBy($sort, $order)->paginate($perPage);
 

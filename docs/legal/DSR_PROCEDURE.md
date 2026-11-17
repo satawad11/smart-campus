@@ -14,6 +14,7 @@ and its PDPA counsel. Statutory deadlines quoted here must be verified by counse
 |---|---|---|
 | Access / copy | Student record and status history (UI/API), person timeline and events (`/api/v1/persons/{uuid}/timeline`), report export filtered to the person. **Never export face embeddings**; face images only if the controller decides they are in scope | Data officer with `student.view`/`report.export` |
 | Correction | Student edit in the UI (audited) | Data officer |
+| Access / correction / erasure of vehicle data (ACR-VEH-01) | จัดการยานพาหนะ: vehicle detail shows the person's current and past links; edit the vehicle (audited); end a link instead of deleting it; plate reads lose their plate text after `retention.plate_reads_days`. Search the events by plate to answer "where was my car seen" (each search is audited) | Data officer with `vehicle.manage` / `event.view` |
 | Withdraw consent for biometrics / erasure of biometrics | 1. Revoke the face profile (UI/API, audited). 2. `php artisan face:purge <person_uuid> --dry-run`, then `--reason=<DSR ID>` (irreversible). Backup copies expire with the backup retention (max ~30 days) | System administrator |
 | Erasure of other data | Assess legal retention duties first; access events expire after the events retention period; archive the student record | Controller decision |
 | Objection / restriction | Disable the person's face profile (revoke) and record the restriction in the ticket | Data officer |
