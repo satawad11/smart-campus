@@ -60,7 +60,9 @@ The script performs the manual steps below in order, starting with a **verified 
 4. Check out the new tag, build, migrate (`php artisan migrate --force`), re-run the approved seed, cache
    (DEPLOYMENT §3.2–§3.5).
 5. `php artisan pilot:preflight` and the smoke test; leave maintenance mode.
-6. Upgrade AI nodes last (`deploy/ai-node/update.sh`): nodes buffer events offline while the backend is down and
+6. Upgrade AI nodes last: `scripts/push-ai-node-update.sh <tag|kit> <user@node>...` from the build machine, or
+   the new kit's `./upgrade.sh` on the node (keeps `.env`/certs/models, no re-enrollment; rollback = the previous
+   kit's `./update.sh`; see `deploy/ai-node/README.md`). Nodes buffer events offline while the backend is down and
    deliver them idempotently afterwards (CAM-012, A-07).
 
 ## Migration rules
