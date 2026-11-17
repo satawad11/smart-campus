@@ -77,6 +77,38 @@ const routes = [
         component: () => import('@/views/users/UserEditView.vue'),
         meta: { requiresAuth: true, permission: 'user.update' },
       },
+      // Teachers and staff (Module 09, PPL-010). 'staff/new' and 'staff/import'
+      // come before 'staff/:uuid' so they are not read as a uuid.
+      {
+        path: 'staff',
+        name: 'staff.index',
+        component: () => import('@/views/staff/StaffListView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.view' },
+      },
+      {
+        path: 'staff/new',
+        name: 'staff.create',
+        component: () => import('@/views/staff/StaffFormView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.create' },
+      },
+      {
+        path: 'staff/import',
+        name: 'staff.import',
+        component: () => import('@/views/staff/StaffImportView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.import' },
+      },
+      {
+        path: 'staff/:uuid',
+        name: 'staff.show',
+        component: () => import('@/views/staff/StaffDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.view' },
+      },
+      {
+        path: 'staff/:uuid/edit',
+        name: 'staff.edit',
+        component: () => import('@/views/staff/StaffFormView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.update' },
+      },
       {
         path: 'students',
         name: 'students.index',

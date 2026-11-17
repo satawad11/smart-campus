@@ -6,7 +6,7 @@
  * verification. Upload remains as a fallback when no camera can be used.
  */
 import { ref, computed, onBeforeUnmount } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
 import { studentsService } from '@/services/students'
@@ -18,6 +18,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const AUTO_CAPTURE_STREAK = 3
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const canEnroll = computed(() => authStore.can('face.enroll'))
@@ -85,6 +86,16 @@ function selectPerson(p) {
   selectedPerson.value = p
   searchResults.value = []
   errorMessage.value = ''
+}
+
+// Opened from a person's page (e.g. staff detail) with ?person=<uuid>&name=<label>:
+// preselect that person, since the search box only finds students for now.
+const presetUuid = typeof route?.query?.person === 'string' ? route.query.person : ''
+if (UUID_RE.test(presetUuid)) {
+  const presetName =
+    typeof route.query.name === 'string' && route.query.name ? route.query.name : presetUuid
+  selectPerson({ uuid: presetUuid, display_name: presetName })
+  personQuery.value = presetName
 }
 
 function pickStudent(s) {
