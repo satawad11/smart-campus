@@ -25,6 +25,12 @@ class AccessPolicySeeder extends Seeder
 {
     public function run(): void
     {
+        // Keep legacy pilot rows for decision-history references, but prevent
+        // their former ALLOW rules from participating in new evaluations.
+        AccessPolicy::query()
+            ->whereIn('name', ['Visitor Active Visit -> Allow', 'Parent With Active Student -> Allow'])
+            ->update(['enabled' => false]);
+
         foreach ($this->getDefaultPolicies() as $policy) {
             AccessPolicy::updateOrCreate(
                 ['name' => $policy['name']],
@@ -136,6 +142,18 @@ class AccessPolicySeeder extends Seeder
                 'enabled' => true,
             ],
             [
+                'name' => 'Student Person Inactive -> Review',
+                'subject_type' => 'STUDENT',
+                'subject_status' => 'PERSON_INACTIVE',
+                'site_id' => null,
+                'zone_id' => null,
+                'event_type' => null,
+                'decision' => 'REVIEW',
+                'reason_code' => 'PERSON_RECORD_INACTIVE',
+                'priority' => 100,
+                'enabled' => true,
+            ],
+            [
                 'name' => 'Staff Active -> Allow',
                 'subject_type' => 'STAFF',
                 'subject_status' => 'ACTIVE',
@@ -149,28 +167,40 @@ class AccessPolicySeeder extends Seeder
             ],
             ...$this->reviewPolicies('STAFF', ['LEAVE', 'SUSPENDED', 'RESIGNED', 'RETIRED'], 'STAFF'),
             [
-                'name' => 'Visitor Active Visit -> Allow',
+                'name' => 'Staff Person Inactive -> Review',
+                'subject_type' => 'STAFF',
+                'subject_status' => 'PERSON_INACTIVE',
+                'site_id' => null,
+                'zone_id' => null,
+                'event_type' => null,
+                'decision' => 'REVIEW',
+                'reason_code' => 'PERSON_RECORD_INACTIVE',
+                'priority' => 100,
+                'enabled' => true,
+            ],
+            [
+                'name' => 'Visitor Active Visit -> Review',
                 'subject_type' => 'VISITOR',
                 'subject_status' => 'VISIT_ACTIVE',
                 'site_id' => null,
                 'zone_id' => null,
                 'event_type' => null,
-                'decision' => 'ALLOW',
-                'reason_code' => 'VISIT_ACTIVE',
-                'priority' => 200,
+                'decision' => 'REVIEW',
+                'reason_code' => 'VISITOR_ACTIVE_VISIT_REVIEW',
+                'priority' => 100,
                 'enabled' => true,
             ],
             ...$this->reviewPolicies('VISITOR', ['NO_ACTIVE_VISIT'], 'VISITOR'),
             [
-                'name' => 'Parent With Active Student -> Allow',
+                'name' => 'Parent With Active Student -> Review',
                 'subject_type' => 'PARENT',
                 'subject_status' => 'ACTIVE',
                 'site_id' => null,
                 'zone_id' => null,
                 'event_type' => null,
-                'decision' => 'ALLOW',
-                'reason_code' => 'PARENT_ACTIVE',
-                'priority' => 200,
+                'decision' => 'REVIEW',
+                'reason_code' => 'PARENT_ACTIVE_STUDENT_REVIEW',
+                'priority' => 100,
                 'enabled' => true,
             ],
             ...$this->reviewPolicies('PARENT', ['NO_ACTIVE_STUDENT'], 'PARENT'),

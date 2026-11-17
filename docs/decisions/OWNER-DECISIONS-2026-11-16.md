@@ -10,6 +10,7 @@ starting with **visitors / parents / staff**. This is an explicit owner instruct
 | U2 | Delivery order | One module at a time. First: **Module 09 — People: staff, visitors, parents** (`docs/12-module-09-people-visitor.md`). The owner picks the next one when Module 09 is done |
 | U3 | Gate before code | Each module needs a written spec the owner accepts before implementation (`Spec -> Contract -> Task -> Test -> Code`) |
 | U4 | Feature flags | `FEATURE_*_ENABLED` stay `false` until that module is complete and accepted; partial code is never exposed (PROJECT_RULES §13) |
+| U5 | Live surveillance alerts (2026-11-17) | Only ACTIVE students and ACTIVE staff are routine. Every other person type/status, including an active visitor or parent, requires an operator alert; inactive/archived person records override profile status. |
 
 ## What this does not change
 - Locked stack, domain model, AI boundary ("AI identifies -> Backend decides") and security rules still apply to every

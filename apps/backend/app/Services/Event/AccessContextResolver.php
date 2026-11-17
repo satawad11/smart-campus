@@ -2,6 +2,7 @@
 
 namespace App\Services\Event;
 
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use App\Enums\VisitStatus;
 use App\Models\AccessEvent;
@@ -20,21 +21,28 @@ class AccessContextResolver
         $person = $event->person;
 
         if ($person !== null) {
+            $recordInactive = $person->status !== PersonStatus::ACTIVE;
             $student = $person->studentProfile;
             if ($student !== null) {
                 $subjectType = 'STUDENT';
-                $subjectStatus = $student->academic_status?->value ?? $student->academic_status;
+                $subjectStatus = $recordInactive
+                    ? 'PERSON_INACTIVE'
+                    : ($student->academic_status?->value ?? $student->academic_status);
             } elseif (in_array($person->person_type, [PersonType::TEACHER, PersonType::STAFF], true) && ($staff = $person->staffProfile) !== null) {
                 $subjectType = 'STAFF';
-                $subjectStatus = $staff->employment_status?->value ?? $staff->employment_status;
+                $subjectStatus = $recordInactive
+                    ? 'PERSON_INACTIVE'
+                    : ($staff->employment_status?->value ?? $staff->employment_status);
             } elseif (in_array($person->person_type, [PersonType::VISITOR, PersonType::CONTRACTOR], true)) {
                 $subjectType = 'VISITOR';
-                $subjectStatus = $this->features->isEnabled('visitor') && $this->hasActiveVisit($person, $event->site_id)
+                $subjectStatus = ! $recordInactive && $this->features->isEnabled('visitor') && $this->hasActiveVisit($person, $event->site_id)
                     ? 'VISIT_ACTIVE'
-                    : 'NO_ACTIVE_VISIT';
+                    : ($recordInactive ? 'PERSON_INACTIVE' : 'NO_ACTIVE_VISIT');
             } elseif ($person->person_type === PersonType::PARENT) {
                 $subjectType = 'PARENT';
-                $subjectStatus = $this->hasActiveStudent($person) ? 'ACTIVE' : 'NO_ACTIVE_STUDENT';
+                $subjectStatus = $recordInactive
+                    ? 'PERSON_INACTIVE'
+                    : ($this->hasActiveStudent($person) ? 'ACTIVE' : 'NO_ACTIVE_STUDENT');
             }
         }
 

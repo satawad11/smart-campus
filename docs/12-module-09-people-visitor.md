@@ -128,3 +128,11 @@ See `TASKS.md` → Module 09 (PPL-001 … PPL-012).
    exposes staff.
 2. Visitor face retention: **30 days** after the last visit ends (`visitor.face_retention_days`, changeable).
 3. A visitor without a face profile **can be checked in manually** at the gate.
+
+## Owner amendment (2026-11-17)
+
+For live face surveillance, only ACTIVE students and ACTIVE staff are routine identities. A visitor with an active visit
+and a parent linked to an active student still generate a REVIEW decision and operator alert. This supersedes the
+PPL-008 default `VISIT_ACTIVE -> ALLOW` and `PARENT ACTIVE -> ALLOW` for face-surveillance events; visit/check-in data
+remains operational context and does not suppress the alert. See `docs/09-module-05-event-policy-monitor.md` and
+`docs/decisions/OWNER-DECISIONS-2026-11-16.md`.

@@ -262,6 +262,12 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
     timeout, daily sync time, connection test — ACR-INT-02 APPROVED 2026-11-12
     (docs/decisions/ACR-INT-02-INTEGRATION-SETTINGS-UI.md); live test against RMS still PENDING HOST
 
+# LIVE SURVEILLANCE READINESS
+
+[~] SURV-001 Active-person-only live recognition alerts: align AI RTSP capture with the TCP preview path; classify only
+    ACTIVE students and ACTIVE staff as routine; alert on UNKNOWN, every other person type/status, and inactive person
+    records; automated tests pass, pending the owner's physical face test on the campus camera.
+
 # FUTURE PHASES — APPROVED 2026-11-16, BUILT ONE AT A TIME
 
 Approved by the owner (docs/decisions/OWNER-DECISIONS-2026-11-16.md). Each module needs an accepted spec before code;

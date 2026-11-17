@@ -10,6 +10,7 @@ machine deterministically against a fake, with no real network/camera
 dependency.
 """
 
+import os
 import random
 import time
 from collections.abc import Callable
@@ -65,6 +66,11 @@ def mask_rtsp_url(url: str) -> str:
 def _default_capture_factory(
     url: str, connect_timeout_ms: int, read_timeout_ms: int
 ) -> CaptureLike:
+    # Keep the AI-node transport consistent with the backend's camera preview.
+    # UDP packet loss can yield decodable-looking frames with corrupted/missing
+    # image regions, which is particularly harmful to face detection. Operators
+    # may still override this process-wide OpenCV option in the deployment env.
+    os.environ.setdefault("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;tcp")
     try:
         import cv2  # noqa: PLC0415 (intentionally lazy — see module docstring)
     except ImportError as exc:

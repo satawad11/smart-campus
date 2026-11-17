@@ -75,6 +75,9 @@ Every module must satisfy:
 - ACTIVE student maps to configured default policy behavior.
 - SUSPENDED/other exceptional statuses follow configured policy.
 - UNKNOWN is handled without creating fake Person records.
+- Only an ACTIVE student or an ACTIVE staff member is treated as routine; all other recognized person types/statuses are routed to REVIEW/DENY and an actionable operator alert.
+- An INACTIVE/ARCHIVED Person record overrides an otherwise ACTIVE student/staff profile and requires review.
+- UNKNOWN face events create an operator alert and durable event history.
 - Duplicate UUID/event cooldown is enforced.
 - WebSocket broadcast occurs after durable persistence.
 - Review queue works.

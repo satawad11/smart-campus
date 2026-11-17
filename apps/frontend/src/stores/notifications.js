@@ -19,7 +19,7 @@ const MAX_ALERTS = 5
 const SOUND_KEY = 'smart-campus.alert-sound'
 
 /** Types that pop up as an alert; everything else only lands in the inbox. */
-export const ALERT_TYPES = ['EVENT_UNKNOWN_PERSON', 'EVENT_DENIED']
+export const ALERT_TYPES = ['EVENT_UNKNOWN_PERSON', 'EVENT_DENIED', 'EVENT_REVIEW_REQUIRED']
 
 export const NOTIFICATION_LABELS = {
   EVENT_UNKNOWN_PERSON: 'พบบุคคลไม่ทราบตัวตน',

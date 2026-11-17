@@ -6,7 +6,10 @@ own "no actual internet dependency" requirement. Backoff sleeps are captured
 via an injected sleep_fn instead of actually sleeping, so tests stay fast.
 """
 
+import os
+import sys
 from collections.abc import Callable
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -108,6 +111,66 @@ class TestMaskRtspUrl:
         # raise, and never fabricate credential-looking output.
         result = mask_rtsp_url("::::not a url::::")
         assert isinstance(result, str)
+
+
+class TestOpenCvTransport:
+    def test_default_capture_uses_tcp_unless_operator_overrides_it(self, monkeypatch) -> None:
+        from app.streams import rtsp
+
+        class OpenCvCapture(FakeCapture):
+            def __init__(self, url: str, backend: int):
+                super().__init__()
+                self.url = url
+                self.backend = backend
+                self.properties: list[tuple[int, float]] = []
+
+            def set(self, prop_id: int, value: float) -> bool:
+                self.properties.append((prop_id, value))
+                return True
+
+        captures = []
+
+        def video_capture(url: str, backend: int) -> OpenCvCapture:
+            capture = OpenCvCapture(url, backend)
+            captures.append(capture)
+            return capture
+
+        fake_cv2 = SimpleNamespace(
+            CAP_FFMPEG=1900,
+            CAP_PROP_OPEN_TIMEOUT_MSEC=53,
+            CAP_PROP_READ_TIMEOUT_MSEC=54,
+            VideoCapture=video_capture,
+        )
+        monkeypatch.setitem(sys.modules, "cv2", fake_cv2)
+        monkeypatch.delenv("OPENCV_FFMPEG_CAPTURE_OPTIONS", raising=False)
+
+        capture = rtsp._default_capture_factory(CREDENTIALED_URL, 5000, 7000)
+
+        assert os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] == "rtsp_transport;tcp"
+        assert capture is captures[0]
+        assert captures[0].url == CREDENTIALED_URL
+        assert captures[0].backend == fake_cv2.CAP_FFMPEG
+        assert captures[0].properties == [(53, 5000), (54, 7000)]
+
+    def test_default_capture_preserves_operator_transport_override(self, monkeypatch) -> None:
+        from app.streams import rtsp
+
+        class OpenCvCapture(FakeCapture):
+            def set(self, prop_id: int, value: float) -> bool:
+                return True
+
+        fake_cv2 = SimpleNamespace(
+            CAP_FFMPEG=1900,
+            CAP_PROP_OPEN_TIMEOUT_MSEC=53,
+            CAP_PROP_READ_TIMEOUT_MSEC=54,
+            VideoCapture=lambda url, backend: OpenCvCapture(),
+        )
+        monkeypatch.setitem(sys.modules, "cv2", fake_cv2)
+        monkeypatch.setenv("OPENCV_FFMPEG_CAPTURE_OPTIONS", "rtsp_transport;udp")
+
+        rtsp._default_capture_factory(CREDENTIALED_URL, 5000, 7000)
+
+        assert os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] == "rtsp_transport;udp"
 
 
 class TestOpenLifecycle:
