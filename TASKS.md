@@ -317,7 +317,7 @@ per-camera `plate_recognition_enabled`, both fail closed.
 Decision and notification only. Physical barrier control needs Phase 2 and its own ACR.
 
 [x] GATE-001 Create gates and gate_cameras schemas (camera role FACE / PLATE / BOTH)
-[ ] GATE-002 Gate management APIs and UI
+[x] GATE-002 Gate management APIs and UI
 [ ] GATE-003 Create gate_passes schema (links events, never modifies them)
 [ ] GATE-004 Face + plate correlation service within the gate time window
 [ ] GATE-005 Extend AccessContext with gate, vehicle, ownership link and match_result

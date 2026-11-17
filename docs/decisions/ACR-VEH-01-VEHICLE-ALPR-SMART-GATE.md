@@ -167,3 +167,9 @@ OWNER-DECISIONS-2026-11-16 (U2) says to build one module at a time, starting wit
 When this branch was merged with that decision, the owner was asked whether to pause the vehicle work
 and chose in chat to **continue VEH-004** in parallel. U4 still applies: `feature.vehicle` and
 `feature.alpr` stay off until the module is complete and accepted.
+
+## Smart Gate access (GATE-002, 2026-11-17)
+
+Asked in chat before GATE-002, the owner chose the recommended options: new permissions `gate.view` /
+`gate.manage` (SUPER_ADMIN and SYSTEM_ADMIN manage, SECURITY_OFFICER views), and the gate pages and API
+sit behind `feature.vehicle`, so gates can be set up while plate reading (`feature.alpr`) is still off.

@@ -25,6 +25,7 @@ use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
 use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\Face\FaceScanController;
+use App\Http\Controllers\Gate\GateController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
@@ -491,6 +492,18 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
         Route::put('/{vehicle}', [VehicleController::class, 'update'])->middleware('permission:vehicle.manage');
         Route::post('/{vehicle}/links', [VehicleController::class, 'link'])->middleware('permission:vehicle.manage');
         Route::post('/{vehicle}/links/{link}/end', [VehicleController::class, 'unlink'])->middleware('permission:vehicle.manage');
+    });
+    // Smart Gate configuration (GATE-002, ACR-VEH-01 Phase 5). Same feature gate as the vehicle
+    // registry (owner decision 2026-11-17). No DELETE: gates are deactivated. Configuration
+    // only; nothing here opens a barrier (D5).
+    Route::middleware('feature:vehicle')->prefix('gates')->group(function () {
+        Route::get('/', [GateController::class, 'index'])->middleware('permission:gate.view');
+        Route::post('/', [GateController::class, 'store'])->middleware('permission:gate.manage');
+        // Literal path before /{gate} so it never binds as a uuid.
+        Route::get('/form-options', [GateController::class, 'formOptions'])->middleware('permission:gate.manage');
+        Route::get('/{gate}', [GateController::class, 'show'])->middleware('permission:gate.view');
+        Route::put('/{gate}', [GateController::class, 'update'])->middleware('permission:gate.manage');
+        Route::put('/{gate}/cameras', [GateController::class, 'replaceCameras'])->middleware('permission:gate.manage');
     });
     Route::middleware('feature:alpr')->prefix('alpr')->group(function () {
         Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));

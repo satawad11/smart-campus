@@ -45,6 +45,34 @@ export const ERROR_MESSAGES = {
   VEHICLE_LINK_END_BEFORE_START: 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม',
   PERSON_NOT_FOUND: 'ไม่พบบุคคลนี้',
   ALPR_DISABLED: 'ระบบอ่านป้ายทะเบียนยังไม่เปิดใช้งาน',
+  // Smart Gate (ACR-VEH-01, GATE-002)
+  GATE_CODE_EXISTS: 'รหัสจุดเข้าออกนี้มีอยู่แล้วในไซต์นี้',
+  GATE_ZONE_SITE_MISMATCH: 'โซนนี้ไม่ได้อยู่ในไซต์ของจุดเข้าออก',
+  GATE_NEEDS_FACE_CAMERA: 'จุดเข้าออกที่เปิดใช้งานต้องมีกล้องจับใบหน้าอย่างน้อย 1 ตัว',
+  GATE_CAMERA_SITE_MISMATCH: 'กล้องนี้ไม่ได้อยู่ในไซต์ของจุดเข้าออก',
+  GATE_CAMERA_IN_USE: 'กล้องนี้ถูกใช้กับจุดเข้าออกอื่นแล้ว',
+  GATE_CAMERA_DUPLICATE: 'เลือกกล้องตัวเดียวกันซ้ำ',
+  SITE_NOT_FOUND: 'ไม่พบไซต์นี้',
+  ZONE_NOT_FOUND: 'ไม่พบโซนนี้',
+  CAMERA_NOT_FOUND: 'ไม่พบกล้องนี้',
+}
+
+/** Smart Gate labels (ACR-VEH-01, GATE-002). */
+export const GATE_DIRECTION_LABELS = {
+  IN: 'ขาเข้า',
+  OUT: 'ขาออก',
+  BOTH: 'เข้าและออก',
+}
+
+export const GATE_CAMERA_ROLE_LABELS = {
+  FACE: 'จับใบหน้า',
+  PLATE: 'อ่านป้ายทะเบียน',
+  BOTH: 'ใบหน้าและป้ายทะเบียน',
+}
+
+export const GATE_STATUS_LABELS = {
+  ACTIVE: 'เปิดใช้งาน',
+  INACTIVE: 'ปิดใช้งาน',
 }
 
 /** Plate-read event types (VEH-006/VEH-012). */

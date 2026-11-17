@@ -168,6 +168,11 @@ enum AuditAction: string
     // VEH-013: who searched for which plate (plates linked to people are personal data)
     case PLATE_SEARCHED = 'PLATE_SEARCHED';
 
+    // Smart Gate configuration (ACR-VEH-01, GATE-002)
+    case GATE_CREATED = 'GATE_CREATED';
+    case GATE_UPDATED = 'GATE_UPDATED';
+    case GATE_CAMERAS_CHANGED = 'GATE_CAMERAS_CHANGED';
+
     // Web system update (ACR-OPS-01)
     case SYSTEM_UPDATE_CHECK_REQUESTED = 'SYSTEM_UPDATE_CHECK_REQUESTED';
     case SYSTEM_UPDATE_REQUESTED = 'SYSTEM_UPDATE_REQUESTED';

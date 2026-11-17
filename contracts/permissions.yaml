@@ -62,3 +62,7 @@ permissions:
   vehicle:
     - vehicle.view
     - vehicle.manage
+  # ACR-VEH-01 (GATE-002): Smart Gate configuration; routes also need feature.vehicle on.
+  gate:
+    - gate.view
+    - gate.manage

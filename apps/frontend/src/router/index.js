@@ -156,8 +156,18 @@ const routes = [
         component: () => import('@/views/academics/AcademicDataView.vue'),
         meta: { requiresAuth: true, permission: 'academic.view' },
       },
-      { path: 'guardians', name: 'guardians.index', component: () => import('@/views/people/GuardiansView.vue'), meta: { requiresAuth: true, permission: 'guardian.view' } },
-      { path: 'visitors', name: 'visitors.index', component: () => import('@/views/people/VisitorsView.vue'), meta: { requiresAuth: true, permission: 'visitor.view' } },
+      {
+        path: 'guardians',
+        name: 'guardians.index',
+        component: () => import('@/views/people/GuardiansView.vue'),
+        meta: { requiresAuth: true, permission: 'guardian.view' },
+      },
+      {
+        path: 'visitors',
+        name: 'visitors.index',
+        component: () => import('@/views/people/VisitorsView.vue'),
+        meta: { requiresAuth: true, permission: 'visitor.view' },
+      },
       {
         path: 'roles',
 
@@ -256,6 +266,19 @@ const routes = [
         name: 'vehicles.show',
         component: () => import('@/views/vehicles/VehicleDetailView.vue'),
         meta: { requiresAuth: true, permission: 'vehicle.view' },
+      },
+      // Smart Gate configuration (GATE-002, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'gates',
+        name: 'gates.index',
+        component: () => import('@/views/gates/GateListView.vue'),
+        meta: { requiresAuth: true, permission: 'gate.view' },
+      },
+      {
+        path: 'gates/:uuid',
+        name: 'gates.show',
+        component: () => import('@/views/gates/GateDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'gate.view' },
       },
       {
         path: 'ai-nodes',

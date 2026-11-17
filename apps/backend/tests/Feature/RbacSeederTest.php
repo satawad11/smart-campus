@@ -154,6 +154,7 @@ class RbacSeederTest extends TestCase
             'guardian' => ['guardian.view', 'guardian.manage'],
             'visitor' => ['visitor.view', 'visitor.manage', 'visit.view', 'visit.manage'],
             'vehicle' => ['vehicle.view', 'vehicle.manage'],
+            'gate' => ['gate.view', 'gate.manage'],
         ];
 
         $totalExpected = 0;
@@ -167,14 +168,14 @@ class RbacSeederTest extends TestCase
             }
         }
 
-        $this->assertSame(60, $totalExpected);
-        $this->assertCount(60, Permission::all());
+        $this->assertSame(62, $totalExpected);
+        $this->assertCount(62, Permission::all());
     }
 
     public function test_permission_codes_are_unique(): void
     {
         $codes = Permission::pluck('code')->all();
-        $this->assertCount(60, $codes);
+        $this->assertCount(62, $codes);
         $this->assertSame($codes, array_unique($codes));
     }
 
@@ -183,7 +184,7 @@ class RbacSeederTest extends TestCase
         $superAdmin = Role::where('code', 'SUPER_ADMIN')->firstOrFail();
         $permissions = $superAdmin->permissions->pluck('code')->all();
 
-        $this->assertCount(60, $permissions);
+        $this->assertCount(62, $permissions);
         $allPermissions = Permission::pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
     }
@@ -195,7 +196,7 @@ class RbacSeederTest extends TestCase
 
         // Everything except the SUPER_ADMIN-only system.update (ACR-OPS-01)
         // and integration.manage (ACR-INT-02).
-        $this->assertCount(58, $permissions);
+        $this->assertCount(60, $permissions);
         $allPermissions = Permission::whereNotIn('code', ['system.update', 'integration.manage'])->pluck('code')->all();
         $this->assertEqualsCanonicalizing($allPermissions, $permissions);
         $this->assertNotContains('system.update', $permissions);
@@ -280,6 +281,7 @@ class RbacSeederTest extends TestCase
             'visit.view',
             'visit.manage',
             'vehicle.view',
+            'gate.view',
         ];
 
         $this->assertCount(count($expected), $permissions);
@@ -313,6 +315,7 @@ class RbacSeederTest extends TestCase
             'camera.test',
             'ai_node.manage',
             'vehicle.manage',
+            'gate.manage',
         ];
 
         foreach ($prohibited as $forbiddenPermission) {
@@ -375,8 +378,8 @@ class RbacSeederTest extends TestCase
         $initialRoleUuids = Role::pluck('uuid', 'code')->all();
 
         $this->assertSame(5, $initialRoleCount);
-        $this->assertSame(60, $initialPermCount);
-        $this->assertSame(60 + 58 + 16 + 13 + 3, $initialPivotCount); // 150 assignments (SUPER_ADMIN-only system.update, integration.manage)
+        $this->assertSame(62, $initialPermCount);
+        $this->assertSame(62 + 60 + 16 + 14 + 3, $initialPivotCount); // 155 assignments (SUPER_ADMIN-only system.update, integration.manage)
 
         // Run seeders again
         $this->seed(DatabaseSeeder::class);

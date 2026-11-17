@@ -461,3 +461,38 @@ camera within `ALPR_PLATE_COOLDOWN_SECONDS` (30) is one pass and answers 200 wit
 - `POST /api/v1/events/{uuid}/review` on a plate event answers `422 PLATE_EVENT_NOT_REVIEWABLE`.
 - Realtime: plate reads arrive on the site channel as `plate.read` (§25.3), separate from
   `event.decided`.
+
+## 26. Smart Gates (ACR-VEH-01 Phase 5, GATE-002)
+
+Behind `feature:vehicle` (owner decision 2026-11-17), checked before permissions, so a disabled module
+answers `403 FEATURE_DISABLED`. Permissions `gate.view` / `gate.manage` (SUPER_ADMIN and SYSTEM_ADMIN
+manage, SECURITY_OFFICER views). Configuration only: no endpoint here opens a barrier (decision D5).
+
+```
+GET  /api/v1/gates                         gate.view   (filters: keyword, site_uuid, zone_uuid, status, paging)
+POST /api/v1/gates                         gate.manage
+GET  /api/v1/gates/form-options            gate.manage (sites -> zones and cameras; each camera has gate_uuid/gate_name if already used)
+GET  /api/v1/gates/{gate_uuid}             gate.view   (includes cameras)
+PUT  /api/v1/gates/{gate_uuid}             gate.manage
+PUT  /api/v1/gates/{gate_uuid}/cameras     gate.manage (replaces the whole camera set)
+```
+
+Create body: `site_uuid`, `zone_uuid`, `code` (`[A-Za-z0-9_-]`, max 64, unique per site), `name`,
+optional `direction` (`IN|OUT|BOTH`, default `BOTH`), `correlation_window_seconds` (1-60, default 10),
+`status` (`ACTIVE|INACTIVE`, default `INACTIVE`), `notes`, `cameras[]` (`camera_uuid`, `role`
+`FACE|PLATE|BOTH`). `mode` is not accepted: every gate is `FACE_PRIMARY` (decision D2).
+
+Update body: `name`, `zone_uuid` (same site), `direction`, `correlation_window_seconds`, `status`,
+`notes`. Site, code and mode cannot change; cameras change only through `PUT .../cameras`
+(body `cameras: [{camera_uuid, role}]`, may be empty).
+
+Rules: an `ACTIVE` gate needs at least one camera whose role reads faces (`FACE` or `BOTH`); a camera
+serves at most one gate and must be in the gate's site. The gate resource lists each camera's `role`,
+`status`, `face_recognition_enabled` and `plate_recognition_enabled` so the UI can warn when a role does
+not match what the camera is set to read. No DELETE: a gate is deactivated.
+
+Audit (module `gate`): `GATE_CREATED`, `GATE_UPDATED`, `GATE_CAMERAS_CHANGED` (only when the set changes).
+
+Error codes: `GATE_CODE_EXISTS` (409), `GATE_CAMERA_IN_USE` (409), `GATE_NEEDS_FACE_CAMERA` (422),
+`GATE_ZONE_SITE_MISMATCH` (422), `GATE_CAMERA_SITE_MISMATCH` (422), `GATE_CAMERA_DUPLICATE` (422),
+`SITE_NOT_FOUND` (422), `ZONE_NOT_FOUND` (422), `CAMERA_NOT_FOUND` (422).

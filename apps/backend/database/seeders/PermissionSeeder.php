@@ -430,6 +430,19 @@ class PermissionSeeder extends Seeder
                 'name' => 'Manage Vehicles',
                 'description' => 'Register vehicles, change their status and link or unlink people',
             ],
+            // Smart Gate (ACR-VEH-01, GATE-002); routes also need feature.vehicle on.
+            [
+                'code' => 'gate.view',
+                'module' => 'gate',
+                'name' => 'View Gates',
+                'description' => 'View Smart Gates and the cameras assigned to them',
+            ],
+            [
+                'code' => 'gate.manage',
+                'module' => 'gate',
+                'name' => 'Manage Gates',
+                'description' => 'Create Smart Gates, change their settings and assign cameras',
+            ],
         ];
     }
 }
