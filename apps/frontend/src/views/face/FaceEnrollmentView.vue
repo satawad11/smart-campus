@@ -5,8 +5,8 @@
  * notice/consent -> camera permission -> capture with live indicators -> enroll ->
  * verification. Upload remains as a fallback when no camera can be used.
  */
-import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onBeforeUnmount, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
 import { personsService } from '@/services/students'
@@ -18,6 +18,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const AUTO_CAPTURE_STREAK = 3
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 
 const canEnroll = computed(() => authStore.can('face.enroll'))
@@ -94,18 +95,19 @@ function pickPerson(person) {
   personQuery.value = name
 }
 
+// Allow links from staff, guardian, and visitor records to preselect a person.
+const presetUuid = typeof route.query.person === 'string' ? route.query.person : ''
+if (UUID_RE.test(presetUuid)) {
+  const presetName = typeof route.query.name === 'string' && route.query.name ? route.query.name : presetUuid
+  selectPerson({ uuid: presetUuid, display_name: presetName })
+  personQuery.value = presetName
+}
+
 watch(personType, () => {
   if (personQuery.value.trim().length >= 2) runSearch(personQuery.value.trim())
 })
 
-onMounted(async () => {
-  const uuid = router.currentRoute.value.query.person
-  if (typeof uuid !== 'string' || !UUID_RE.test(uuid)) return
-  personQuery.value = uuid
-  // UUID links are intentionally supported even though safe text search does
-  // not search UUIDs. The enrollment API still validates the person server-side.
-  selectPerson({ uuid, display_name: uuid })
-})
+
 
 function setImage(blob, src) {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)

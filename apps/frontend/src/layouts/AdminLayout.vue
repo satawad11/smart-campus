@@ -122,6 +122,12 @@ const NAV_SECTIONS = [
     items: [
       { to: '/students', label: 'จัดการข้อมูลนักเรียน', icon: 'students', perm: 'student.view' },
       { to: '/staff', label: 'จัดการข้อมูลบุคลากร', icon: 'users', perm: 'staff.view' },
+      {
+        to: '/academics',
+        label: 'ข้อมูลการศึกษา (แผนก/สาขา/ห้อง)',
+        icon: 'students',
+        perm: 'academic.view',
+      },
       { to: '/guardians', label: 'จัดการข้อมูลผู้ปกครอง', icon: 'users', perm: 'guardian.view' },
       { to: '/visitors', label: 'ผู้มาติดต่อและรายการเข้าออก', icon: 'camera', perm: 'visitor.view' },
       { to: '/users', label: 'จัดการผู้ใช้งาน', icon: 'users', perm: 'user.view' },
@@ -135,6 +141,7 @@ const NAV_SECTIONS = [
   {
     title: 'อุปกรณ์',
     items: [
+      { to: '/locations', label: 'สถานที่และโซน', icon: 'home', perm: 'system.view' },
       { to: '/cameras', label: 'จัดการกล้อง', icon: 'camera', perm: 'camera.view' },
       {
         to: '/ai-nodes',

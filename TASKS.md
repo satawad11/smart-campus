@@ -147,6 +147,11 @@ Only mark `[x]` when the relevant tests pass.
     group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
     private user.{uuid} (polling stays as fallback)
 
+# UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
+
+[x] UIX-001 ข้อมูลการศึกษา page: departments / programs / classrooms list, search, add, edit, deactivate (existing API)
+[x] UIX-002 สถานที่และโซน: sites/zones API (system.view/manage) + page; add, edit, deactivate
+
 # MODULE 06 — HISTORY + REPORTING
 
 [x] RPT-001 Implement historical search API
@@ -273,6 +278,6 @@ feature flags stay false until the module is complete.
 [x] PPL-007 Person search API (all person types) for face enrollment and pickers
 [x] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
 [x] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
-[x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
+[x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import) — UIX-003
 [x] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
 [x] PPL-012 Events/history/reports show person group and status; acceptance tests
