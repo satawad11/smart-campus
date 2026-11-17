@@ -448,3 +448,16 @@ channel as `plate.read`. Rejections: `422 ALPR_DISABLED`, `422 PLATE_RECOGNITION
 switch off), `AI_NODE_IDENTITY_MISMATCH`, `CAMERA_NOT_FOUND`, `CAMERA_NOT_ASSIGNED_TO_NODE`,
 `409 EVENT_ALREADY_EXISTS`. A retried `event_uuid` answers 200; the same readable plate at the same
 camera within `ALPR_PLATE_COOLDOWN_SECONDS` (30) is one pass and answers 200 with the first event.
+
+### 25.4 Plate events in events, history and reports (VEH-012)
+
+- `GET /api/v1/events` and `GET /api/v1/history/search` accept `plate` (normalised like stored plates;
+  matches plate events only; unreadable input returns nothing).
+- Event resources carry `plate` on plate events: `plate_number`, `plate_display`, `plate_province`,
+  `plate_province_name`, `raw_text`, `ocr_score`, `vehicle_uuid`, `vehicle_status`; `null` otherwise.
+- Range reports (`/reports/daily|weekly|monthly|yearly|custom`) add `plates`: `recognized`,
+  `unknown`, `low_confidence`, `blocked_vehicle_reads`. These are counted from events and are not part
+  of `totals` (plate events have no decision).
+- `POST /api/v1/events/{uuid}/review` on a plate event answers `422 PLATE_EVENT_NOT_REVIEWABLE`.
+- Realtime: plate reads arrive on the site channel as `plate.read` (§25.3), separate from
+  `event.decided`.

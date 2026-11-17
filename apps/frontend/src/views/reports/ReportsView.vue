@@ -2,6 +2,11 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { apiErrorText, statusLabel } from '@/constants/labels'
+import { useFeaturesStore } from '@/stores/features'
+
+// VEH-012: plate totals only while the ALPR module is on.
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 
 const activeTab = ref('generator') // 'generator' | 'exports'
 
@@ -338,6 +343,42 @@ onMounted(() => {
               {{ reportData.totals.unique_persons_recognized.toLocaleString() }}
             </div>
           </div>
+        </div>
+
+        <!-- VEH-012: plate reads (records only; not part of the face totals above) -->
+        <div
+          v-if="reportData.plates && featuresStore.isOn('alpr')"
+          data-test="plate-totals"
+          class="bg-surface p-4 rounded-xl border border-gray-200 space-y-2"
+        >
+          <h3 class="text-sm font-semibold text-gray-900">การอ่านป้ายทะเบียน</h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <div class="text-xs text-gray-500">รถที่ลงทะเบียน</div>
+              <div class="text-lg font-bold text-blue-700">
+                {{ reportData.plates.recognized.toLocaleString() }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500">รถไม่ได้ลงทะเบียน</div>
+              <div class="text-lg font-bold text-gray-800">
+                {{ reportData.plates.unknown.toLocaleString() }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500">อ่านทะเบียนไม่ชัด</div>
+              <div class="text-lg font-bold text-gray-600">
+                {{ reportData.plates.low_confidence.toLocaleString() }}
+              </div>
+            </div>
+            <div>
+              <div class="text-xs text-gray-500">พบรถที่ถูกระงับ</div>
+              <div class="text-lg font-bold text-red-700">
+                {{ reportData.plates.blocked_vehicle_reads.toLocaleString() }}
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500">นับแยกจากเหตุการณ์ใบหน้า ไม่รวมในตัวเลขด้านบน</p>
         </div>
 
         <!-- Note if present (e.g. unknown report) -->

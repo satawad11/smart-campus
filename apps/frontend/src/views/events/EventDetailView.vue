@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
+import { PLATE_EVENT_LABELS, VEHICLE_STATUS_LABELS } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -129,21 +130,85 @@ onMounted(() => {
         <div class="border-b pb-4 flex items-start justify-between">
           <div>
             <h1 class="text-2xl font-bold text-gray-900">
-              {{ event.person?.name || event.person?.display_name || 'ไม่ทราบตัวตน' }}
+              <template v-if="event.plate">
+                {{ event.plate.plate_display || event.plate.raw_text || 'อ่านทะเบียนไม่ได้' }}
+                <span class="text-base font-normal text-gray-500">{{
+                  event.plate.plate_province_name || ''
+                }}</span>
+              </template>
+              <template v-else>
+                {{ event.person?.name || event.person?.display_name || 'ไม่ทราบตัวตน' }}
+              </template>
             </h1>
             <p class="text-sm text-gray-500">
               {{ event.event_type }} · {{ new Date(event.occurred_at).toLocaleString() }}
             </p>
             <p v-if="event.person" class="mt-1 text-sm text-gray-600">
-              ประเภทบุคคล: {{ personTypeLabel(event.person.person_type) }} · สถานะ: {{ statusLabel(event.person.status || event.person.person_status) }}
+              ประเภทบุคคล: {{ personTypeLabel(event.person.person_type) }} · สถานะ:
+              {{ statusLabel(event.person.status || event.person.person_status) }}
             </p>
           </div>
           <span
+            v-if="event.plate"
+            data-test="plate-badge"
+            class="px-3 py-1.5 rounded-full text-sm font-semibold"
+            :class="
+              event.plate.vehicle_status === 'BLOCKED'
+                ? 'bg-red-100 text-red-800'
+                : 'bg-blue-100 text-blue-800'
+            "
+          >
+            {{ PLATE_EVENT_LABELS[event.event_type] || 'ป้ายทะเบียน' }}
+          </span>
+          <span
+            v-else
             class="px-3 py-1.5 rounded-full text-sm font-semibold"
             :class="decisionBadgeClass(event.current_decision?.decision)"
           >
             {{ event.current_decision?.decision || '-' }}
           </span>
+        </div>
+
+        <!-- VEH-012: plate read (records only — no person, no decision) -->
+        <div
+          v-if="event.plate"
+          data-test="plate-section"
+          class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3"
+        >
+          <h2 class="font-semibold text-gray-900">ข้อมูลป้ายทะเบียน</h2>
+          <div class="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span class="text-gray-500">ข้อความที่อ่านได้:</span>
+              {{ event.plate.raw_text || '-' }}
+            </div>
+            <div>
+              <span class="text-gray-500">ความมั่นใจ:</span>
+              {{
+                typeof event.plate.ocr_score === 'number' ? event.plate.ocr_score.toFixed(2) : '-'
+              }}
+            </div>
+            <div>
+              <span class="text-gray-500">รถในระบบ:</span>
+              <button
+                v-if="event.plate.vehicle_uuid && authStore.can('vehicle.view')"
+                class="text-blue-700 hover:underline"
+                @click="
+                  router.push({ name: 'vehicles.show', params: { uuid: event.plate.vehicle_uuid } })
+                "
+              >
+                ดูข้อมูลรถ
+              </button>
+              <span v-else-if="event.plate.vehicle_uuid">ลงทะเบียนแล้ว</span>
+              <span v-else>ไม่พบในระบบ</span>
+            </div>
+            <div>
+              <span class="text-gray-500">สถานะรถ:</span>
+              {{ VEHICLE_STATUS_LABELS[event.plate.vehicle_status] || '-' }}
+            </div>
+          </div>
+          <p class="text-xs text-gray-500">
+            การอ่านป้ายทะเบียนเป็นข้อมูลประกอบเท่านั้น ไม่ใช่ผลการอนุญาตเข้าออก (ใบหน้ายังเป็นหลัก)
+          </p>
         </div>
 
         <!-- Event fields -->
@@ -161,8 +226,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Decision timeline (Event Drawer) -->
-        <div class="bg-surface rounded-xl border border-gray-200 p-6">
+        <!-- Decision timeline (Event Drawer); plate reads never have decisions -->
+        <div v-if="!event.plate" class="bg-surface rounded-xl border border-gray-200 p-6">
           <h2 class="font-semibold text-gray-900 mb-3">
             ประวัติการตัดสินใจ ({{ event.decisions?.length || 0 }})
           </h2>
@@ -199,7 +264,10 @@ onMounted(() => {
         </div>
 
         <!-- Manual review form -->
-        <div v-if="canReview" class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4">
+        <div
+          v-if="canReview && !event.plate"
+          class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
+        >
           <h2 class="font-semibold text-gray-900">ตรวจสอบโดยเจ้าหน้าที่</h2>
 
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
