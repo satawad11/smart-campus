@@ -197,6 +197,11 @@ class RetentionCleanupService
 
         $count = 0;
         $query->chunkById(500, function ($events) use (&$count) {
+            // GATE-003: a gate pass keeps the vehicle link it got from this plate read; it goes
+            // with the plate text. Query builder on purpose: GatePass is immutable for everyone
+            // else.
+            DB::table('gate_passes')->whereIn('plate_event_id', $events->pluck('id'))->update(['vehicle_id' => null]);
+
             foreach ($events as $event) {
                 $metadata = $event->metadata ?? [];
                 $plate = $metadata['plate'] ?? [];
@@ -234,6 +239,11 @@ class RetentionCleanupService
         $eventIds = (clone $query)->pluck('id');
         if ($eventIds->isNotEmpty()) {
             DB::table('access_decisions')->whereIn('event_id', $eventIds)->delete();
+            // GATE-003: a gate pass only links events, so it goes with them (FK is RESTRICT).
+            DB::table('gate_passes')
+                ->whereIn('face_event_id', $eventIds)
+                ->orWhereIn('plate_event_id', $eventIds)
+                ->delete();
         }
 
         return $query->delete();

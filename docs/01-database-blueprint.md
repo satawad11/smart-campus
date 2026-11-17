@@ -660,7 +660,7 @@ setting `effective_to` (not earlier than `effective_from`). A vehicle may have s
 ## 17. Smart Gate Tables (ACR-VEH-01 Phase 5, GATE-001)
 
 Configuration for the face-first Smart Gate. Decision and notification only: no table here drives a
-barrier (decision D5; actuation needs Phase 2 and its own ACR). Nothing reads these tables until the
+barrier (decision D5; actuation needs Phase 2 and its own ACR). Nothing writes gate passes until the
 correlation service (GATE-004).
 
 ### gates
@@ -688,3 +688,29 @@ Unique `(site_id, code)` among rows where `deleted_at IS NULL`.
   resolves to one gate; must be in the gate's site, enforced in `App\Models\GateCamera`)
 - role FACE | PLATE | BOTH (decision D3: separate face and plate cameras, or one camera for both)
 - timestamps
+
+### gate_passes (GATE-003)
+One row per pass through a gate. It links the face event and/or the plate event the correlation
+service (GATE-004) put together; the `access_events` rows themselves are never modified. Holds no
+ALLOW/DENY: the decision stays in `access_decisions`.
+- id
+- uuid
+- gate_id (restrict delete)
+- face_event_id nullable (restrict delete; unique: an event belongs to at most one pass; must be a
+  RECOGNITION event)
+- plate_event_id nullable (restrict delete; unique; must be a PLATE event)
+- person_id nullable (null on delete; identity at correlation time)
+- vehicle_id nullable (null on delete; identity at correlation time)
+- match_result MATCHED | MISMATCH | UNKNOWN | FACE_ONLY | PLATE_ONLY
+  - MATCHED: face and plate events, both recognised, and the person is linked to the vehicle
+  - MISMATCH: face and plate events, both recognised, but no link
+  - UNKNOWN: face and plate events, but the face or the plate was not recognised
+  - FACE_ONLY / PLATE_ONLY: only that event in the window
+- occurred_at (earliest occurred_at of its events)
+- created_at (no updated_at)
+
+Immutable, enforced in `App\Models\GatePass`: on create it checks that the events fit
+`match_result`, MATCHED/MISMATCH carry both person_id and vehicle_id, each event has the right
+category and is in the gate's site; it is never updated or deleted through the model. Retention is
+the only later writer: passes are deleted with their events (`retention.events_days`) and lose
+`vehicle_id` when their plate read is redacted (`retention.plate_reads_days`).

@@ -89,6 +89,12 @@ class Gate extends Model
             ->withTimestamps();
     }
 
+    /** Passes through this gate (GATE-003). */
+    public function passes(): HasMany
+    {
+        return $this->hasMany(GatePass::class);
+    }
+
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by_user_id');
