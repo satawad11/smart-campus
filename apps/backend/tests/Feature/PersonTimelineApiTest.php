@@ -63,7 +63,7 @@ class PersonTimelineApiTest extends TestCase
     {
         $user = $this->userWith(['report.view']);
         $person = Person::factory()->create();
-        $profile = StudentProfile::factory()->for($person)->create();
+        $profile = StudentProfile::factory()->for($person)->create(['academic_status' => 'ACTIVE']);
 
         $oldEvent = AccessEvent::factory()->create(['person_id' => $person->id, 'occurred_at' => now()->subDays(3)]);
         AccessDecision::factory()->for($oldEvent, 'event')->create();
@@ -86,6 +86,8 @@ class PersonTimelineApiTest extends TestCase
         // Newest first.
         $res->assertJsonPath('data.0.type', 'EVENT');
         $res->assertJsonPath('data.0.event.uuid', $recentEvent->uuid);
+        $res->assertJsonPath('meta.person.person_type', 'STUDENT');
+        $res->assertJsonPath('meta.person.status', 'ACTIVE');
         $res->assertJsonPath('data.1.type', 'STATUS_CHANGE');
         $res->assertJsonPath('data.1.status_change.new_status', 'SUSPENDED');
         $res->assertJsonPath('data.1.status_change.reason', 'Disciplinary action');

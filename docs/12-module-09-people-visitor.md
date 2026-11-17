@@ -67,17 +67,22 @@ profile and appear in monitoring, events and reports exactly like a student.
 |---|---|---|
 | has student profile | `STUDENT` | academic status (unchanged) |
 | has staff profile | `STAFF` | employment status |
-| `VISITOR` / `CONTRACTOR` | `VISITOR` | `VISIT_ACTIVE` if a visit is `CHECKED_IN` (or `SCHEDULED` and inside its window) at that site, else `NO_ACTIVE_VISIT` |
+| `VISITOR` / `CONTRACTOR` | `VISITOR` | `VISIT_ACTIVE` if the visitor feature is enabled and a visit is `CHECKED_IN` (or `SCHEDULED` and inside its window) at that site, else `NO_ACTIVE_VISIT` |
 | `PARENT` | `PARENT` | `ACTIVE` while linked to at least one active student, else `NO_ACTIVE_STUDENT` |
 
 New seeded policies: `STAFF_ACTIVE` → ALLOW; other staff statuses → REVIEW; `VISIT_ACTIVE` → ALLOW;
 `NO_ACTIVE_VISIT` → REVIEW (notifies like UNKNOWN/DENY); `PARENT` `ACTIVE` → ALLOW, otherwise REVIEW.
-Policies stay editable like today's student policies.
+Policies stay editable like today's student policies. The visitor kill switch forces visitor subjects to
+`NO_ACTIVE_VISIT`, so an active visit cannot resolve to ALLOW while the feature remains disabled.
 
 ## Face data of visitors (PDPA)
 - Consent is required at enrollment, as for students.
 - A visitor's face profile is **revoked automatically N days after their last visit ends** (system setting
-  `visitor.face_retention_days`, default 30), with the stored vectors deleted the same way as a normal revoke. Audited.
+  `visitor.face_retention_days`, default 30, adjustable in System Settings → Retention), with the stored vectors and
+  private sample images deleted through the biometric purge service. The daily `visitors:retain-faces` scheduler job
+  records the revoke and purge in the audit log and continues running while the Visitor feature is disabled. The end
+  time comes from `checked_out_at` for checked-out visits, `valid_until` for expired visits, and `updated_at` for
+  cancelled visits. Any scheduled or checked-in visit prevents retention from running for that visitor.
 - Staff and parent faces follow the same rules as student faces.
 
 ## Permissions
@@ -93,8 +98,9 @@ DISCIPLINE_OFFICER `staff.view`, `guardian.view`, `visit.view`.
   `GET/POST /guardians`, `GET/PUT /guardians/{uuid}`
 - `GET/POST /visitors`, `GET/PUT /visitors/{uuid}`
 - `GET/POST /visits`, `GET/PUT /visits/{uuid}`, `POST /visits/{uuid}/check-in|check-out|cancel`
-- `GET /persons?keyword=&person_type=`: one person search for face enrollment and pickers (returns the same safe
-  summary as today)
+- `GET /persons?keyword=&person_type=` (`face.enroll`): one person search for face enrollment and pickers. It returns
+  identity, person type, nullable academic/employment status, profile code, and active face-enrollment flag; never
+  contact details, account data, photo paths, or biometric data.
 
 `/visitors` and `/visits` answer `403 FEATURE_DISABLED` while `FEATURE_VISITOR_ENABLED=false`. Staff and guardians are
 not behind a future flag.
@@ -104,7 +110,11 @@ not behind a future flag.
   **ผู้ปกครอง** (list + link to students, also a tab on the student detail page), **ผู้มาติดต่อ** (visitors +
   today's visits, check-in/out at the gate).
 - Face enrollment: the person picker searches every person type, with a type filter.
-- Events, history search and reports show the person's group and status, not only students.
+- Visitor UI reads the `visitor` feature flag before calling visitor APIs; the backend gate remains authoritative.
+- Events and history summaries show the person's group and the current applicable profile status; the attendance report
+  includes group, academic/employment status and current person status in the screen and CSV. Timeline response metadata
+  includes the selected person's safe summary. Profile status is current status, not a claim about status at historical
+  event time.
 
 ## Audit
 Staff create/update/status change/import · guardian link add/remove · visitor create/update · visit

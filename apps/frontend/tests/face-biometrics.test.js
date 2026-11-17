@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import router from '@/router'
 import facesService from '@/services/faces'
@@ -99,5 +99,58 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
     expect(wrapper.text()).toContain('ทดสอบการจดจำใบหน้า')
     expect(wrapper.find('input[type="file"]').exists()).toBe(true)
     expect(wrapper.find('input[type="number"]').exists()).toBe(true)
+  })
+
+  it('maps the API response and filters candidates by the displayed similarity minimum', async () => {
+    const authStore = useAuthStore()
+    authStore.user = { id: 'user-uuid', permissions: ['face.test'] }
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: vi.fn(() => 'blob:probe'),
+    })
+    const runTest = vi.spyOn(facesService, 'runRecognitionTest').mockResolvedValue({
+      data: {
+        model: { code: 'yunet-sface', version: '2021dec' },
+        quality_score: 0.91,
+        candidate_count: 2,
+        candidates: [
+          {
+            candidate_person_uuid: 'person-match-uuid',
+            candidate_face_profile_uuid: 'profile-match-uuid',
+            rank: 1,
+            similarity: 1,
+            distance: 0,
+          },
+          {
+            candidate_person_uuid: 'person-below-threshold-uuid',
+            candidate_face_profile_uuid: 'profile-below-threshold-uuid',
+            rank: 2,
+            similarity: 0.1274,
+            distance: 0.8726,
+          },
+        ],
+      },
+    })
+
+    const wrapper = mount(RecognitionTestView, { global: { plugins: [router] } })
+    const fileInput = wrapper.find('input[type="file"]')
+    Object.defineProperty(fileInput.element, 'files', {
+      configurable: true,
+      value: [new File(['face-sample'], 'probe.jpg', { type: 'image/jpeg' })],
+    })
+    await fileInput.trigger('change')
+    await wrapper.find('button').trigger('click')
+    await flushPromises()
+
+    expect(runTest).toHaveBeenCalledOnce()
+    expect(Array.from(runTest.mock.calls[0][0].keys())).toEqual(['image', 'top_k'])
+    expect(wrapper.text()).toContain('yunet-sface / 2021dec')
+    expect(wrapper.text()).toContain('91.0%')
+    expect(wrapper.text()).toContain('บุคคล: person-match-uuid')
+    expect(wrapper.text()).toContain('โปรไฟล์: profile-match-uuid')
+    expect(wrapper.text()).not.toContain('person-below-threshold-uuid')
+    expect(wrapper.text()).toContain('100.00%')
+    expect(wrapper.text()).not.toContain('NaN')
   })
 })

@@ -206,9 +206,9 @@ class AccessPolicyMatcherTest extends TestCase
         $this->seed(EventTypeSeeder::class);
         $this->seed(AccessPolicySeeder::class);
 
-        // No STAFF policies exist at all yet (locked domain).
+        // PPL-008 seeds staff policies; ALUMNI remains deliberately unresolved.
         $result = $this->matcher->match(new AccessContext(
-            subjectType: 'STAFF',
+            subjectType: 'ALUMNI',
             subjectStatus: 'ACTIVE',
             siteId: 1,
             zoneId: null,

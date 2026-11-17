@@ -28,7 +28,7 @@ class EventSearchQuery
      */
     public function build(array $filters): Builder
     {
-        $query = AccessEvent::query()->with(['person', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
+        $query = AccessEvent::query()->with(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
 
         if (! empty($filters['from'])) {
             // Parse to Carbon, not the raw string — see EventController's

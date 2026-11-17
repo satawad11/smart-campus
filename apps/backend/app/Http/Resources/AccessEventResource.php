@@ -31,6 +31,16 @@ class AccessEventResource extends JsonResource
                 // Additive: name with first/last fallback and the person's group.
                 'name' => $this->person->displayLabel(),
                 'person_type' => $this->person->person_type?->value,
+                'person_code' => $this->person->person_code,
+                'person_status' => $this->person->status?->value ?? $this->person->status,
+                'academic_status' => $this->person->studentProfile?->academic_status?->value ?? $this->person->studentProfile?->academic_status,
+                'employment_status' => $this->person->staffProfile?->employment_status?->value ?? $this->person->staffProfile?->employment_status,
+                'status' => $this->person->studentProfile?->academic_status?->value
+                    ?? $this->person->studentProfile?->academic_status
+                    ?? $this->person->staffProfile?->employment_status?->value
+                    ?? $this->person->staffProfile?->employment_status
+                    ?? $this->person->status?->value
+                    ?? $this->person->status,
             ],
             'site' => $this->site === null ? null : [
                 'uuid' => $this->site->uuid,

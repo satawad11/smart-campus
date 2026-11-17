@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import attendanceService from '@/services/attendance'
 import { apiErrorText } from '@/constants/labels'
+import { statusLabel } from '@/constants/labels'
 
 /**
  * บันทึกเวลาเข้า-ออก: first and last confirmed (ALLOW) recognition of each person
@@ -64,6 +65,7 @@ function downloadCsv() {
     'รหัส',
     'ชื่อ',
     'ประเภท',
+    'สถานะ',
     'เวลาเข้า',
     'กล้องเข้า',
     'เวลาออก',
@@ -75,6 +77,7 @@ function downloadCsv() {
       r.person.code,
       r.person.name,
       typeLabel(r.person.person_type),
+      statusLabel(r.person.status),
       time(r.time_in),
       r.time_in_camera,
       time(r.time_out),
@@ -169,6 +172,7 @@ onMounted(load)
             <th class="px-4 py-3">รหัส</th>
             <th class="px-4 py-3">ชื่อ</th>
             <th class="px-4 py-3">ประเภท</th>
+            <th class="px-4 py-3">สถานะ</th>
             <th class="px-4 py-3">เวลาเข้า</th>
             <th class="px-4 py-3">เวลาออก</th>
             <th class="px-4 py-3 text-right">พบ (ครั้ง)</th>
@@ -186,6 +190,7 @@ onMounted(load)
               </router-link>
             </td>
             <td class="px-4 py-3">{{ typeLabel(row.person.person_type) }}</td>
+            <td class="px-4 py-3">{{ statusLabel(row.person.status) }}</td>
             <td class="px-4 py-3">
               {{ time(row.time_in) }}
               <span class="block text-xs text-gray-400">{{ row.time_in_camera }}</span>
@@ -200,7 +205,7 @@ onMounted(load)
             <td class="px-4 py-3 text-right">{{ row.sightings }}</td>
           </tr>
           <tr v-if="!loading && rows.length === 0">
-            <td colspan="6" class="px-4 py-10 text-center text-gray-400">
+            <td colspan="7" class="px-4 py-10 text-center text-gray-400">
               ไม่มีการบันทึกเวลาเข้า-ออกในวันที่เลือก
             </td>
           </tr>

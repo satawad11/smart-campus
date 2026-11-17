@@ -40,6 +40,14 @@ class PersonTimelineController extends Controller
             'to' => ['sometimes', 'date'],
         ]);
 
+        $person->loadMissing(['studentProfile', 'staffProfile']);
+        $profileStatus = $person->studentProfile?->academic_status?->value
+            ?? $person->studentProfile?->academic_status
+            ?? $person->staffProfile?->employment_status?->value
+            ?? $person->staffProfile?->employment_status
+            ?? $person->status?->value
+            ?? $person->status;
+
         $perPage = (int) ($validated['per_page'] ?? 20);
         $page = (int) ($validated['page'] ?? 1);
 
@@ -50,7 +58,7 @@ class PersonTimelineController extends Controller
         $to = ! empty($validated['to']) ? Carbon::parse($validated['to']) : null;
 
         $events = $this->scopeQuery(AccessEvent::query(), $request, 'report.view')
-            ->with(['site', 'zone', 'camera', 'aiNode', 'latestDecision'])
+            ->with(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision'])
             ->where('person_id', $person->id)
             ->when($from !== null, fn ($q) => $q->where('occurred_at', '>=', $from))
             ->when($to !== null, fn ($q) => $q->where('occurred_at', '<=', $to))
@@ -102,6 +110,15 @@ class PersonTimelineController extends Controller
             'message' => 'Success',
             'data' => $items,
             'meta' => [
+                'person' => [
+                    'uuid' => $person->uuid,
+                    'name' => $person->displayLabel(),
+                    'person_code' => $person->person_code,
+                    'person_type' => $person->person_type?->value ?? $person->person_type,
+                    'status' => $profileStatus,
+                    'academic_status' => $person->studentProfile?->academic_status?->value ?? $person->studentProfile?->academic_status,
+                    'employment_status' => $person->staffProfile?->employment_status?->value ?? $person->staffProfile?->employment_status,
+                ],
                 'pagination' => [
                     'current_page' => $paginator->currentPage(),
                     'per_page' => $paginator->perPage(),

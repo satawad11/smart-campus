@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { apiErrorText } from '@/constants/labels'
+import { personTypeLabel, statusLabel } from '@/constants/labels'
 
 const router = useRouter()
 
@@ -203,7 +204,7 @@ onMounted(() => {
           <tbody class="divide-y divide-gray-200 bg-surface">
             <tr v-for="evt in events" :key="evt.uuid" class="hover:bg-gray-50">
               <td class="px-4 py-3 whitespace-nowrap text-gray-700 font-mono text-xs">
-                {{ formatTime(evt.event_time) }}
+                {{ formatTime(evt.occurred_at || evt.event_time) }}
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-xs font-medium">
                 {{ evt.event_type }}
@@ -212,19 +213,20 @@ onMounted(() => {
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   :class="{
-                    'bg-green-100 text-green-800': evt.decision === 'ALLOW',
-                    'bg-red-100 text-red-800': evt.decision === 'DENY',
-                    'bg-amber-100 text-amber-800': evt.decision === 'REVIEW',
-                    'bg-gray-100 text-gray-800': evt.decision === 'UNKNOWN',
+                    'bg-green-100 text-green-800': (evt.current_decision?.decision || evt.decision) === 'ALLOW',
+                    'bg-red-100 text-red-800': (evt.current_decision?.decision || evt.decision) === 'DENY',
+                    'bg-amber-100 text-amber-800': (evt.current_decision?.decision || evt.decision) === 'REVIEW',
+                    'bg-gray-100 text-gray-800': (evt.current_decision?.decision || evt.decision) === 'UNKNOWN',
                   }"
                 >
-                  {{ evt.decision }}
+                  {{ evt.current_decision?.decision || evt.decision || '-' }}
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
                 <div v-if="evt.person" class="text-sm">
                   <div class="font-medium text-gray-900">{{ evt.person.name }}</div>
                   <div class="text-xs text-gray-500">{{ evt.person.person_code }}</div>
+                  <div class="text-xs text-blue-700">{{ personTypeLabel(evt.person.person_type) }}<span v-if="evt.person.status"> · {{ statusLabel(evt.person.status) }}</span></div>
                 </div>
                 <span v-else class="text-gray-400 text-xs">-</span>
               </td>

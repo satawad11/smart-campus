@@ -147,6 +147,11 @@ Only mark `[x]` when the relevant tests pass.
     group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
     private user.{uuid} (polling stays as fallback)
 
+# UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
+
+[x] UIX-001 ข้อมูลการศึกษา page: departments / programs / classrooms list, search, add, edit, deactivate (existing API)
+[x] UIX-002 สถานที่และโซน: sites/zones API (system.view/manage) + page; add, edit, deactivate
+
 # MODULE 06 — HISTORY + REPORTING
 
 [x] RPT-001 Implement historical search API
@@ -233,7 +238,13 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [x] AUDIT-A02..A13 Confirmed defects fixed (forced password change, export IDOR, ingestion race,
     broadcast-in-transaction, Redis-bound scheduler, health/session coupling, DB timeout, PAD preflight,
     login throttle, site/zone provisioning, export serialization)
-[!] AUDIT-B5 No production face/PAD model — live biometric operation HOLD (human decision)
+[~] AUDIT-B5 No production face/PAD model — models shipped by ACR-AI-01 (APPROVED 2026-11-10; v1.1.0-rc12+):
+    YuNet + SFace (zero-padded to 512) + MiniFASNet PAD; `face:model-activate yunet-sface 2021dec`.
+    Live biometric operation still HOLD until: Pi speed measured, FACE-021 volunteer evaluation and
+    human-approved thresholds, PAD accuracy on campus cameras. Training-data provenance accepted for
+    the college pilot only (docs/decisions/ACR-AI-01-FACE-MODELS.md).
+[x] AUDIT-RPT-019 Dashboard read flat fields/arrays while RPT-005/006 return nested `events`/`series`;
+    cards threw and charts were empty on a real server, tests mocked the wrong shape — fixed PR #6
 [ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
 [ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
 [ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
@@ -257,8 +268,8 @@ Approved by the owner (docs/decisions/OWNER-DECISIONS-2026-11-16.md). Each modul
 feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
-[~] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — spec ACCEPTED: docs/12-module-09-people-visitor.md
-[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..003 done (PR #18), see PHASE 4/5
+[x] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — complete; FEATURE_VISITOR remains disabled by default: docs/12-module-09-people-visitor.md
+[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 009..011 done (PR #18), see PHASE 4/5
     below; plate model still needs choosing and licence-checking (VEH-007)
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
@@ -269,14 +280,14 @@ feature flags stay false until the module is complete.
     11 permissions + role matrix (fresh seed and migration for existing installs)
 [x] PPL-003 Staff API: CRUD, status change workflow + history, audit (/staff, docs/02 §5)
 [x] PPL-004 Staff import (CSV, like the student import) — /staff/import + /staff/imports/{uuid}/…
-[ ] PPL-005 Guardian links API + student detail tab
-[ ] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
-[ ] PPL-007 Person search API (all person types) for face enrollment and pickers
-[ ] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
-[ ] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
-[ ] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
-[ ] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
-[ ] PPL-012 Events/history/reports show person group and status; acceptance tests
+[x] PPL-005 Guardian links API + student detail tab
+[x] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
+[x] PPL-007 Person search API (all person types) for face enrollment and pickers
+[x] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
+[x] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
+[x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import) — UIX-003
+[x] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
+[x] PPL-012 Events/history/reports show person group and status; acceptance tests
 
 # PHASE 4 — VEHICLE + ALPR (ACR-VEH-01 APPROVED 2026-11-12 — one task at a time)
 
@@ -297,7 +308,8 @@ per-camera `plate_recognition_enabled`, both fail closed.
     (app/delivery/plate.py; the node's retry loop starts calling it in VEH-008, when plate reads exist)
 [x] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
 [x] VEH-011 Vehicle management UI (จัดการยานพาหนะ) and camera toggle "อ่านป้ายทะเบียน"
-[ ] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
+[~] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
+    (part 1 done: API, reports API, Live Monitor; remaining: event detail, event/history search UI, reports UI)
 [ ] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
 [ ] VEH-014 Benchmark face+plate load per node; Phase 4 acceptance tests
 

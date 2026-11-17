@@ -102,6 +102,23 @@ class HistorySearchApiTest extends TestCase
         $res->assertJsonCount(1, 'data');
     }
 
+    public function test_history_results_include_person_group_and_current_profile_status(): void
+    {
+        $user = $this->userWith(['report.view']);
+        $person = Person::factory()->create(['person_type' => 'STUDENT', 'status' => 'ACTIVE']);
+        StudentProfile::factory()->for($person)->create(['student_code' => 'STU-GROUP-1', 'academic_status' => 'WITHDRAWN']);
+        $event = AccessEvent::factory()->create(['person_id' => $person->id]);
+        AccessDecision::factory()->for($event, 'event')->create(['decision' => 'REVIEW']);
+
+        $this->actingAs($user, 'web')->getJson('/api/v1/history/search')
+            ->assertOk()
+            ->assertJsonPath('data.0.person.person_type', 'STUDENT')
+            ->assertJsonPath('data.0.person.status', 'WITHDRAWN')
+            ->assertJsonPath('data.0.person.academic_status', 'WITHDRAWN')
+            ->assertJsonPath('data.0.person.name', $person->displayLabel())
+            ->assertJsonPath('data.0.current_decision.decision', 'REVIEW');
+    }
+
     public function test_keyword_with_no_match_returns_an_empty_result_not_everything(): void
     {
         $user = $this->userWith(['report.view']);
