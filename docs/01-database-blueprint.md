@@ -656,3 +656,35 @@ Unique `(plate_number, plate_province)` among rows where `deleted_at IS NULL`.
 
 Append-oriented: a row is never rewritten or deleted. The only allowed change is closing it once by
 setting `effective_to` (not earlier than `effective_from`). A vehicle may have several current links.
+
+## 17. Smart Gate Tables (ACR-VEH-01 Phase 5, GATE-001)
+
+Configuration for the face-first Smart Gate. Decision and notification only: no table here drives a
+barrier (decision D5; actuation needs Phase 2 and its own ACR). Nothing reads these tables until the
+correlation service (GATE-004).
+
+### gates
+- id
+- uuid
+- site_id (restrict delete)
+- zone_id (restrict delete; must belong to `site_id`, enforced in `App\Models\Gate`)
+- code
+- name
+- direction IN | OUT | BOTH (default BOTH)
+- correlation_window_seconds (default 10; face and plate events of one pass must fall within it)
+- mode FACE_PRIMARY (the only approved mode, decision D2: a plate alone never produces ALLOW)
+- status ACTIVE | INACTIVE
+- notes nullable
+- created_by_user_id nullable
+- timestamps
+- deleted_at nullable
+
+Unique `(site_id, code)` among rows where `deleted_at IS NULL`.
+
+### gate_cameras
+- id
+- gate_id (cascade delete: configuration link)
+- camera_id (restrict delete; unique, so a camera serves at most one gate and an event's camera
+  resolves to one gate; must be in the gate's site, enforced in `App\Models\GateCamera`)
+- role FACE | PLATE | BOTH (decision D3: separate face and plate cameras, or one camera for both)
+- timestamps

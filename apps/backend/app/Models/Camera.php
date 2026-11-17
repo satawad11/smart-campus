@@ -97,6 +97,14 @@ class Camera extends Model
         return $this->belongsTo(AiNode::class);
     }
 
+    /**
+     * The Smart Gate this camera serves, if any (GATE-001). A camera serves at most one gate.
+     */
+    public function gateCamera(): HasOne
+    {
+        return $this->hasOne(GateCamera::class);
+    }
+
     public function healthLogs(): HasMany
     {
         return $this->hasMany(CameraHealthLog::class);
