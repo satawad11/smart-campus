@@ -118,6 +118,48 @@ const routes = [
         meta: { requiresAuth: true, permission: 'student.update' },
       },
       {
+        path: 'staff',
+        name: 'staff.index',
+        component: () => import('@/views/staff/StaffListView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.view' },
+      },
+      {
+        path: 'staff/new',
+        name: 'staff.create',
+        component: () => import('@/views/staff/StaffFormView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.create' },
+      },
+      {
+        path: 'staff/import',
+        name: 'staff.import',
+        component: () => import('@/views/staff/StaffImportView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.import' },
+      },
+      {
+        path: 'staff/:uuid/edit',
+        name: 'staff.edit',
+        component: () => import('@/views/staff/StaffFormView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.update' },
+      },
+      {
+        path: 'staff/:uuid',
+        name: 'staff.show',
+        component: () => import('@/views/staff/StaffDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'staff.view' },
+      },
+      {
+        path: 'guardians',
+        name: 'guardians.index',
+        component: () => import('@/views/people/GuardiansView.vue'),
+        meta: { requiresAuth: true, permission: 'guardian.view' },
+      },
+      {
+        path: 'visitors',
+        name: 'visitors.index',
+        component: () => import('@/views/people/VisitorsView.vue'),
+        meta: { requiresAuth: true, permission: 'visitor.view' },
+      },
+      {
         path: 'roles',
 
         name: 'roles.index',

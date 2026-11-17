@@ -96,6 +96,8 @@ class AttendanceAndRealtimeAlertTest extends TestCase
         $nok = $rows['6512345'];
         $this->assertSame('Nok Suk', $nok['person']['name']);
         $this->assertSame('STUDENT', $nok['person']['person_type']);
+        $this->assertSame('ACTIVE', $nok['person']['status']);
+        $this->assertSame('ACTIVE', $nok['person']['academic_status']);
         $this->assertStringStartsWith('2026-11-16T07:42', $nok['time_in']);
         $this->assertSame('ประตูหน้า', $nok['time_in_camera']);
         $this->assertStringStartsWith('2026-11-16T16:31', $nok['time_out']);

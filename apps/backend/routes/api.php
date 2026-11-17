@@ -30,6 +30,10 @@ use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
 use App\Http\Controllers\Integration\RmsSyncController;
 use App\Http\Controllers\Notification\NotificationController;
+use App\Http\Controllers\Person\GuardianController;
+use App\Http\Controllers\Person\PersonSearchController;
+use App\Http\Controllers\Person\VisitController;
+use App\Http\Controllers\Person\VisitorController;
 use App\Http\Controllers\Report\AttendanceController;
 use App\Http\Controllers\Report\DashboardChartsController;
 use App\Http\Controllers\Report\DashboardController;
@@ -205,6 +209,15 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 | recorded in the status history. No DELETE.
 */
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
+    Route::get('/persons', [PersonSearchController::class, 'index'])->middleware('permission:face.enroll');
+    // Guardian identity picker and student links (PPL-005).
+    Route::get('/guardians', [GuardianController::class, 'index'])->middleware('permission:guardian.view');
+    Route::post('/guardians', [GuardianController::class, 'storeGuardian'])->middleware('permission:guardian.manage');
+    Route::get('/guardians/{guardian:uuid}', [GuardianController::class, 'showGuardian'])->middleware('permission:guardian.view');
+    Route::put('/guardians/{guardian:uuid}', [GuardianController::class, 'updateGuardian'])->middleware('permission:guardian.manage');
+    Route::get('/students/{student}/guardians', [GuardianController::class, 'forStudent'])->middleware('permission:guardian.view');
+    Route::post('/students/{student}/guardians', [GuardianController::class, 'store'])->middleware('permission:guardian.manage');
+    Route::delete('/guardian-links/{guardianLink:uuid}', [GuardianController::class, 'destroy'])->middleware('permission:guardian.manage');
     Route::get('/staff', [StaffController::class, 'index'])->middleware('permission:staff.view');
     Route::post('/staff', [StaffController::class, 'store'])->middleware('permission:staff.create');
     Route::get('/staff/{staff}', [StaffController::class, 'show'])->middleware('permission:staff.view');
@@ -445,8 +458,19 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::middleware('feature:door')->prefix('doors')->group(function () {
         Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
     });
-    Route::middleware('feature:visitor')->prefix('visitors')->group(function () {
-        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+    Route::middleware('feature:visitor')->group(function () {
+        Route::get('/visitors', [VisitorController::class, 'index'])->middleware('permission:visitor.view');
+        Route::post('/visitors', [VisitorController::class, 'store'])->middleware('permission:visitor.manage');
+        Route::get('/visitors/{visitor:uuid}', [VisitorController::class, 'show'])->middleware('permission:visitor.view');
+        Route::put('/visitors/{visitor:uuid}', [VisitorController::class, 'update'])->middleware('permission:visitor.manage');
+
+        Route::get('/visits', [VisitController::class, 'index'])->middleware('permission:visit.view');
+        Route::post('/visits', [VisitController::class, 'store'])->middleware('permission:visit.manage');
+        Route::get('/visits/{visit:uuid}', [VisitController::class, 'show'])->middleware('permission:visit.view');
+        Route::put('/visits/{visit:uuid}', [VisitController::class, 'update'])->middleware('permission:visit.manage');
+        Route::post('/visits/{visit:uuid}/check-in', [VisitController::class, 'checkIn'])->middleware('permission:visit.manage');
+        Route::post('/visits/{visit:uuid}/check-out', [VisitController::class, 'checkOut'])->middleware('permission:visit.manage');
+        Route::post('/visits/{visit:uuid}/cancel', [VisitController::class, 'cancel'])->middleware('permission:visit.manage');
     });
     Route::middleware('feature:vehicle')->prefix('vehicles')->group(function () {
         Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));

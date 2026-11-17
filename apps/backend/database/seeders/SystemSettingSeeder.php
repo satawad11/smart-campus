@@ -307,6 +307,14 @@ class SystemSettingSeeder extends Seeder
                 'description' => 'Data retention period for system security audit logs in days',
                 'is_public' => false,
             ],
+            [
+                'key' => 'visitor.face_retention_days',
+                'group' => 'RETENTION',
+                'type' => 'integer',
+                'value' => '30',
+                'description' => 'Days after the visitor\'s most recent visit ends before face biometrics are revoked and erased',
+                'is_public' => false,
+            ],
 
             // FEATURE (SEC-002: Production V1 strictly locks future features to false)
             [

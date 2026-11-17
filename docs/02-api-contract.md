@@ -71,7 +71,7 @@ Roles/Permissions:
 ## 5. Persons/Students
 
 Persons:
-- GET `/persons`
+- GET `/persons` (`face.enroll`): filters `keyword, person_type, page, per_page`; returns a privacy-minimised person summary with person type, nullable `academic_status` / `employment_status`, profile code, and active face-profile flag. Contact data and biometric data are excluded.
 - POST `/persons`
 - GET `/persons/{uuid}`
 - PUT `/persons/{uuid}`
@@ -87,6 +87,23 @@ Students:
 - POST `/students/import`
 - POST `/students/export`
 
+Guardian links (Module 09, PPL-005):
+- GET `/guardians` (`guardian.view`): filters `keyword, page, per_page`; searches only PARENT, TEACHER, and STAFF identities and returns safe identity fields.
+- POST `/guardians` (`guardian.manage`): create a PARENT identity `{ first_name, last_name, person_code?, display_name?, gender? }`.
+- GET `/guardians/{uuid}` (`guardian.view`): read one PARENT identity; other person types return 404.
+- PUT `/guardians/{uuid}` (`guardian.manage`): update identity fields only; person type and lifecycle status cannot be changed here.
+- GET `/students/{uuid}/guardians` (`guardian.view`): lists linked guardian identities and relation.
+- POST `/students/{uuid}/guardians` (`guardian.manage`): `{ guardian_person_uuid, relation: FATHER|MOTHER|GUARDIAN|OTHER }`; accepts PARENT, TEACHER, or STAFF, rejects self-links and duplicate links.
+- DELETE `/guardian-links/{uuid}` (`guardian.manage`): removes the relationship and writes an audit record.
+
+Visitors and visits (Module 09, PPL-006; every endpoint is additionally gated by `feature:visitor` and returns `403 FEATURE_DISABLED` while the feature is off):
+- GET `/visitors` (`visitor.view`): filters `keyword, person_type (VISITOR|CONTRACTOR), page, per_page`; POST `/visitors` (`visitor.manage`) creates a visitor/contractor identity and profile. `id_document_last4` must be exactly four alphanumeric characters; full document numbers are not accepted or stored.
+- GET `/visitors/{uuid}` (`visitor.view`); PUT `/visitors/{uuid}` (`visitor.manage`) updates the person's names and visitor profile fields. No hard-delete endpoint exists.
+- GET `/visits` (`visit.view`): optional filters `status, site_uuid, visitor_person_uuid, from, to, page, per_page`, constrained by the caller's site/zone scope.
+- POST `/visits` (`visit.manage`): `{ visitor_person_uuid, host_person_uuid?, purpose, site_uuid, zone_uuid?, valid_from, valid_until }`; visitor must have a visitor/contractor profile, host must be staff/teacher, and the time window and site/zone relationship are validated.
+- GET `/visits/{uuid}` (`visit.view`); PUT `/visits/{uuid}` (`visit.manage`) edits SCHEDULED visits only.
+- POST `/visits/{uuid}/check-in|check-out|cancel` (`visit.manage`): legal transitions are SCHEDULED→CHECKED_IN→CHECKED_OUT or SCHEDULED→CANCELLED. SCHEDULED visits past `valid_until` are automatically marked EXPIRED by `visits:expire` each minute.
+
 Student list filters:
 - page
 - per_page
@@ -97,6 +114,11 @@ Student list filters:
 - education_level
 - year_level
 - academic_status
+
+Event and historical search person summaries include `name`, `person_type`,
+`person_code`, `person_status`, and the applicable profile `academic_status`,
+`employment_status`, and resolved display `status`. These are additive, read-only
+fields; they contain no biometric or contact data.
 - face_enrolled
 - sort
 - order
@@ -239,9 +261,12 @@ Filters:
 - GET `/history/search`
 - GET `/persons/{uuid}/timeline`
 
+The timeline response retains its chronological `data` list. `meta.person` adds
+the selected person's UUID, display name, type, code, and current profile status.
+
 ## 16. Reports
 
-- GET `/reports/attendance` (`report.view`, EVT-023): daily time in / time out per person from ALLOW recognition events. Params `date` (YYYY-MM-DD, default today), `tz` (default Asia/Bangkok), `person_type`, `keyword`, `site_uuid`. Rows: `person {uuid, name, person_type, code}, time_in, time_in_camera, time_out (null if seen once), time_out_camera, sightings`
+- GET `/reports/attendance` (`report.view`, EVT-023): daily time in / time out per person from ALLOW recognition events. Params `date` (YYYY-MM-DD, default today), `tz` (default Asia/Bangkok), `person_type`, `keyword`, `site_uuid`. Rows: `person {uuid, name, person_type, code, status, academic_status, employment_status}, time_in, time_in_camera, time_out (null if seen once), time_out_camera, sightings`
 - GET `/reports/daily`
 - GET `/reports/weekly`
 - GET `/reports/monthly`
@@ -273,6 +298,10 @@ Realtime push (EVT-023): every new notification is also broadcast on the private
 - GET `/system/health`
 - GET `/audit-logs`
 - GET `/audit-logs/{uuid}`
+
+Visitor biometric retention (Module 09, PPL-009) is configurable as `visitor.face_retention_days` under the `RETENTION`
+settings group (positive integer; default 30). The daily `visitors:retain-faces` task revokes and purges only visitors
+whose latest visit ended at least that many days ago and who have no scheduled or checked-in visit.
 
 Commercial licensing (COM-02, additive; see `docs/commercial/LICENSE_MODEL.md`):
 - GET `/system/license` (`system.view`): installation ID + evaluated license state; never returns the signed document

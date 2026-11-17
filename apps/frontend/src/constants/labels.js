@@ -77,6 +77,31 @@ export const STATUS_LABELS = {
   LOW: 'ต่ำ',
   MEDIUM: 'ปานกลาง',
   HIGH: 'สูง',
+  LEAVE: 'ลาพัก',
+  SUSPENDED: 'พักการใช้งาน',
+  WITHDRAWN: 'พ้นสภาพ',
+  GRADUATED: 'สำเร็จการศึกษา',
+  EXPELLED: 'พ้นสภาพ',
+  RESIGNED: 'ลาออก',
+  RETIRED: 'เกษียณ',
+  VISIT_ACTIVE: 'มีนัดหมาย/อยู่ระหว่างติดต่อ',
+  NO_ACTIVE_VISIT: 'ไม่มีนัดหมายที่ใช้งาน',
+  NO_ACTIVE_STUDENT: 'ไม่มีนักเรียนที่กำลังศึกษา',
+}
+
+export const PERSON_TYPE_LABELS = {
+  STUDENT: 'นักเรียน',
+  TEACHER: 'ครู',
+  STAFF: 'บุคลากร',
+  PARENT: 'ผู้ปกครอง',
+  VISITOR: 'ผู้มาติดต่อ',
+  CONTRACTOR: 'ผู้รับเหมา',
+  ALUMNI: 'ศิษย์เก่า',
+  OTHER: 'บุคคลอื่น',
+}
+
+export function personTypeLabel(code) {
+  return PERSON_TYPE_LABELS[code] || code || '-'
 }
 
 export function statusLabel(code) {

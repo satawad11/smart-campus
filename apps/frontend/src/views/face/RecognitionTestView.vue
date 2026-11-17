@@ -13,8 +13,28 @@ const minConfidence = ref(0.5)
 const loading = ref(false)
 const errorMessage = ref('')
 const testResult = ref(null)
+const latencyMs = ref(null)
 
 const canTest = computed(() => authStore.can('face.test'))
+const visibleCandidates = computed(() => {
+  const candidates = testResult.value?.candidates || []
+  const minimum = Number(minConfidence.value)
+
+  return candidates.filter((candidate) => {
+    const similarity = Number(candidate.similarity)
+    return Number.isFinite(similarity) && similarity >= minimum
+  })
+})
+
+function percent(value, digits = 2) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? `${(numeric * 100).toFixed(digits)}%` : '—'
+}
+
+function distance(value) {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric.toFixed(4) : '—'
+}
 
 function onFileSelected(event) {
   const file = event.target.files?.[0]
@@ -23,6 +43,7 @@ function onFileSelected(event) {
   probeFile.value = file
   previewUrl.value = URL.createObjectURL(file)
   testResult.value = null
+  latencyMs.value = null
   errorMessage.value = ''
 }
 
@@ -35,15 +56,17 @@ async function runTest() {
   loading.value = true
   errorMessage.value = ''
   testResult.value = null
+  latencyMs.value = null
 
   const formData = new FormData()
   formData.append('image', probeFile.value)
   formData.append('top_k', topK.value)
-  formData.append('min_confidence', minConfidence.value)
 
+  const startedAt = performance.now()
   try {
     const res = await facesService.runRecognitionTest(formData)
     testResult.value = res.data
+    latencyMs.value = Math.round(performance.now() - startedAt)
   } catch (err) {
     errorMessage.value = apiErrorText(err, 'ทดสอบการจดจำใบหน้าไม่สำเร็จ')
   } finally {
@@ -101,7 +124,7 @@ async function runTest() {
 
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1"
-            >ความมั่นใจขั้นต่ำ (0.0 - 1.0)</label
+            >คะแนนความคล้ายขั้นต่ำ (0.0 - 1.0)</label
           >
           <input
             v-model.number="minConfidence"
@@ -112,6 +135,9 @@ async function runTest() {
             class="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>
+        <p class="text-xs text-gray-400">
+          ใช้กรองผลทดสอบเท่านั้น คะแนนความคล้ายไม่ใช่ความน่าจะเป็นและไม่เปลี่ยนเกณฑ์ MATCH ของระบบ
+        </p>
 
         <button
           @click="runTest"
@@ -144,24 +170,23 @@ async function runTest() {
             <div>
               <div class="text-gray-400">โมเดล</div>
               <div class="font-bold text-gray-900">
-                {{ testResult.model?.code }}
+                {{ testResult.model?.code
+                }}<span v-if="testResult.model?.version"> / {{ testResult.model.version }}</span>
               </div>
             </div>
             <div>
               <div class="text-gray-400">คุณภาพภาพ</div>
               <div class="font-bold text-blue-600">
-                {{ (testResult.probe_quality_score * 100).toFixed(1) }}%
+                {{ percent(testResult.quality_score, 1) }}
               </div>
             </div>
             <div>
-              <div class="text-gray-400">เวลาที่ใช้ทั้งหมด</div>
-              <div class="font-bold text-emerald-600">{{ testResult.latency_ms?.total_ms }} ms</div>
+              <div class="text-gray-400">เวลารวม (รวมเครือข่าย)</div>
+              <div class="font-bold text-emerald-600">{{ latencyMs ?? '—' }} ms</div>
             </div>
             <div>
-              <div class="text-gray-400">จำนวนที่พบ</div>
-              <div class="font-bold text-gray-900">
-                {{ testResult.candidates_count }}
-              </div>
+              <div class="text-gray-400">จำนวนที่ผ่านเกณฑ์ขั้นต่ำ</div>
+              <div class="font-bold text-gray-900">{{ visibleCandidates.length }}</div>
             </div>
           </div>
 
@@ -174,17 +199,17 @@ async function runTest() {
             </div>
 
             <div
-              v-if="testResult.candidates?.length === 0"
+              v-if="visibleCandidates.length === 0"
               class="p-8 text-center text-gray-400 text-sm"
             >
-              ไม่พบบุคคลที่มีความมั่นใจเกิน
+              ไม่พบผู้สมัครที่มีคะแนนความคล้ายถึง
               {{ (minConfidence * 100).toFixed(0) }}%
             </div>
 
             <div v-else class="divide-y divide-gray-100">
               <div
-                v-for="candidate in testResult.candidates"
-                :key="candidate.rank"
+                v-for="candidate in visibleCandidates"
+                :key="candidate.candidate_face_profile_uuid || candidate.rank"
                 class="p-4 flex items-center justify-between hover:bg-gray-50 text-sm"
               >
                 <div class="flex items-center space-x-4">
@@ -195,20 +220,20 @@ async function runTest() {
                   </span>
                   <div>
                     <div class="font-mono text-xs font-semibold text-gray-900">
-                      บุคคล: {{ candidate.person_uuid }}
+                      บุคคล: {{ candidate.candidate_person_uuid || 'ไม่ระบุ' }}
                     </div>
                     <div class="text-xs text-gray-400 font-mono">
-                      โปรไฟล์: {{ candidate.face_profile_uuid }}
+                      โปรไฟล์: {{ candidate.candidate_face_profile_uuid || 'ไม่ระบุ' }}
                     </div>
                   </div>
                 </div>
 
                 <div class="text-right">
                   <div class="font-bold text-sm text-indigo-600">
-                    {{ (candidate.similarity * 100).toFixed(2) }}%
+                    {{ percent(candidate.similarity) }}
                   </div>
                   <div class="text-xs text-gray-400">
-                    ระยะห่าง: {{ candidate.distance?.toFixed(4) }}
+                    ระยะห่าง: {{ distance(candidate.distance) }}
                   </div>
                 </div>
               </div>

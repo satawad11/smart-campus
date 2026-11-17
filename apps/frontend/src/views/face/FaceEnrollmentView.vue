@@ -5,11 +5,11 @@
  * notice/consent -> camera permission -> capture with live indicators -> enroll ->
  * verification. Upload remains as a fallback when no camera can be used.
  */
-import { ref, computed, onBeforeUnmount } from 'vue'
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import facesService from '@/services/faces'
-import { studentsService } from '@/services/students'
+import { personsService } from '@/services/students'
 import { apiErrorText, statusLabel } from '@/constants/labels'
 import WebcamCapture from '@/components/face/WebcamCapture.vue'
 import FaceQualityIndicators from '@/components/face/FaceQualityIndicators.vue'
@@ -21,11 +21,12 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 const canEnroll = computed(() => authStore.can('face.enroll'))
-const canSearch = computed(() => authStore.can('student.view'))
+const canSearch = computed(() => authStore.can('face.enroll'))
 const canScan = computed(() => authStore.can('face.test'))
 
 // Person
 const personQuery = ref('')
+const personType = ref('')
 const searchResults = ref([])
 const searching = ref(false)
 const selectedPerson = ref(null)
@@ -72,8 +73,8 @@ function onQueryInput() {
 async function runSearch(q) {
   searching.value = true
   try {
-    const res = await studentsService.list({ keyword: q, per_page: 8 })
-    searchResults.value = (res.data || []).filter((s) => s.person?.uuid)
+    const res = await personsService.list({ keyword: q, person_type: personType.value || undefined, per_page: 20 })
+    searchResults.value = res.data || []
   } catch {
     searchResults.value = []
   } finally {
@@ -87,12 +88,24 @@ function selectPerson(p) {
   errorMessage.value = ''
 }
 
-function pickStudent(s) {
-  const name =
-    s.person.display_name || [s.person.first_name, s.person.last_name].filter(Boolean).join(' ')
-  selectPerson({ uuid: s.person.uuid, display_name: name, student_code: s.student_code })
+function pickPerson(person) {
+  const name = person.name || person.display_name || [person.first_name, person.last_name].filter(Boolean).join(' ')
+  selectPerson({ ...person, display_name: name })
   personQuery.value = name
 }
+
+watch(personType, () => {
+  if (personQuery.value.trim().length >= 2) runSearch(personQuery.value.trim())
+})
+
+onMounted(async () => {
+  const uuid = router.currentRoute.value.query.person
+  if (typeof uuid !== 'string' || !UUID_RE.test(uuid)) return
+  personQuery.value = uuid
+  // UUID links are intentionally supported even though safe text search does
+  // not search UUIDs. The enrollment API still validates the person server-side.
+  selectPerson({ uuid, display_name: uuid })
+})
 
 function setImage(blob, src) {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
@@ -263,28 +276,32 @@ onBeforeUnmount(() => {
           <input
             v-model="personQuery"
             type="text"
-            :placeholder="
-              canSearch ? 'ชื่อ หรือรหัสนักเรียน (หรือวางรหัสบุคคล UUID)' : 'รหัสบุคคล (UUID)'
-            "
+            :placeholder="canSearch ? 'ชื่อ หรือรหัสบุคคล / รหัสนักเรียน / รหัสบุคลากร' : 'รหัสบุคคล (UUID)'"
             class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
             data-test="person-search"
             @input="onQueryInput"
           />
+          <label class="mt-3 block text-sm font-medium text-gray-700">
+            ประเภทบุคคล
+            <select v-model="personType" class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm" data-test="person-type-filter">
+              <option value="">ทุกประเภท</option><option value="STUDENT">นักเรียน</option><option value="TEACHER">ครู</option><option value="STAFF">บุคลากร</option><option value="PARENT">ผู้ปกครอง</option><option value="VISITOR">ผู้มาติดต่อ</option><option value="CONTRACTOR">ผู้รับเหมา</option><option value="ALUMNI">ศิษย์เก่า</option><option value="OTHER">อื่น ๆ</option>
+            </select>
+          </label>
           <p v-if="searching" class="mt-1 text-xs text-gray-500">กำลังค้นหา...</p>
           <ul
             v-if="searchResults.length"
             class="absolute z-10 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-200 bg-surface shadow-lg"
           >
-            <li v-for="s in searchResults" :key="s.uuid">
+            <li v-for="person in searchResults" :key="person.uuid">
               <button
                 type="button"
                 class="w-full px-3 py-2 text-left text-sm hover:bg-blue-50"
-                @click="pickStudent(s)"
+                @click="pickPerson(person)"
               >
                 <span class="font-medium">
-                  {{ s.person.display_name || `${s.person.first_name} ${s.person.last_name}` }}
+                  {{ person.name || person.display_name || `${person.first_name} ${person.last_name}` }}
                 </span>
-                <span class="ml-2 text-xs text-gray-500">{{ s.student_code }}</span>
+                <span class="ml-2 text-xs text-gray-500">{{ person.person_type }} · {{ person.student_code || person.staff_code || person.person_code || 'ไม่มีรหัส' }}</span>
               </button>
             </li>
           </ul>
@@ -296,9 +313,7 @@ onBeforeUnmount(() => {
           data-test="selected-person"
         >
           <div class="font-semibold">{{ selectedPerson.display_name }}</div>
-          <div v-if="selectedPerson.student_code" class="text-xs">
-            รหัสนักเรียน {{ selectedPerson.student_code }}
-          </div>
+          <div class="text-xs">{{ selectedPerson.person_type || 'PERSON' }} · {{ selectedPerson.student_code || selectedPerson.staff_code || selectedPerson.person_code || 'ไม่มีรหัส' }}</div>
         </div>
 
         <div>

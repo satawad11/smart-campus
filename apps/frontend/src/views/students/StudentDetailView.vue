@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
-import { studentsService } from '@/services/students'
+import { studentsService, guardiansService } from '@/services/students'
 import AcademicStatusBadge from '@/components/students/AcademicStatusBadge.vue'
 import EducationLevelBadge from '@/components/students/EducationLevelBadge.vue'
 import ChangeStatusModal from '@/components/students/ChangeStatusModal.vue'
@@ -19,6 +19,25 @@ const errorMessage = ref('')
 const successMessage = ref('')
 const showStatusModal = ref(false)
 const historyTimelineRef = ref(null)
+const activeStudentTab = ref('profile')
+const guardians = ref([])
+const guardianCandidates = ref([])
+const guardianKeyword = ref('')
+const guardianRelation = ref('GUARDIAN')
+const guardiansLoading = ref(false)
+const guardianSearchLoading = ref(false)
+const guardianBusy = ref(false)
+const guardianError = ref('')
+const guardianSuccess = ref('')
+const showGuardianPicker = ref(false)
+const selectedGuardianUuid = ref('')
+
+const guardianRelations = [
+  { value: 'FATHER', label: 'บิดา' },
+  { value: 'MOTHER', label: 'มารดา' },
+  { value: 'GUARDIAN', label: 'ผู้ปกครอง' },
+  { value: 'OTHER', label: 'อื่น ๆ' },
+]
 
 const errorTranslations = {
   FORBIDDEN: 'คุณไม่มีสิทธิ์ในการเข้าถึงข้อมูลนักเรียนนี้',
@@ -34,11 +53,80 @@ async function fetchStudentDetail() {
     const uuid = route.params.uuid
     const data = await studentsService.get(uuid)
     student.value = data
+    await fetchGuardians()
   } catch (err) {
     errorMessage.value =
       errorTranslations[err.code] || apiErrorText(err, 'ไม่สามารถโหลดข้อมูลนักเรียนได้')
   } finally {
     loading.value = false
+  }
+}
+
+async function fetchGuardians() {
+  if (!student.value || !authStore.can('guardian.view')) return
+  guardiansLoading.value = true
+  guardianError.value = ''
+  try {
+    guardians.value = await guardiansService.forStudent(student.value.uuid)
+  } catch (err) {
+    guardianError.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลผู้ปกครองได้')
+  } finally {
+    guardiansLoading.value = false
+  }
+}
+
+async function searchGuardians() {
+  guardianSearchLoading.value = true
+  guardianError.value = ''
+  try {
+    const result = await guardiansService.list({ keyword: guardianKeyword.value, per_page: 25 })
+    guardianCandidates.value = result.data
+    selectedGuardianUuid.value = ''
+  } catch (err) {
+    guardianError.value = apiErrorText(err, 'ค้นหารายชื่อผู้ปกครองไม่สำเร็จ')
+  } finally {
+    guardianSearchLoading.value = false
+  }
+}
+
+function toggleGuardianPicker() {
+  showGuardianPicker.value = !showGuardianPicker.value
+  guardianSuccess.value = ''
+  guardianError.value = ''
+  if (showGuardianPicker.value) searchGuardians()
+}
+
+async function linkGuardian() {
+  if (!selectedGuardianUuid.value || !student.value) return
+  guardianBusy.value = true
+  guardianError.value = ''
+  try {
+    await guardiansService.link(student.value.uuid, {
+      guardian_person_uuid: selectedGuardianUuid.value,
+      relation: guardianRelation.value,
+    })
+    guardianSuccess.value = 'เชื่อมโยงข้อมูลผู้ปกครองเรียบร้อยแล้ว'
+    showGuardianPicker.value = false
+    await fetchGuardians()
+  } catch (err) {
+    guardianError.value = apiErrorText(err, 'เชื่อมโยงข้อมูลผู้ปกครองไม่สำเร็จ')
+  } finally {
+    guardianBusy.value = false
+  }
+}
+
+async function unlinkGuardian(link) {
+  if (!window.confirm(`ยืนยันถอดความเชื่อมโยงผู้ปกครอง ${link.guardian.name} หรือไม่`)) return
+  guardianBusy.value = true
+  guardianError.value = ''
+  try {
+    await guardiansService.unlink(link.uuid)
+    guardianSuccess.value = 'ถอดความเชื่อมโยงเรียบร้อยแล้ว'
+    await fetchGuardians()
+  } catch (err) {
+    guardianError.value = apiErrorText(err, 'ถอดความเชื่อมโยงไม่สำเร็จ')
+  } finally {
+    guardianBusy.value = false
   }
 }
 
@@ -291,139 +379,322 @@ onMounted(() => {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <!-- Card 1: ข้อมูลส่วนบุคคล (Identity) -->
+      <div
+        class="flex gap-2 border-b border-gray-200"
+        role="tablist"
+        aria-label="ส่วนข้อมูลนักเรียน"
+      >
+        <button
+          type="button"
+          role="tab"
+          :aria-selected="activeStudentTab === 'profile'"
+          class="border-b-2 px-4 py-3 text-sm font-medium"
+          :class="
+            activeStudentTab === 'profile'
+              ? 'border-blue-600 text-blue-700'
+              : 'border-transparent text-gray-500 hover:text-gray-800'
+          "
+          @click="activeStudentTab = 'profile'"
+        >
+          ข้อมูลนักเรียนและประวัติ
+        </button>
+        <button
+          v-if="authStore.can('guardian.view')"
+          type="button"
+          role="tab"
+          :aria-selected="activeStudentTab === 'guardians'"
+          class="border-b-2 px-4 py-3 text-sm font-medium"
+          :class="
+            activeStudentTab === 'guardians'
+              ? 'border-blue-600 text-blue-700'
+              : 'border-transparent text-gray-500 hover:text-gray-800'
+          "
+          @click="activeStudentTab = 'guardians'"
+        >
+          ผู้ปกครอง
+        </button>
+      </div>
+
+      <div v-if="activeStudentTab === 'profile'" class="space-y-6">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <!-- Card 1: ข้อมูลส่วนบุคคล (Identity) -->
+          <div class="rounded-lg bg-surface p-6 shadow">
+            <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
+              ข้อมูลส่วนบุคคล (Identity)
+            </h3>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm">
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ชื่อ</dt>
+                <dd class="mt-1 text-gray-900 font-medium">
+                  {{ student.person?.first_name || '-' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">นามสกุล</dt>
+                <dd class="mt-1 text-gray-900 font-medium">
+                  {{ student.person?.last_name || '-' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ชื่อที่แสดง / ชื่อเล่น</dt>
+                <dd class="mt-1 text-gray-900">{{ student.person?.display_name || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">เลขประจำตัวประชาชน</dt>
+                <dd class="mt-1 font-mono text-gray-900">
+                  {{ student.person?.person_code || '-' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ประเภทบุคคล (Person Type)</dt>
+                <dd class="mt-1 text-gray-900">{{ student.person?.person_type || 'STUDENT' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">สถานะบุคคล (Person Status)</dt>
+                <dd class="mt-1 text-gray-900">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
+                  >
+                    {{ getPersonStatusLabel(student.person?.status) }}
+                  </span>
+                </dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Card 2: ข้อมูลการศึกษา (Academic Information) -->
+          <div class="rounded-lg bg-surface p-6 shadow">
+            <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
+              ข้อมูลการศึกษา (Academic Profile)
+            </h3>
+            <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm">
+              <div>
+                <dt class="text-xs font-medium text-gray-500">รหัสนักเรียน</dt>
+                <dd class="mt-1 font-mono font-semibold text-gray-900">
+                  {{ student.student_code }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ระดับการศึกษา</dt>
+                <dd class="mt-1"><EducationLevelBadge :level="student.education_level" /></dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">แผนกวิชา</dt>
+                <dd class="mt-1 text-gray-900 font-medium">
+                  {{ student.department?.name || '-' }} ({{ student.department?.code || '-' }})
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">สาขาวิชา</dt>
+                <dd class="mt-1 text-gray-900">
+                  {{ student.program ? `${student.program.name} (${student.program.code})` : '-' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ห้องเรียน</dt>
+                <dd class="mt-1 text-gray-900">
+                  {{
+                    student.classroom
+                      ? `${student.classroom.name} (${student.classroom.code})`
+                      : '-'
+                  }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ชั้นปี</dt>
+                <dd class="mt-1 text-gray-900 font-medium">
+                  ชั้นปีที่ {{ student.year_level ?? '-' }}
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ปีที่เข้าศึกษา (พ.ศ.)</dt>
+                <dd class="mt-1 text-gray-900">{{ student.admission_year || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ปีที่คาดว่าจะจบ (พ.ศ.)</dt>
+                <dd class="mt-1 text-gray-900">{{ student.graduation_year || '-' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">สถานะการศึกษาปัจจุบัน</dt>
+                <dd class="mt-1"><AcademicStatusBadge :status="student.academic_status" /></dd>
+              </div>
+              <div>
+                <dt class="text-xs font-medium text-gray-500">ช่วงเวลาสถานะ</dt>
+                <dd class="mt-1 text-gray-700 text-xs">
+                  {{ formatDateShort(student.status_start_date) }} -
+                  {{
+                    student.status_end_date ? formatDateShort(student.status_end_date) : 'ปัจจุบัน'
+                  }}
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Card 3: ข้อมูลระบบ (System Metadata) -->
         <div class="rounded-lg bg-surface p-6 shadow">
           <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
-            ข้อมูลส่วนบุคคล (Identity)
+            ข้อมูลระบบ (System Info)
           </h3>
-          <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm">
+          <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3 text-sm">
             <div>
-              <dt class="text-xs font-medium text-gray-500">ชื่อ</dt>
-              <dd class="mt-1 text-gray-900 font-medium">
-                {{ student.person?.first_name || '-' }}
-              </dd>
+              <dt class="text-xs font-medium text-gray-500">รหัสอ้างอิงสาธารณะ (UUID)</dt>
+              <dd class="mt-1 font-mono text-xs text-gray-600 break-all">{{ student.uuid }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-medium text-gray-500">นามสกุล</dt>
-              <dd class="mt-1 text-gray-900 font-medium">{{ student.person?.last_name || '-' }}</dd>
+              <dt class="text-xs font-medium text-gray-500">วันที่บันทึกข้อมูล</dt>
+              <dd class="mt-1 text-xs text-gray-700">{{ formatDate(student.created_at) }}</dd>
             </div>
             <div>
-              <dt class="text-xs font-medium text-gray-500">ชื่อที่แสดง / ชื่อเล่น</dt>
-              <dd class="mt-1 text-gray-900">{{ student.person?.display_name || '-' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">เลขประจำตัวประชาชน</dt>
-              <dd class="mt-1 font-mono text-gray-900">{{ student.person?.person_code || '-' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ประเภทบุคคล (Person Type)</dt>
-              <dd class="mt-1 text-gray-900">{{ student.person?.person_type || 'STUDENT' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">สถานะบุคคล (Person Status)</dt>
-              <dd class="mt-1 text-gray-900">
-                <span
-                  class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800"
-                >
-                  {{ getPersonStatusLabel(student.person?.status) }}
-                </span>
-              </dd>
+              <dt class="text-xs font-medium text-gray-500">วันที่แก้ไขล่าสุด</dt>
+              <dd class="mt-1 text-xs text-gray-700">{{ formatDate(student.updated_at) }}</dd>
             </div>
           </dl>
         </div>
 
-        <!-- Card 2: ข้อมูลการศึกษา (Academic Information) -->
-        <div class="rounded-lg bg-surface p-6 shadow">
-          <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
-            ข้อมูลการศึกษา (Academic Profile)
-          </h3>
-          <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2 text-sm">
-            <div>
-              <dt class="text-xs font-medium text-gray-500">รหัสนักเรียน</dt>
-              <dd class="mt-1 font-mono font-semibold text-gray-900">{{ student.student_code }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ระดับการศึกษา</dt>
-              <dd class="mt-1"><EducationLevelBadge :level="student.education_level" /></dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">แผนกวิชา</dt>
-              <dd class="mt-1 text-gray-900 font-medium">
-                {{ student.department?.name || '-' }} ({{ student.department?.code || '-' }})
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">สาขาวิชา</dt>
-              <dd class="mt-1 text-gray-900">
-                {{ student.program ? `${student.program.name} (${student.program.code})` : '-' }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ห้องเรียน</dt>
-              <dd class="mt-1 text-gray-900">
-                {{
-                  student.classroom ? `${student.classroom.name} (${student.classroom.code})` : '-'
-                }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ชั้นปี</dt>
-              <dd class="mt-1 text-gray-900 font-medium">
-                ชั้นปีที่ {{ student.year_level ?? '-' }}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ปีที่เข้าศึกษา (พ.ศ.)</dt>
-              <dd class="mt-1 text-gray-900">{{ student.admission_year || '-' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ปีที่คาดว่าจะจบ (พ.ศ.)</dt>
-              <dd class="mt-1 text-gray-900">{{ student.graduation_year || '-' }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">สถานะการศึกษาปัจจุบัน</dt>
-              <dd class="mt-1"><AcademicStatusBadge :status="student.academic_status" /></dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500">ช่วงเวลาสถานะ</dt>
-              <dd class="mt-1 text-gray-700 text-xs">
-                {{ formatDateShort(student.status_start_date) }} -
-                {{
-                  student.status_end_date ? formatDateShort(student.status_end_date) : 'ปัจจุบัน'
-                }}
-              </dd>
-            </div>
-          </dl>
+        <!-- Card 4: ประวัติการเปลี่ยนสถานะการศึกษา (Academic Status History) -->
+        <StatusHistoryTimeline ref="historyTimelineRef" :student-uuid="student.uuid" />
+
+        <!-- Card 5: ประวัติการรับรู้ใบหน้า (Event Timeline, EVT-019) -->
+        <PersonEventTimeline v-if="student.person?.uuid" :person-uuid="student.person.uuid" />
+      </div>
+
+      <section
+        v-if="activeStudentTab === 'guardians' && authStore.can('guardian.view')"
+        class="rounded-lg bg-surface p-6 shadow"
+      >
+        <div
+          class="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 pb-3"
+        >
+          <div>
+            <h3 class="text-base font-semibold text-gray-900">ข้อมูลผู้ปกครอง</h3>
+            <p class="mt-1 text-sm text-gray-500">บุคคลที่เชื่อมโยงกับระเบียนนักเรียนนี้</p>
+          </div>
+          <button
+            v-if="authStore.can('guardian.manage')"
+            type="button"
+            class="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+            :disabled="guardianBusy"
+            @click="toggleGuardianPicker"
+          >
+            {{ showGuardianPicker ? 'ปิด' : 'เชื่อมโยงผู้ปกครอง' }}
+          </button>
         </div>
-      </div>
 
-      <!-- Card 3: ข้อมูลระบบ (System Metadata) -->
-      <div class="rounded-lg bg-surface p-6 shadow">
-        <h3 class="text-base font-semibold text-gray-900 border-b border-gray-200 pb-3 mb-4">
-          ข้อมูลระบบ (System Info)
-        </h3>
-        <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-3 text-sm">
-          <div>
-            <dt class="text-xs font-medium text-gray-500">รหัสอ้างอิงสาธารณะ (UUID)</dt>
-            <dd class="mt-1 font-mono text-xs text-gray-600 break-all">{{ student.uuid }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium text-gray-500">วันที่บันทึกข้อมูล</dt>
-            <dd class="mt-1 text-xs text-gray-700">{{ formatDate(student.created_at) }}</dd>
-          </div>
-          <div>
-            <dt class="text-xs font-medium text-gray-500">วันที่แก้ไขล่าสุด</dt>
-            <dd class="mt-1 text-xs text-gray-700">{{ formatDate(student.updated_at) }}</dd>
-          </div>
-        </dl>
-      </div>
+        <p
+          v-if="guardianError"
+          class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+          role="alert"
+        >
+          {{ guardianError }}
+        </p>
+        <p
+          v-if="guardianSuccess"
+          class="mt-4 rounded-md border border-green-200 bg-green-50 p-3 text-sm text-green-700"
+          role="status"
+        >
+          {{ guardianSuccess }}
+        </p>
 
-      <!-- Card 4: ประวัติการเปลี่ยนสถานะการศึกษา (Academic Status History) -->
-      <StatusHistoryTimeline ref="historyTimelineRef" :student-uuid="student.uuid" />
+        <div
+          v-if="showGuardianPicker && authStore.can('guardian.manage')"
+          class="mt-4 rounded-md border border-gray-200 p-4"
+        >
+          <form class="grid gap-3 sm:grid-cols-[1fr_auto]" @submit.prevent="searchGuardians">
+            <label class="sr-only" for="guardian-search">ค้นหาผู้ปกครอง</label>
+            <input
+              id="guardian-search"
+              v-model="guardianKeyword"
+              type="search"
+              maxlength="255"
+              placeholder="ค้นหาชื่อ หรือรหัสบุคคล"
+              class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              class="rounded-md border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50"
+              :disabled="guardianSearchLoading"
+            >
+              {{ guardianSearchLoading ? 'กำลังค้นหา…' : 'ค้นหา' }}
+            </button>
+          </form>
+          <div class="mt-3 grid gap-3 sm:grid-cols-[1fr_180px_auto]">
+            <label class="sr-only" for="guardian-candidate">เลือกบุคคล</label>
+            <select
+              id="guardian-candidate"
+              v-model="selectedGuardianUuid"
+              class="min-w-0 rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option value="">เลือกผู้ปกครอง</option>
+              <option v-for="person in guardianCandidates" :key="person.uuid" :value="person.uuid">
+                {{ person.name }} · {{ person.person_type
+                }}{{ person.person_code ? ` · ${person.person_code}` : '' }}
+              </option>
+            </select>
+            <label class="sr-only" for="guardian-relation">ความสัมพันธ์</label>
+            <select
+              id="guardian-relation"
+              v-model="guardianRelation"
+              class="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              <option
+                v-for="relation in guardianRelations"
+                :key="relation.value"
+                :value="relation.value"
+              >
+                {{ relation.label }}
+              </option>
+            </select>
+            <button
+              type="button"
+              class="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+              :disabled="!selectedGuardianUuid || guardianBusy"
+              @click="linkGuardian"
+            >
+              บันทึก
+            </button>
+          </div>
+          <p class="mt-2 text-xs text-gray-500">
+            ค้นหาได้จากข้อมูลบุคคลประเภทผู้ปกครอง ครู หรือบุคลากร
+            ระบบจะแสดงเฉพาะข้อมูลพื้นฐานที่จำเป็น
+          </p>
+        </div>
 
-      <!-- Card 5: ประวัติการรับรู้ใบหน้า (Event Timeline, EVT-019) -->
-      <PersonEventTimeline v-if="student.person?.uuid" :person-uuid="student.person.uuid" />
+        <div v-if="guardiansLoading" class="py-6 text-center text-sm text-gray-500">
+          กำลังโหลดข้อมูลผู้ปกครอง…
+        </div>
+        <div v-else-if="guardians.length" class="mt-4 divide-y divide-gray-100">
+          <div
+            v-for="link in guardians"
+            :key="link.uuid"
+            class="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-1"
+          >
+            <div>
+              <p class="font-medium text-gray-900">{{ link.guardian.name }}</p>
+              <p class="mt-1 text-sm text-gray-500">
+                {{
+                  guardianRelations.find((item) => item.value === link.relation)?.label ||
+                  link.relation
+                }}
+                · {{ link.guardian.person_type
+                }}<span v-if="link.guardian.person_code"> · {{ link.guardian.person_code }}</span>
+              </p>
+            </div>
+            <button
+              v-if="authStore.can('guardian.manage')"
+              type="button"
+              class="rounded-md border border-red-200 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50"
+              :disabled="guardianBusy"
+              @click="unlinkGuardian(link)"
+            >
+              ถอดการเชื่อมโยง
+            </button>
+          </div>
+        </div>
+        <p v-else class="mt-4 rounded-md bg-gray-50 p-4 text-sm text-gray-500">
+          ยังไม่มีข้อมูลผู้ปกครองเชื่อมโยง
+        </p>
+      </section>
 
       <!-- Change Status Modal -->
       <ChangeStatusModal

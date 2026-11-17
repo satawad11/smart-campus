@@ -86,6 +86,14 @@ class AttendanceReportService
                 'name' => $person->displayLabel(),
                 'person_type' => $person->person_type?->value ?? $person->person_type,
                 'code' => $person->studentProfile?->student_code ?? $person->staffProfile?->staff_code ?? $person->person_code,
+                'status' => $person->studentProfile?->academic_status?->value
+                    ?? $person->studentProfile?->academic_status
+                    ?? $person->staffProfile?->employment_status?->value
+                    ?? $person->staffProfile?->employment_status
+                    ?? $person->status?->value
+                    ?? $person->status,
+                'academic_status' => $person->studentProfile?->academic_status?->value ?? $person->studentProfile?->academic_status,
+                'employment_status' => $person->staffProfile?->employment_status?->value ?? $person->staffProfile?->employment_status,
             ],
             'time_in' => $first->occurred_at->setTimezone($tz)->toIso8601String(),
             'time_in_camera' => $first->camera?->name,

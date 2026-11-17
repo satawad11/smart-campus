@@ -180,7 +180,12 @@ class SystemSettingService
                     throw ValidationException::withMessages([$key => "The setting '{$key}' must be an integer."]);
                 }
 
-                return (int) $value;
+                $integer = (int) $value;
+                if ($key === 'visitor.face_retention_days' && $integer < 1) {
+                    throw ValidationException::withMessages([$key => "The setting '{$key}' must be at least one day."]);
+                }
+
+                return $integer;
 
             case 'float':
                 if (! is_numeric($value)) {

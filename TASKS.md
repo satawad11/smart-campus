@@ -257,7 +257,7 @@ Approved by the owner (docs/decisions/OWNER-DECISIONS-2026-11-16.md). Each modul
 feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
-[~] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — spec ACCEPTED: docs/12-module-09-people-visitor.md
+[x] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — complete; FEATURE_VISITOR remains disabled by default: docs/12-module-09-people-visitor.md
 [ ] [R] VEH-* Vehicle + ALPR (module 10) — needs plate model chosen and licence-checked
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
@@ -268,11 +268,11 @@ feature flags stay false until the module is complete.
     11 permissions + role matrix (fresh seed and migration for existing installs)
 [x] PPL-003 Staff API: CRUD, status change workflow + history, audit (/staff, docs/02 §5)
 [x] PPL-004 Staff import (CSV, like the student import) — /staff/import + /staff/imports/{uuid}/…
-[ ] PPL-005 Guardian links API + student detail tab
-[ ] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
-[ ] PPL-007 Person search API (all person types) for face enrollment and pickers
-[ ] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
-[ ] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
-[ ] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
-[ ] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
-[ ] PPL-012 Events/history/reports show person group and status; acceptance tests
+[x] PPL-005 Guardian links API + student detail tab
+[x] PPL-006 Visitor + visit API (check-in/out/cancel/expire), FEATURE_VISITOR_ENABLED gate
+[x] PPL-007 Person search API (all person types) for face enrollment and pickers
+[x] PPL-008 AccessContextResolver: STAFF / VISITOR / PARENT subjects + seeded policies
+[x] PPL-009 Visitor face retention: automatic revoke N days after the last visit (scheduled, audited)
+[x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import)
+[x] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
+[x] PPL-012 Events/history/reports show person group and status; acceptance tests

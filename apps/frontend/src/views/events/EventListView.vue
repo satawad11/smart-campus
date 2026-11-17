@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
+import { personTypeLabel, statusLabel } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -222,7 +223,10 @@ onMounted(() => {
             >
               <td class="px-6 py-4">
                 <div class="font-semibold text-gray-900">
-                  {{ event.person?.display_name || 'ไม่ทราบตัวตน' }}
+                  {{ event.person?.name || event.person?.display_name || 'ไม่ทราบตัวตน' }}
+                </div>
+                <div v-if="event.person" class="mt-1 text-xs text-gray-500">
+                  {{ personTypeLabel(event.person.person_type) }}<span v-if="event.person.status"> · {{ statusLabel(event.person.status) }}</span>
                 </div>
               </td>
               <td class="px-6 py-4 text-xs text-gray-600">

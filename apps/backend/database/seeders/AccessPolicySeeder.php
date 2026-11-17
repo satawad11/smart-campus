@@ -19,8 +19,7 @@ use Illuminate\Database\Seeder;
  * migration's docblock). LIVENESS_FAILED and UNKNOWN are evaluated ahead
  * of the subject-status policies (priority 10 vs 100/200) since neither
  * depends on — or should be overridden by — a resolved student's status.
- * STUDENT+ACTIVE is the lowest-priority (200) of the student policies: it
- * is the "nothing exceptional" fallback among them.
+ * Group-specific baseline policies are evaluated after event exceptions.
  */
 class AccessPolicySeeder extends Seeder
 {
@@ -136,6 +135,62 @@ class AccessPolicySeeder extends Seeder
                 'priority' => 100,
                 'enabled' => true,
             ],
+            [
+                'name' => 'Staff Active -> Allow',
+                'subject_type' => 'STAFF',
+                'subject_status' => 'ACTIVE',
+                'site_id' => null,
+                'zone_id' => null,
+                'event_type' => null,
+                'decision' => 'ALLOW',
+                'reason_code' => 'STAFF_ACTIVE',
+                'priority' => 200,
+                'enabled' => true,
+            ],
+            ...$this->reviewPolicies('STAFF', ['LEAVE', 'SUSPENDED', 'RESIGNED', 'RETIRED'], 'STAFF'),
+            [
+                'name' => 'Visitor Active Visit -> Allow',
+                'subject_type' => 'VISITOR',
+                'subject_status' => 'VISIT_ACTIVE',
+                'site_id' => null,
+                'zone_id' => null,
+                'event_type' => null,
+                'decision' => 'ALLOW',
+                'reason_code' => 'VISIT_ACTIVE',
+                'priority' => 200,
+                'enabled' => true,
+            ],
+            ...$this->reviewPolicies('VISITOR', ['NO_ACTIVE_VISIT'], 'VISITOR'),
+            [
+                'name' => 'Parent With Active Student -> Allow',
+                'subject_type' => 'PARENT',
+                'subject_status' => 'ACTIVE',
+                'site_id' => null,
+                'zone_id' => null,
+                'event_type' => null,
+                'decision' => 'ALLOW',
+                'reason_code' => 'PARENT_ACTIVE',
+                'priority' => 200,
+                'enabled' => true,
+            ],
+            ...$this->reviewPolicies('PARENT', ['NO_ACTIVE_STUDENT'], 'PARENT'),
         ];
+    }
+
+    /** @param list<string> $statuses @return list<array<string, mixed>> */
+    private function reviewPolicies(string $subjectType, array $statuses, string $label): array
+    {
+        return array_map(fn (string $status) => [
+            'name' => "{$label} {$status} -> Review",
+            'subject_type' => $subjectType,
+            'subject_status' => $status,
+            'site_id' => null,
+            'zone_id' => null,
+            'event_type' => null,
+            'decision' => 'REVIEW',
+            'reason_code' => "{$subjectType}_{$status}",
+            'priority' => 100,
+            'enabled' => true,
+        ], $statuses);
     }
 }

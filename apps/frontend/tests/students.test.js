@@ -4,7 +4,7 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { createRouter, createMemoryHistory } from 'vue-router'
 
 import api from '@/services/api'
-import { studentsService } from '@/services/students'
+import { studentsService, guardiansService } from '@/services/students'
 import { academicsService } from '@/services/academics'
 import { useAuthStore } from '@/stores/auth'
 import StudentListView from '@/views/students/StudentListView.vue'
@@ -564,6 +564,42 @@ describe('STD-015: Student Management UI', () => {
       expect(wrapper.html()).not.toContain('embedding')
       expect(wrapper.html()).not.toContain('ALLOW')
       expect(wrapper.html()).not.toContain('DENY')
+    })
+
+    it('shows the guardian tab and links a selected person with the chosen relation', async () => {
+      const auth = useAuthStore()
+      auth.user.permissions.push('guardian.view', 'guardian.manage')
+      vi.spyOn(studentsService, 'get').mockResolvedValue(sampleStudent)
+      const listSpy = vi.spyOn(guardiansService, 'forStudent').mockResolvedValue([])
+      const searchSpy = vi.spyOn(guardiansService, 'list').mockResolvedValue({
+        data: [{ uuid: 'parent-uuid', name: 'สมพร สุขใจ', person_type: 'PARENT' }],
+        meta: null,
+      })
+      const linkSpy = vi
+        .spyOn(guardiansService, 'link')
+        .mockResolvedValue({ uuid: 'guardian-link-uuid' })
+
+      const wrapper = mount(StudentDetailView, { global: { plugins: [router] } })
+      await flushPromises()
+      expect(listSpy).toHaveBeenCalledWith('std-uuid-12345')
+      await wrapper.get('[role="tab"]:nth-child(2)').trigger('click')
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text().includes('เชื่อมโยงผู้ปกครอง'))
+        .trigger('click')
+      await flushPromises()
+      expect(searchSpy).toHaveBeenCalled()
+      await wrapper.get('#guardian-candidate').setValue('parent-uuid')
+      await wrapper.get('#guardian-relation').setValue('MOTHER')
+      await wrapper
+        .findAll('button')
+        .find((button) => button.text().includes('บันทึก'))
+        .trigger('click')
+      await flushPromises()
+      expect(linkSpy).toHaveBeenCalledWith('std-uuid-12345', {
+        guardian_person_uuid: 'parent-uuid',
+        relation: 'MOTHER',
+      })
     })
 
     it('hides edit button when user lacks student.update permission', async () => {

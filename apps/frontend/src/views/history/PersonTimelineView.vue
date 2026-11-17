@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { apiErrorText } from '@/constants/labels'
+import { personTypeLabel, statusLabel } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,8 +19,25 @@ async function fetchTimeline() {
   error.value = null
   try {
     const res = await api.get(`/persons/${personUuid}/timeline`)
-    person.value = res.data.data?.person || null
-    events.value = res.data.data?.events || []
+    person.value = res.data.meta?.person || null
+    events.value = (Array.isArray(res.data.data) ? res.data.data : []).map((item) => {
+      if (item.type === 'STATUS_CHANGE') return {
+        uuid: item.status_change.uuid,
+        event_time: item.timestamp,
+        timelineType: item.type,
+        event_type: 'เปลี่ยนสถานะการศึกษา',
+        status_change: item.status_change,
+      }
+      const event = item.event || {}
+      return {
+        ...event,
+        uuid: event.uuid || item.timestamp,
+        event_time: event.occurred_at || item.timestamp,
+        decision: event.current_decision?.decision || 'UNKNOWN',
+        confidence_score: event.face_score,
+        timelineType: item.type,
+      }
+    })
   } catch (err) {
     error.value = apiErrorText(err, 'ไม่สามารถโหลดข้อมูลไทม์ไลน์บุคคลได้')
   } finally {
@@ -85,7 +103,7 @@ onMounted(() => {
           <div class="text-xs text-gray-500 space-x-2">
             <span>รหัส: {{ person.person_code }}</span>
             <span>•</span>
-            <span>ประเภท: {{ person.person_type }}</span>
+            <span>ประเภท: {{ personTypeLabel(person.person_type) }}</span>
             <span v-if="person.department">•</span>
             <span v-if="person.department">แผนก: {{ person.department.name }}</span>
           </div>
@@ -98,7 +116,7 @@ onMounted(() => {
             person.status === 'ACTIVE' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
           "
         >
-          {{ person.status }}
+          {{ statusLabel(person.status) }}
         </span>
       </div>
     </div>
@@ -108,7 +126,7 @@ onMounted(() => {
       <h3 class="text-base font-semibold text-gray-900 mb-6">บันทึกเหตุการณ์ตามลำดับเวลา</h3>
 
       <div class="relative pl-6 border-l-2 border-gray-200 space-y-6">
-        <div v-for="evt in events" :key="evt.uuid" class="relative">
+          <div v-for="evt in events" :key="evt.uuid" class="relative">
           <!-- Timeline dot -->
           <div
             class="absolute -left-[31px] top-1.5 w-4 h-4 rounded-full border-2 border-white shadow"
@@ -116,7 +134,7 @@ onMounted(() => {
               'bg-green-500': evt.decision === 'ALLOW',
               'bg-red-500': evt.decision === 'DENY',
               'bg-amber-500': evt.decision === 'REVIEW',
-              'bg-gray-400': evt.decision === 'UNKNOWN',
+              'bg-gray-400': evt.decision === 'UNKNOWN' || evt.timelineType === 'STATUS_CHANGE',
             }"
           ></div>
 
@@ -144,6 +162,7 @@ onMounted(() => {
             </div>
             <p class="text-xs text-gray-600 mt-2">
               ประเภท: {{ evt.event_type }}
+              <span v-if="evt.status_change"> · {{ statusLabel(evt.status_change.old_status) }} → {{ statusLabel(evt.status_change.new_status) }}<span v-if="evt.status_change.reason"> · {{ evt.status_change.reason }}</span></span>
               <span v-if="evt.confidence_score">
                 | ค่าความเชื่อมั่น: {{ (evt.confidence_score * 100).toFixed(1) }}%</span
               >

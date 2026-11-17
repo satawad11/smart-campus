@@ -117,6 +117,45 @@ export const studentsService = {
   },
 }
 
+/** Guardian directory and student relationship operations (PPL-005). */
+export const guardiansService = {
+  async list(params = {}) {
+    const response = await api.get('/guardians', { params })
+    return { data: response.data.data, meta: response.data.meta }
+  },
+  async create(payload) {
+    const response = await api.post('/guardians', payload)
+    return response.data.data
+  },
+  async get(uuid) {
+    const response = await api.get(`/guardians/${uuid}`)
+    return response.data.data
+  },
+  async update(uuid, payload) {
+    const response = await api.put(`/guardians/${uuid}`, payload)
+    return response.data.data
+  },
+  async forStudent(studentUuid) {
+    const response = await api.get(`/students/${studentUuid}/guardians`)
+    return response.data.data
+  },
+  async link(studentUuid, payload) {
+    const response = await api.post(`/students/${studentUuid}/guardians`, payload)
+    return response.data.data
+  },
+  async unlink(linkUuid) {
+    await api.delete(`/guardian-links/${linkUuid}`)
+  },
+}
+
+/** Safe cross-type picker used for face enrollment (PPL-007). */
+export const personsService = {
+  async list(params = {}) {
+    const response = await api.get('/persons', { params })
+    return { data: response.data.data, meta: response.data.meta }
+  },
+}
+
 /**
  * Student Import API Service (STD-012, STD-013, STD-014, STD-017).
  *

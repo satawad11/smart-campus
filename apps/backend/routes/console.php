@@ -40,6 +40,12 @@ Schedule::call(fn () => app(AiNodeCommandService::class)->expireStale())
 // COM-02: advance the license clock high-water mark and raise expiry/limit alerts.
 Schedule::command('license:check')->hourly()->withoutOverlapping(10);
 
+// PPL-006: expire scheduled visitor visits after their approved time window.
+Schedule::command('visits:expire')->everyMinute()->withoutOverlapping(5);
+
+// PPL-009: remove visitor face biometrics after the configured retention period.
+Schedule::command('visitors:retain-faces')->dailyAt('02:30')->withoutOverlapping(60);
+
 // Pilot backup policy (docs/pilot/PILOT-BACKUP-RETENTION-POLICY.md). Off by
 // default so development stacks do not accumulate backups.
 if (config('backup.schedule.enabled')) {

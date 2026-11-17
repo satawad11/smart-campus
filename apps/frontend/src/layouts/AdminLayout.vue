@@ -121,6 +121,9 @@ const NAV_SECTIONS = [
     title: 'บุคคลและสิทธิ์',
     items: [
       { to: '/students', label: 'จัดการข้อมูลนักเรียน', icon: 'students', perm: 'student.view' },
+      { to: '/staff', label: 'จัดการข้อมูลบุคลากร', icon: 'users', perm: 'staff.view' },
+      { to: '/guardians', label: 'จัดการข้อมูลผู้ปกครอง', icon: 'users', perm: 'guardian.view' },
+      { to: '/visitors', label: 'ผู้มาติดต่อและรายการเข้าออก', icon: 'camera', perm: 'visitor.view' },
       { to: '/users', label: 'จัดการผู้ใช้งาน', icon: 'users', perm: 'user.view' },
       { to: '/roles', label: 'จัดการบทบาทและสิทธิ์', icon: 'shield', perm: 'role.view' },
       { to: '/faces', label: 'ข้อมูลใบหน้าชีวมิติ', icon: 'face', perm: 'face.view' },

@@ -2,31 +2,39 @@
 
 namespace App\Services\Event;
 
+use App\Enums\PersonType;
+use App\Enums\VisitStatus;
 use App\Models\AccessEvent;
+use App\Models\Person;
+use App\Services\System\FeatureFlagService;
 
-/**
- * Resolves an AccessEvent into the AccessContext the policy matcher
- * (EVT-006) needs — the "resolve student" step of docs/09's processing
- * pipeline (`... -> resolve person -> resolve student -> ... -> evaluate
- * policy -> ...`). subject_type is hard-coded 'STUDENT' when a resolved
- * person has a StudentProfile — the only subject domain that exists today
- * (every other domain is explicitly locked pending approval, TASKS.md
- * "FUTURE — LOCKED UNTIL APPROVAL"); a person with no StudentProfile (or
- * no person at all, e.g. an UNKNOWN_PERSON event) resolves to a null
- * subject_type/subject_status, matching only wildcard policies.
- */
+/** Resolve the canonical subject type/status used by access policy evaluation (PPL-008). */
 class AccessContextResolver
 {
+    public function __construct(private readonly FeatureFlagService $features) {}
+
     public function resolve(AccessEvent $event): AccessContext
     {
         $subjectType = null;
         $subjectStatus = null;
+        $person = $event->person;
 
-        if ($event->person_id !== null) {
-            $studentProfile = $event->person?->studentProfile;
-            if ($studentProfile !== null) {
+        if ($person !== null) {
+            $student = $person->studentProfile;
+            if ($student !== null) {
                 $subjectType = 'STUDENT';
-                $subjectStatus = $studentProfile->academic_status?->value ?? $studentProfile->academic_status;
+                $subjectStatus = $student->academic_status?->value ?? $student->academic_status;
+            } elseif (in_array($person->person_type, [PersonType::TEACHER, PersonType::STAFF], true) && ($staff = $person->staffProfile) !== null) {
+                $subjectType = 'STAFF';
+                $subjectStatus = $staff->employment_status?->value ?? $staff->employment_status;
+            } elseif (in_array($person->person_type, [PersonType::VISITOR, PersonType::CONTRACTOR], true)) {
+                $subjectType = 'VISITOR';
+                $subjectStatus = $this->features->isEnabled('visitor') && $this->hasActiveVisit($person, $event->site_id)
+                    ? 'VISIT_ACTIVE'
+                    : 'NO_ACTIVE_VISIT';
+            } elseif ($person->person_type === PersonType::PARENT) {
+                $subjectType = 'PARENT';
+                $subjectStatus = $this->hasActiveStudent($person) ? 'ACTIVE' : 'NO_ACTIVE_STUDENT';
             }
         }
 
@@ -37,5 +45,28 @@ class AccessContextResolver
             zoneId: $event->zone_id,
             eventType: $event->event_type,
         );
+    }
+
+    private function hasActiveVisit(Person $person, int $siteId): bool
+    {
+        return $person->visits()
+            ->where('site_id', $siteId)
+            ->where(function ($query) {
+                $query->where('status', VisitStatus::CHECKED_IN->value)
+                    ->orWhere(fn ($scheduled) => $scheduled
+                        ->where('status', VisitStatus::SCHEDULED->value)
+                        ->where('valid_from', '<=', now())
+                        ->where('valid_until', '>=', now()));
+            })
+            ->exists();
+    }
+
+    private function hasActiveStudent(Person $person): bool
+    {
+        return $person->guardianOf()
+            ->whereHas('student', fn ($student) => $student
+                ->where('status', 'ACTIVE')
+                ->whereHas('studentProfile', fn ($profile) => $profile->where('academic_status', 'ACTIVE')))
+            ->exists();
     }
 }
