@@ -165,4 +165,24 @@ describe('EVT-022: unknown-person alerts', () => {
     await wrapper.find('[data-test="alert-dismiss"]').trigger('click')
     expect(wrapper.find('[data-test="alert-toast"]').exists()).toBe(false)
   })
+
+  it('ignoring an alert marks only its notification as read', async () => {
+    const patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: { data: {} } })
+    const router = makeRouter()
+    const store = useNotificationsStore()
+    const alert = notification('ignored')
+    store.alerts = [alert]
+    store.items = [alert]
+    store.unreadCount = 1
+
+    const wrapper = mount(AlertToasts, { global: { plugins: [router] } })
+    await wrapper.find('[data-test="alert-ignore"]').trigger('click')
+    await flushPromises()
+
+    expect(patchSpy).toHaveBeenCalledWith('/notifications/ignored/read')
+    expect(alert.read_at).toBeTruthy()
+    expect(store.unreadCount).toBe(0)
+    expect(store.alerts).toHaveLength(0)
+    expect(wrapper.find('[data-test="alert-toast"]').exists()).toBe(false)
+  })
 })

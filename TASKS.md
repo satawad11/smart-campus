@@ -146,6 +146,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-023 Real-time verification, automatic time in/out, instant alerts: monitor shows name (first/last fallback),
     group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
     private user.{uuid} (polling stays as fallback)
+[x] EVT-024 Alert acknowledgement: “ละเว้นการแจ้งเตือน” marks only the notification read; the durable event stays
+    in history/review. Frontend regression test covers the read endpoint and local unread state.
+[R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
+    currently sent or stored on the recognition event path.
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 

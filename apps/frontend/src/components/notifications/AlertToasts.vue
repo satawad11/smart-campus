@@ -20,6 +20,12 @@ async function view(alert) {
   const eventUuid = alert.data?.event_uuid
   if (eventUuid) router.push({ name: 'events.show', params: { uuid: eventUuid } })
 }
+
+async function ignore(alert) {
+  // Acknowledge only the notification. The underlying access event remains
+  // durable and available in event history / the review queue.
+  await store.markRead(alert)
+}
 </script>
 
 <template>
@@ -66,6 +72,15 @@ async function view(alert) {
         @click="view(alert)"
       >
         ดูเหตุการณ์
+      </button>
+      <button
+        type="button"
+        data-test="alert-ignore"
+        class="ml-4 mt-2 text-xs font-medium text-gray-600 hover:text-gray-900"
+        aria-label="ละเว้นการแจ้งเตือนนี้ โดยเก็บเหตุการณ์ไว้ในประวัติ"
+        @click="ignore(alert)"
+      >
+        ละเว้นการแจ้งเตือน
       </button>
     </div>
   </div>
