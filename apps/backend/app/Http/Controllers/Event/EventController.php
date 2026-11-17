@@ -68,6 +68,7 @@ class EventController extends Controller
             'zone_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:zones,uuid'],
             'camera_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:cameras,uuid'],
             'academic_status' => ['sometimes', 'string'],
+            'plate' => ['sometimes', 'string', 'max:32'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);

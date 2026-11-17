@@ -45,6 +45,12 @@ class EventReviewService
         ?AuditRequestContext $context,
         ?string $expectedDecisionUuid = null,
     ): AccessDecision {
+        // VEH-012 (ACR-VEH-01 D2): a plate read is a record, never an access decision, so it
+        // cannot be reviewed into one. Gate decisions come from gate passes (GATE-007).
+        if (str_starts_with((string) $event->event_type, 'PLATE_')) {
+            throw ApiException::unprocessable('PLATE_EVENT_NOT_REVIEWABLE', 'Plate reads are records only and cannot receive an access decision.');
+        }
+
         return DB::transaction(function () use ($event, $decision, $reasonCode, $reasonText, $actor, $context, $expectedDecisionUuid) {
             $locked = AccessEvent::whereKey($event->getKey())->lockForUpdate()->firstOrFail();
             $previous = $locked->latestDecision()->first();

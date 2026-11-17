@@ -2,6 +2,7 @@
 
 namespace App\Services\Report;
 
+use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
 use App\Models\Department;
@@ -104,6 +105,36 @@ class ReportBuilderService
             'by_decision' => $byDecisionList,
             'by_camera' => $this->formatDimensionBreakdown($byCameraCounts, Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
             'by_department' => $this->formatDimensionBreakdown($byDepartmentCounts, Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
+            'plates' => $this->buildPlateSection($from, $to, $siteId),
+        ];
+    }
+
+    /**
+     * VEH-012: plate reads in the range, counted straight from access_events. Plate events have
+     * no decision, so the decision-based daily summaries above never include them and the face
+     * totals stay unchanged.
+     *
+     * @return array{recognized:int, unknown:int, low_confidence:int, blocked_vehicle_reads:int}
+     */
+    public function buildPlateSection(Carbon $from, Carbon $to, ?int $siteId = null): array
+    {
+        $query = AccessEvent::query()
+            ->whereIn('event_type', ['PLATE_RECOGNIZED', 'PLATE_UNKNOWN', 'PLATE_LOW_CONFIDENCE'])
+            ->where('occurred_at', '>=', $from->copy()->startOfDay())
+            ->where('occurred_at', '<=', $to->copy()->endOfDay());
+        if ($siteId !== null) {
+            $query->where('site_id', $siteId);
+        }
+
+        $byType = (clone $query)->selectRaw('event_type, COUNT(*) as c')->groupBy('event_type')->pluck('c', 'event_type');
+        $blocked = (clone $query)->where('event_type', 'PLATE_RECOGNIZED')
+            ->where('metadata->plate->vehicle_status', 'BLOCKED')->count();
+
+        return [
+            'recognized' => (int) ($byType['PLATE_RECOGNIZED'] ?? 0),
+            'unknown' => (int) ($byType['PLATE_UNKNOWN'] ?? 0),
+            'low_confidence' => (int) ($byType['PLATE_LOW_CONFIDENCE'] ?? 0),
+            'blocked_vehicle_reads' => $blocked,
         ];
     }
 

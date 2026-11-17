@@ -47,6 +47,13 @@ export const ERROR_MESSAGES = {
   ALPR_DISABLED: 'ระบบอ่านป้ายทะเบียนยังไม่เปิดใช้งาน',
 }
 
+/** Plate-read event types (VEH-006/VEH-012). */
+export const PLATE_EVENT_LABELS = {
+  PLATE_RECOGNIZED: 'รถที่ลงทะเบียน',
+  PLATE_UNKNOWN: 'รถไม่ได้ลงทะเบียน',
+  PLATE_LOW_CONFIDENCE: 'อ่านทะเบียนไม่ชัด',
+}
+
 /** Vehicle registry labels (ACR-VEH-01). */
 export const VEHICLE_TYPE_LABELS = {
   CAR: 'รถยนต์',

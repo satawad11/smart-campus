@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import camerasService from '@/services/cameras'
 import { getEcho, disconnectEcho } from '@/services/echo'
-import { apiErrorText } from '@/constants/labels'
+import { apiErrorText, PLATE_EVENT_LABELS, VEHICLE_STATUS_LABELS } from '@/constants/labels'
 import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
 
 const router = useRouter()
@@ -79,6 +79,15 @@ function pushLiveEvent(payload) {
   ].slice(0, MAX_FEED_LENGTH)
 }
 
+// VEH-012: a plate read is a record, never a decision (ACR-VEH-01 D2) — it carries `plate`
+// instead of `decision` and is drawn with its own badge.
+function pushPlateEvent(payload) {
+  liveEvents.value = [
+    { ...payload.event, plate: payload.plate, decision: null, _receivedAt: Date.now() },
+    ...liveEvents.value,
+  ].slice(0, MAX_FEED_LENGTH)
+}
+
 function subscribeToSite(siteUuid) {
   unsubscribeFromSite()
   if (!siteUuid) return
@@ -86,6 +95,7 @@ function subscribeToSite(siteUuid) {
   try {
     const channel = getEcho().private(`site.${siteUuid}`)
     channel.listen('.event.decided', pushLiveEvent)
+    channel.listen('.plate.read', pushPlateEvent)
     currentChannel = channel
     currentChannelName = `site.${siteUuid}`
     realtimeConnected.value = true
@@ -100,6 +110,7 @@ function subscribeToSite(siteUuid) {
 function unsubscribeFromSite() {
   if (currentChannel) {
     currentChannel.stopListening('.event.decided')
+    currentChannel.stopListening('.plate.read')
     getEcho().leave(currentChannelName)
     currentChannel = null
     currentChannelName = ''
@@ -195,7 +206,26 @@ function decisionBadgeClass(decision) {
 }
 
 // display_name is often empty; the backend also sends a name with a first/last fallback.
+function plateLabel(event) {
+  const plate = event.plate || {}
+  const text = plate.plate_display || plate.raw_text || 'อ่านทะเบียนไม่ได้'
+  const province = plate.plate_province_name || ''
+  return province ? `${text} ${province}` : text
+}
+
+function plateBadgeClass(event) {
+  if (event.plate?.vehicle_status === 'BLOCKED') return 'bg-red-100 text-red-800'
+  if (event.event_type === 'PLATE_RECOGNIZED') return 'bg-blue-100 text-blue-800'
+  return 'bg-gray-100 text-gray-700'
+}
+
+function plateBadgeText(event) {
+  if (event.plate?.vehicle_status === 'BLOCKED') return `รถ${VEHICLE_STATUS_LABELS.BLOCKED}`
+  return PLATE_EVENT_LABELS[event.event_type] || 'ป้ายทะเบียน'
+}
+
 function personLabel(event) {
+  if (event.plate) return plateLabel(event)
   return (
     event.person?.name ||
     event.person_name ||
@@ -385,6 +415,15 @@ function personMeta(event) {
               </div>
               <div class="text-right shrink-0">
                 <span
+                  v-if="event.plate"
+                  data-test="plate-badge"
+                  class="px-2.5 py-1 rounded-full text-xs font-semibold"
+                  :class="plateBadgeClass(event)"
+                >
+                  {{ plateBadgeText(event) }}
+                </span>
+                <span
+                  v-else
                   class="px-2.5 py-1 rounded-full text-xs font-semibold"
                   :class="decisionBadgeClass(event.decision?.decision)"
                 >

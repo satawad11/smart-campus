@@ -54,11 +54,15 @@ class VehicleController extends Controller
         $query = Vehicle::query();
 
         // Exact plate search, normalised the same way as stored plates ("1กข-1234" finds "1กข1234").
+        // Unreadable input is a real, empty filter — never a NUL "impossible value",
+        // which PostgreSQL rejects as a query parameter.
         if (isset($validated['plate'])) {
-            $query->where('plate_number', ThaiPlate::tryNormalize($validated['plate']) ?? "\0");
+            $plate = ThaiPlate::tryNormalize($validated['plate']);
+            $plate === null ? $query->whereRaw('1 = 0') : $query->where('plate_number', $plate);
         }
         if (isset($validated['province'])) {
-            $query->where('plate_province', ThaiProvince::resolve($validated['province']) ?? "\0");
+            $province = ThaiProvince::resolve($validated['province']);
+            $province === null ? $query->whereRaw('1 = 0') : $query->where('plate_province', $province);
         }
         if (! empty($validated['keyword'])) {
             $keyword = '%'.mb_strtolower($validated['keyword']).'%';
