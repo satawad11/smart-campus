@@ -60,7 +60,7 @@ onMounted(async () => {
   <div class="mx-auto max-w-7xl space-y-6 p-6">
     <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900">จัดการบุคลากร</h1>
+        <h1 class="text-2xl font-bold text-gray-900">จัดการข้อมูลบุคลากร</h1>
         <p class="text-sm text-gray-500">ครูและบุคลากร ลงทะเบียนใบหน้าได้เช่นเดียวกับผู้เรียน</p>
       </div>
       <div class="flex gap-2">
@@ -87,6 +87,7 @@ onMounted(async () => {
       <input
         v-model="filters.keyword"
         type="text"
+        aria-label="ค้นหาบุคลากร"
         placeholder="ค้นหารหัส ชื่อ หรือตำแหน่ง"
         class="min-w-[220px] flex-1 rounded-lg border px-3 py-2 text-sm"
       />

@@ -62,8 +62,9 @@ class LocationController extends Controller
         return $this->respondSite($site, 'Site created', 201);
     }
 
-    public function updateSite(Request $request, Site $site): JsonResponse
+    public function updateSite(Request $request, string $uuid): JsonResponse
     {
+        $site = Site::where('uuid', $uuid)->firstOrFail();
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'address' => ['sometimes', 'nullable', 'string', 'max:1000'],
@@ -83,8 +84,9 @@ class LocationController extends Controller
         return $this->respondSite($site, 'Site updated');
     }
 
-    public function storeZone(Request $request, Site $site): JsonResponse
+    public function storeZone(Request $request, string $uuid): JsonResponse
     {
+        $site = Site::where('uuid', $uuid)->firstOrFail();
         $data = $request->validate([
             'code' => ['required', 'string', 'max:50', 'regex:/^[A-Za-z0-9_-]+$/',
                 Rule::unique('zones', 'code')->where('site_id', $site->id)],
@@ -99,8 +101,9 @@ class LocationController extends Controller
         return $this->respondSite($site, 'Zone created', 201);
     }
 
-    public function updateZone(Request $request, Zone $zone): JsonResponse
+    public function updateZone(Request $request, string $uuid): JsonResponse
     {
+        $zone = Zone::where('uuid', $uuid)->firstOrFail();
         $data = $request->validate([
             'name' => ['sometimes', 'string', 'max:255'],
             'zone_type' => ['sometimes', 'nullable', 'string', 'max:50'],

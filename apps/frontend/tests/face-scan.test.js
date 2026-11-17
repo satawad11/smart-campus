@@ -5,7 +5,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import router from '@/router'
 import api from '@/services/api'
 import facesService from '@/services/faces'
-import { studentsService } from '@/services/students'
+import { personsService } from '@/services/students'
 import { useAuthStore } from '@/stores/auth'
 import FaceScanView from '@/views/face/FaceScanView.vue'
 import FaceEnrollmentView from '@/views/face/FaceEnrollmentView.vue'
@@ -145,16 +145,14 @@ describe('Face scanning (FACE-022)', () => {
 
   it('enrollment: search a student, consent, auto-capture, enroll with source CAMERA', async () => {
     useAuthStore().user = { id: 'u', permissions: ['face.enroll', 'student.view'] }
-    vi.spyOn(studentsService, 'list').mockResolvedValue({
+    vi.spyOn(personsService, 'list').mockResolvedValue({
       data: [
         {
-          uuid: 's-1',
+          uuid: '11111111-2222-4333-8444-555555555555',
+          person_type: 'STUDENT',
           student_code: '65001',
-          person: {
-            uuid: '11111111-2222-4333-8444-555555555555',
-            first_name: 'สมชาย',
-            last_name: 'ใจดี',
-          },
+          first_name: 'สมชาย',
+          last_name: 'ใจดี',
         },
       ],
     })

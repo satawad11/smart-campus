@@ -430,9 +430,9 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     // Sites and zones (UIX-002): previously CLI only (locations:provision).
     Route::get('/sites', [LocationController::class, 'index'])->middleware('permission:system.view');
     Route::post('/sites', [LocationController::class, 'storeSite'])->middleware('permission:system.manage');
-    Route::put('/sites/{site}', [LocationController::class, 'updateSite'])->middleware('permission:system.manage');
-    Route::post('/sites/{site}/zones', [LocationController::class, 'storeZone'])->middleware('permission:system.manage');
-    Route::put('/zones/{zone}', [LocationController::class, 'updateZone'])->middleware('permission:system.manage');
+    Route::put('/sites/{uuid}', [LocationController::class, 'updateSite'])->middleware('permission:system.manage');
+    Route::post('/sites/{uuid}/zones', [LocationController::class, 'storeZone'])->middleware('permission:system.manage');
+    Route::put('/zones/{uuid}', [LocationController::class, 'updateZone'])->middleware('permission:system.manage');
 
     Route::get('/settings', [SystemSettingController::class, 'index'])->middleware('permission:system.view');
     Route::get('/settings/{group}', [SystemSettingController::class, 'show'])->middleware('permission:system.view');
