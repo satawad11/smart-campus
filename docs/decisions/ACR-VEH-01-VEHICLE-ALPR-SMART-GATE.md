@@ -173,3 +173,25 @@ and chose in chat to **continue VEH-004** in parallel. U4 still applies: `featur
 Asked in chat before GATE-002, the owner chose the recommended options: new permissions `gate.view` /
 `gate.manage` (SUPER_ADMIN and SYSTEM_ADMIN manage, SECURITY_OFFICER views), and the gate pages and API
 sit behind `feature.vehicle`, so gates can be set up while plate reading (`feature.alpr`) is still off.
+
+## Smart Gate correlation (GATE-004, 2026-11-19)
+
+How the correlation service (`App\Services\Gate\GateCorrelationService`) applies item 7. No new owner
+decision was needed; the choices below follow the ACR and the existing ingestion pipeline.
+
+- When: right after a face or plate event is stored (after commit, after broadcast), the service tries
+  to pair it with an unpaired event of the other kind at the same gate whose `occurred_at` is within
+  the gate's `correlation_window_seconds`. A failure there is logged and never loses the event.
+- Lone events: `gates:correlate` runs every five seconds. An event still alone once the window plus
+  5 s grace has passed since it was received gets a FACE_ONLY or PLATE_ONLY pass. The sweep tries to
+  pair first, so a pairing missed at ingest time is not lost. It looks back 15 minutes only, so turning
+  a gate on never backfills old history.
+- Which events: camera linked to an ACTIVE gate, camera role reads that kind (FACE/BOTH for face
+  events, PLATE/BOTH for plate events), event in the gate's site and received after the camera was
+  linked. All face types (FACE_RECOGNIZED, UNKNOWN_PERSON, LIVENESS_FAILED) and all plate types count.
+- Several candidates in the window: the closest in time wins; an event is used by one pass only.
+- match_result: MATCHED when the face is FACE_RECOGNIZED with a person, the plate is PLATE_RECOGNIZED
+  with a vehicle, and that person has a current ownership link to that vehicle at the face event's
+  time; MISMATCH when both are known without such a link; UNKNOWN when either is not recognised.
+- Only with `feature.vehicle` on. The service never writes an AccessDecision (GATE-005..007) and never
+  modifies an access event. Two cars, tailgating and late or out-of-order delivery are GATE-009.

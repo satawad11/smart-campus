@@ -8,6 +8,7 @@ use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
 use App\Models\Vehicle;
+use App\Services\Gate\GateCorrelationService;
 use App\Services\System\FeatureFlagService;
 use App\Support\Vehicles\ThaiPlate;
 use App\Support\Vehicles\ThaiProvince;
@@ -24,7 +25,7 @@ use Throwable;
  * looks up the vehicle and picks the type.
  *
  * Records only. A plate event has no person and gets no AccessDecision: a plate never decides
- * access on its own (D2). The Smart Gate (GATE-004+) later pairs plate and face events.
+ * access on its own (D2). The Smart Gate correlation (GATE-004) pairs plate and face events.
  *
  * Guards, in order: ALPR enabled for the installation; node identity from the credential;
  * camera assigned to this node and switched to read plates; event_uuid idempotency (same as
@@ -34,6 +35,7 @@ class PlateEventIngestionService
 {
     public function __construct(
         private readonly FeatureFlagService $flags,
+        private readonly GateCorrelationService $gateCorrelation,
     ) {}
 
     /** @param array<string, mixed> $data */
@@ -102,6 +104,13 @@ class PlateEventIngestionService
                     'event_uuid' => $event->uuid,
                     'error' => $e->getMessage(),
                 ]);
+            }
+            // GATE-004: pair with a face event at the same Smart Gate. A failure here never
+            // loses the stored event; the gates:correlate sweep retries.
+            try {
+                $this->gateCorrelation->onEventIngested($event);
+            } catch (Throwable $e) {
+                Log::error('Gate correlation failed', ['event_uuid' => $event->uuid, 'error' => $e->getMessage()]);
             }
         }
 

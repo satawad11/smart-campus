@@ -660,8 +660,8 @@ setting `effective_to` (not earlier than `effective_from`). A vehicle may have s
 ## 17. Smart Gate Tables (ACR-VEH-01 Phase 5, GATE-001)
 
 Configuration for the face-first Smart Gate. Decision and notification only: no table here drives a
-barrier (decision D5; actuation needs Phase 2 and its own ACR). Nothing writes gate passes until the
-correlation service (GATE-004).
+barrier (decision D5; actuation needs Phase 2 and its own ACR). Gate passes are written only by the
+correlation service `App\Services\Gate\GateCorrelationService` (GATE-004), with `feature.vehicle` on.
 
 ### gates
 - id
