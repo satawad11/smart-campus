@@ -286,9 +286,11 @@ class GatePassAccessContextTest extends TestCase
         $this->assertSame($generic->id, $this->matcher->match($this->resolver->resolvePass($there))->matchedPolicyId);
     }
 
-    public function test_with_only_the_default_policies_a_plate_alone_is_never_allowed(): void
+    public function test_without_any_gate_policy_a_plate_alone_still_fails_closed(): void
     {
         $this->seed(AccessPolicySeeder::class);
+        // Only the ordinary policies: the gate policies of GATE-006 removed.
+        AccessPolicy::whereNotNull('gate_mode')->delete();
         $owner = $this->student();
         $vehicle = Vehicle::factory()->create();
         $this->link($owner, $vehicle);

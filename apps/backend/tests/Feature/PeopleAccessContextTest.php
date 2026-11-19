@@ -160,7 +160,8 @@ class PeopleAccessContextTest extends TestCase
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('VISITOR', 'NO_ACTIVE_VISIT', 1, null, 'FACE_RECOGNIZED'))->decision->value);
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('PARENT', 'ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('PARENT', 'NO_ACTIVE_STUDENT', 1, null, 'FACE_RECOGNIZED'))->decision->value);
-        $this->assertDatabaseCount('access_policies', 19);
+        // Gate policies (GATE-006) are counted in FacePrimaryGatePolicyTest.
+        $this->assertSame(19, AccessPolicy::whereNull('gate_mode')->count());
     }
 
     public function test_seeder_disables_legacy_active_visitor_and_parent_allow_policies(): void

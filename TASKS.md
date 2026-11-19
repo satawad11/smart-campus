@@ -331,7 +331,7 @@ Decision and notification only. Physical barrier control needs Phase 2 and its o
 [x] GATE-003 Create gate_passes schema (links events, never modifies them)
 [x] GATE-004 Face + plate correlation service within the gate time window
 [x] GATE-005 Extend AccessContext with gate, vehicle, ownership link and match_result
-[ ] GATE-006 Seed FACE_PRIMARY gate policies (decision D2)
+[x] GATE-006 Seed FACE_PRIMARY gate policies (decision D2)
 [ ] GATE-007 Gate pass decisions in Live Monitor, notifications and review queue
 [ ] GATE-008 Gate pass history search and reports
 [ ] GATE-009 Correlation edge cases: two cars, tailgating, out-of-order and late events

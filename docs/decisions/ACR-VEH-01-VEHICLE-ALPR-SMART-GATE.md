@@ -213,3 +213,15 @@ How item 8 is applied. No new owner decision was needed.
   whether the link exists.
 - With only the existing default policies a PLATE_ONLY pass falls to REVIEW / NO_MATCHING_POLICY.
   The FACE_PRIMARY policies themselves are GATE-006; writing gate decisions is GATE-007.
+
+## FACE_PRIMARY gate policies (GATE-006, 2026-11-19)
+
+How D2 is seeded (rows listed in `docs/09-module-05-event-policy-monitor.md` "Smart Gate Policies"):
+
+- BLOCKED vehicle -> DENY ahead of everything; plate only, unknown face and failed liveness -> REVIEW.
+- "Face MATCH -> ALLOW" is not a gate policy. A recognised face falls through to the person's own policies,
+  so the gate never allows anyone the ordinary rules would review or deny (inactive record, suspended,
+  expelled, visitor, parent). For an entitled person this gives D2's ALLOW, with match_result as the note.
+- "Configurable to REVIEW per gate" is two disabled template policies (mismatch, plate unknown) at priority
+  150, which can only make a decision stricter. Per-gate use means copying a template with `gate_id`.
+  There is no policy editing UI or API; a gate-level setting for this would need an owner decision.
