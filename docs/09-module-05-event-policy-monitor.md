@@ -18,10 +18,18 @@ Example:
 - STUDENT + WITHDRAWN -> REVIEW
 - STUDENT + GRADUATED -> REVIEW
 - STUDENT + EXPELLED -> DENY
+- STAFF + ACTIVE -> ALLOW
+- Other STAFF statuses -> REVIEW
+- Other recognized person types (including parents and visitors) -> REVIEW and notify
 - UNKNOWN -> UNKNOWN
 - LIVENESS_FAILED -> REVIEW
 
 Policies are configuration-driven.
+
+Owner amendment (2026-11-17): only an ACTIVE student and ACTIVE staff member are routine identities. A visitor's active
+visit or a parent's link to an active student does not suppress monitoring alerts; those identities require operator
+review. A non-ACTIVE `persons.status` record also overrides an otherwise ACTIVE student/staff profile and requires
+review. This amendment is recorded in `docs/decisions/OWNER-DECISIONS-2026-11-16.md`.
 
 ## Processing
 `recognition -> validate/idempotency -> resolve person -> resolve student -> persist event -> evaluate policy -> persist decision -> commit -> broadcast -> notify`

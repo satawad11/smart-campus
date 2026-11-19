@@ -6,6 +6,7 @@ use App\Enums\PersonType;
 use App\Enums\StaffEmploymentStatus;
 use App\Enums\VisitStatus;
 use App\Models\AccessEvent;
+use App\Models\AccessPolicy;
 use App\Models\GuardianLink;
 use App\Models\Person;
 use App\Models\Site;
@@ -47,6 +48,23 @@ class PeopleAccessContextTest extends TestCase
 
         $this->assertSame('STAFF', $context->subjectType);
         $this->assertSame('SUSPENDED', $context->subjectStatus);
+    }
+
+    public function test_inactive_person_record_overrides_active_student_or_staff_profile(): void
+    {
+        $student = Person::factory()->create(['status' => 'INACTIVE']);
+        StudentProfile::factory()->for($student)->create(['academic_status' => 'ACTIVE']);
+        $staff = Person::factory()->create(['person_type' => PersonType::STAFF, 'status' => 'ARCHIVED']);
+        StaffProfile::factory()->for($staff)->create(['employment_status' => 'ACTIVE']);
+        $resolver = app(AccessContextResolver::class);
+
+        $studentContext = $resolver->resolve(AccessEvent::factory()->create(['person_id' => $student->id]));
+        $staffContext = $resolver->resolve(AccessEvent::factory()->create(['person_id' => $staff->id]));
+
+        $this->assertSame('STUDENT', $studentContext->subjectType);
+        $this->assertSame('PERSON_INACTIVE', $studentContext->subjectStatus);
+        $this->assertSame('STAFF', $staffContext->subjectType);
+        $this->assertSame('PERSON_INACTIVE', $staffContext->subjectStatus);
     }
 
     public function test_visitor_is_active_only_for_a_current_visit_at_the_event_site(): void
@@ -136,10 +154,40 @@ class PeopleAccessContextTest extends TestCase
 
         $this->assertSame('ALLOW', $matcher->match(new AccessContext('STAFF', 'ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('STAFF', 'RESIGNED', 1, null, 'FACE_RECOGNIZED'))->decision->value);
-        $this->assertSame('ALLOW', $matcher->match(new AccessContext('VISITOR', 'VISIT_ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
+        $this->assertSame('REVIEW', $matcher->match(new AccessContext('VISITOR', 'VISIT_ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
+        $this->assertSame('REVIEW', $matcher->match(new AccessContext('STUDENT', 'PERSON_INACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
+        $this->assertSame('REVIEW', $matcher->match(new AccessContext('STAFF', 'PERSON_INACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('VISITOR', 'NO_ACTIVE_VISIT', 1, null, 'FACE_RECOGNIZED'))->decision->value);
-        $this->assertSame('ALLOW', $matcher->match(new AccessContext('PARENT', 'ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
+        $this->assertSame('REVIEW', $matcher->match(new AccessContext('PARENT', 'ACTIVE', 1, null, 'FACE_RECOGNIZED'))->decision->value);
         $this->assertSame('REVIEW', $matcher->match(new AccessContext('PARENT', 'NO_ACTIVE_STUDENT', 1, null, 'FACE_RECOGNIZED'))->decision->value);
-        $this->assertDatabaseCount('access_policies', 17);
+        $this->assertDatabaseCount('access_policies', 19);
+    }
+
+    public function test_seeder_disables_legacy_active_visitor_and_parent_allow_policies(): void
+    {
+        $this->seed(EventTypeSeeder::class);
+        $legacyVisitor = AccessPolicy::factory()->create([
+            'name' => 'Visitor Active Visit -> Allow',
+            'subject_type' => 'VISITOR',
+            'subject_status' => 'VISIT_ACTIVE',
+            'decision' => 'ALLOW',
+            'reason_code' => 'VISIT_ACTIVE',
+            'priority' => 200,
+            'enabled' => true,
+        ]);
+        $legacyParent = AccessPolicy::factory()->create([
+            'name' => 'Parent With Active Student -> Allow',
+            'subject_type' => 'PARENT',
+            'subject_status' => 'ACTIVE',
+            'decision' => 'ALLOW',
+            'reason_code' => 'PARENT_ACTIVE',
+            'priority' => 200,
+            'enabled' => true,
+        ]);
+
+        (new AccessPolicySeeder)->run();
+
+        $this->assertFalse($legacyVisitor->fresh()->enabled);
+        $this->assertFalse($legacyParent->fresh()->enabled);
     }
 }

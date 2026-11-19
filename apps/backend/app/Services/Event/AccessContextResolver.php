@@ -2,6 +2,7 @@
 
 namespace App\Services\Event;
 
+use App\Enums\PersonStatus;
 use App\Enums\PersonType;
 use App\Enums\VisitStatus;
 use App\Models\AccessEvent;
@@ -68,20 +69,30 @@ class AccessContextResolver
             return [null, null];
         }
 
+        // A person record that is not ACTIVE overrides the profile status (master: surveillance
+        // alerts for non-active recognised identities).
+        $recordInactive = $person->status !== PersonStatus::ACTIVE;
+
         $student = $person->studentProfile;
         if ($student !== null) {
-            return ['STUDENT', $student->academic_status?->value ?? $student->academic_status];
+            return ['STUDENT', $recordInactive
+                ? 'PERSON_INACTIVE'
+                : ($student->academic_status?->value ?? $student->academic_status)];
         }
         if (in_array($person->person_type, [PersonType::TEACHER, PersonType::STAFF], true) && ($staff = $person->staffProfile) !== null) {
-            return ['STAFF', $staff->employment_status?->value ?? $staff->employment_status];
+            return ['STAFF', $recordInactive
+                ? 'PERSON_INACTIVE'
+                : ($staff->employment_status?->value ?? $staff->employment_status)];
         }
         if (in_array($person->person_type, [PersonType::VISITOR, PersonType::CONTRACTOR], true)) {
-            return ['VISITOR', $this->features->isEnabled('visitor') && $this->hasActiveVisit($person, $siteId)
+            return ['VISITOR', ! $recordInactive && $this->features->isEnabled('visitor') && $this->hasActiveVisit($person, $siteId)
                 ? 'VISIT_ACTIVE'
-                : 'NO_ACTIVE_VISIT'];
+                : ($recordInactive ? 'PERSON_INACTIVE' : 'NO_ACTIVE_VISIT')];
         }
         if ($person->person_type === PersonType::PARENT) {
-            return ['PARENT', $this->hasActiveStudent($person) ? 'ACTIVE' : 'NO_ACTIVE_STUDENT'];
+            return ['PARENT', $recordInactive
+                ? 'PERSON_INACTIVE'
+                : ($this->hasActiveStudent($person) ? 'ACTIVE' : 'NO_ACTIVE_STUDENT')];
         }
 
         return [null, null];

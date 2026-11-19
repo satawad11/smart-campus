@@ -75,7 +75,7 @@ describe('EVT-022: unknown-person alerts', () => {
     expect(store.alerts).toHaveLength(0)
   })
 
-  it('pops up an alert for an unknown person that arrives while the console is open', async () => {
+  it('pops up alerts for unknown and review events that arrive while the console is open', async () => {
     const getSpy = vi.spyOn(api, 'get').mockResolvedValue(inbox([notification('a')]))
     const store = useNotificationsStore()
     store.start()
@@ -89,8 +89,7 @@ describe('EVT-022: unknown-person alerts', () => {
 
     expect(getSpy).toHaveBeenCalledWith('/notifications', { params: { per_page: 20 } })
     expect(store.unreadCount).toBe(3)
-    // Only the new UNKNOWN pops up; REVIEW stays in the inbox only.
-    expect(store.alerts.map((a) => a.uuid)).toEqual(['b'])
+    expect(store.alerts.map((a) => a.uuid)).toEqual(['c', 'b'])
   })
 
   it('stops polling and clears state when the session is gone', async () => {
@@ -164,6 +163,26 @@ describe('EVT-022: unknown-person alerts', () => {
     expect(toast.text()).toContain('กล้อง ประตูหน้า')
 
     await wrapper.find('[data-test="alert-dismiss"]').trigger('click')
+    expect(wrapper.find('[data-test="alert-toast"]').exists()).toBe(false)
+  })
+
+  it('ignoring an alert marks only its notification as read', async () => {
+    const patchSpy = vi.spyOn(api, 'patch').mockResolvedValue({ data: { data: {} } })
+    const router = makeRouter()
+    const store = useNotificationsStore()
+    const alert = notification('ignored')
+    store.alerts = [alert]
+    store.items = [alert]
+    store.unreadCount = 1
+
+    const wrapper = mount(AlertToasts, { global: { plugins: [router] } })
+    await wrapper.find('[data-test="alert-ignore"]').trigger('click')
+    await flushPromises()
+
+    expect(patchSpy).toHaveBeenCalledWith('/notifications/ignored/read')
+    expect(alert.read_at).toBeTruthy()
+    expect(store.unreadCount).toBe(0)
+    expect(store.alerts).toHaveLength(0)
     expect(wrapper.find('[data-test="alert-toast"]').exists()).toBe(false)
   })
 })

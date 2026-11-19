@@ -115,7 +115,7 @@ class AccessPolicySchemaTest extends TestCase
         $this->seed(EventTypeSeeder::class);
         $this->seed(AccessPolicySeeder::class);
 
-        $this->assertDatabaseCount('access_policies', 17);
+        $this->assertDatabaseCount('access_policies', 19);
 
         $expected = [
             'Liveness Failed -> Review' => 'REVIEW',
@@ -126,14 +126,16 @@ class AccessPolicySchemaTest extends TestCase
             'Student Withdrawn -> Review' => 'REVIEW',
             'Student Graduated -> Review' => 'REVIEW',
             'Student Expelled -> Deny' => 'DENY',
+            'Student Person Inactive -> Review' => 'REVIEW',
             'Staff Active -> Allow' => 'ALLOW',
             'STAFF LEAVE -> Review' => 'REVIEW',
             'STAFF SUSPENDED -> Review' => 'REVIEW',
             'STAFF RESIGNED -> Review' => 'REVIEW',
             'STAFF RETIRED -> Review' => 'REVIEW',
-            'Visitor Active Visit -> Allow' => 'ALLOW',
+            'Staff Person Inactive -> Review' => 'REVIEW',
+            'Visitor Active Visit -> Review' => 'REVIEW',
             'VISITOR NO_ACTIVE_VISIT -> Review' => 'REVIEW',
-            'Parent With Active Student -> Allow' => 'ALLOW',
+            'Parent With Active Student -> Review' => 'REVIEW',
             'PARENT NO_ACTIVE_STUDENT -> Review' => 'REVIEW',
         ];
 
@@ -148,7 +150,7 @@ class AccessPolicySchemaTest extends TestCase
         $this->seed(AccessPolicySeeder::class);
         $this->seed(AccessPolicySeeder::class);
 
-        $this->assertDatabaseCount('access_policies', 17);
+        $this->assertDatabaseCount('access_policies', 19);
     }
 
     public function test_student_status_policies_cover_every_studentacademicstatus_value(): void

@@ -31,14 +31,17 @@ class ReadinessChecker:
         return True, "ok"
 
     def check_runtime(self) -> tuple[bool, str]:
-        """Verify execution runtime provider availability (CPU/ONNX/Mock)."""
+        """Verify the execution library used by the configured AI provider."""
         if self.settings.ai_mode == "mock":
             return True, "ok"
 
         if self.settings.ai_mode == "onnx":
-            if importlib.util.find_spec("onnxruntime") is not None:
+            # ACR-AI-01 runs YuNet, SFace and MiniFASNet through OpenCV's DNN
+            # APIs. The legacy ONNX Runtime detector is not selected by the
+            # production provider factories and is not a package dependency.
+            if importlib.util.find_spec("cv2") is not None:
                 return True, "ok"
-            return False, "onnxruntime_unavailable"
+            return False, "opencv_unavailable"
 
         return False, "unknown_runtime"
 

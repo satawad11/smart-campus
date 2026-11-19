@@ -146,6 +146,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-023 Real-time verification, automatic time in/out, instant alerts: monitor shows name (first/last fallback),
     group, code and similarity; GET /reports/attendance + page บันทึกเวลาเข้า-ออก (CSV); notifications pushed on
     private user.{uuid} (polling stays as fallback)
+[x] EVT-024 Alert acknowledgement: “ละเว้นการแจ้งเตือน” marks only the notification read; the durable event stays
+    in history/review. Frontend regression test covers the read endpoint and local unread state.
+[R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
+    currently sent or stored on the recognition event path.
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 
@@ -261,6 +265,12 @@ Open register: docs/audit/V1-OPEN-FINDINGS.md
 [x] INT-002 External API connection settings page (การเชื่อมต่อระบบภายนอก): RMS address, encrypted write-only key,
     timeout, daily sync time, connection test — ACR-INT-02 APPROVED 2026-11-12
     (docs/decisions/ACR-INT-02-INTEGRATION-SETTINGS-UI.md); live test against RMS still PENDING HOST
+
+# LIVE SURVEILLANCE READINESS
+
+[~] SURV-001 Active-person-only live recognition alerts: align AI RTSP capture with the TCP preview path; classify only
+    ACTIVE students and ACTIVE staff as routine; alert on UNKNOWN, every other person type/status, and inactive person
+    records; automated tests pass, pending the owner's physical face test on the campus camera.
 
 # FUTURE PHASES — APPROVED 2026-11-16, BUILT ONE AT A TIME
 
