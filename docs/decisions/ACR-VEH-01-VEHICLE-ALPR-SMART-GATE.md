@@ -195,3 +195,21 @@ decision was needed; the choices below follow the ACR and the existing ingestion
   time; MISMATCH when both are known without such a link; UNKNOWN when either is not recognised.
 - Only with `feature.vehicle` on. The service never writes an AccessDecision (GATE-005..007) and never
   modifies an access event. Two cars, tailgating and late or out-of-order delivery are GATE-009.
+
+## Smart Gate policy context (GATE-005, 2026-11-19)
+
+How item 8 is applied. No new owner decision was needed.
+
+- `AccessContext` gains gate fields, all null for an ordinary event: gate id and mode, the pass's
+  match_result, the vehicle and its current status, and the relation of the person's ownership link
+  to that vehicle at the face event's time (null when there is none).
+- `AccessContextResolver::resolvePass(GatePass)` builds it. The subject comes from the face event's
+  person only, never from the vehicle owner, so a plate alone leaves the subject unknown. Site and zone
+  are the gate's; the event type is the face event's, or the plate event's for a PLATE_ONLY pass.
+- `access_policies` gains four wildcard-when-null dimensions read by the existing matcher: `gate_id`,
+  `gate_mode`, `match_result`, `vehicle_status`. An ordinary event cannot match a policy that sets any
+  of them. `gate_id` is restrict-delete so removing a gate never widens its policy to every gate.
+  The ownership relation stays in the context for the decision record; match_result already says
+  whether the link exists.
+- With only the existing default policies a PLATE_ONLY pass falls to REVIEW / NO_MATCHING_POLICY.
+  The FACE_PRIMARY policies themselves are GATE-006; writing gate decisions is GATE-007.

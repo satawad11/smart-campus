@@ -4,6 +4,9 @@ namespace App\Models;
 
 use App\Concerns\HasPublicUuid;
 use App\Enums\AccessDecisionOutcome;
+use App\Enums\GateMatchResult;
+use App\Enums\GateMode;
+use App\Enums\VehicleStatus;
 use Database\Factories\AccessPolicyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -20,6 +23,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * nullable-optional-dimension shape AccessEvent itself uses. priority:
  * lower value is evaluated first (see the creating migration's docblock).
  *
+ * gate_id/gate_mode/match_result/vehicle_status (GATE-005) are Smart Gate
+ * dimensions with the same wildcard rule; a policy that sets any of them
+ * applies only to gate passes.
+ *
  * @use HasFactory<AccessPolicyFactory>
  */
 class AccessPolicy extends Model
@@ -34,6 +41,10 @@ class AccessPolicy extends Model
         'site_id',
         'zone_id',
         'event_type',
+        'gate_id',
+        'gate_mode',
+        'match_result',
+        'vehicle_status',
         'decision',
         'reason_code',
         'priority',
@@ -49,6 +60,9 @@ class AccessPolicy extends Model
     {
         return [
             'decision' => AccessDecisionOutcome::class,
+            'gate_mode' => GateMode::class,
+            'match_result' => GateMatchResult::class,
+            'vehicle_status' => VehicleStatus::class,
             'priority' => 'integer',
             'enabled' => 'boolean',
             'valid_from' => 'datetime',
@@ -64,6 +78,11 @@ class AccessPolicy extends Model
     public function zone(): BelongsTo
     {
         return $this->belongsTo(Zone::class);
+    }
+
+    public function gate(): BelongsTo
+    {
+        return $this->belongsTo(Gate::class)->withTrashed();
     }
 
     public function eventType(): BelongsTo

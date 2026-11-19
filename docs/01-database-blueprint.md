@@ -407,6 +407,10 @@ Decision source:
 - site_id nullable
 - zone_id nullable
 - event_type nullable
+- gate_id nullable (GATE-005; restrict delete)
+- gate_mode nullable (GATE-005; GateMode)
+- match_result nullable (GATE-005; GateMatchResult)
+- vehicle_status nullable (GATE-005; VehicleStatus)
 - decision
 - reason_code
 - priority
@@ -414,6 +418,10 @@ Decision source:
 - valid_from nullable
 - valid_until nullable
 - timestamps
+
+Every dimension is a wildcard when null. The four Smart Gate dimensions (ACR-VEH-01 Phase 5 item 8)
+are null in an ordinary event's AccessContext, so a policy that sets any of them applies only to a
+gate pass (`AccessContextResolver::resolvePass`).
 
 ### event_notes
 - id
