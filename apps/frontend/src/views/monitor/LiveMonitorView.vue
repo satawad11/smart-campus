@@ -7,6 +7,7 @@ import camerasService from '@/services/cameras'
 import { getEcho, disconnectEcho } from '@/services/echo'
 import { apiErrorText, PLATE_EVENT_LABELS, VEHICLE_STATUS_LABELS } from '@/constants/labels'
 import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
+import GatePassInfo from '@/components/common/GatePassInfo.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -72,11 +73,22 @@ let currentChannelName = ''
 const realtimeConnected = ref(false)
 const realtimeError = ref('')
 
+// GATE-007: a Smart Gate decision arrives as a second `event.decided` for an event already in
+// the feed (the face event, or the plate read of a plate-only pass). It updates that row in place
+// and moves it to the top, keeping fields the earlier push carried (such as the plate).
 function pushLiveEvent(payload) {
-  liveEvents.value = [
-    { ...payload.event, decision: payload.decision, _receivedAt: Date.now() },
-    ...liveEvents.value,
-  ].slice(0, MAX_FEED_LENGTH)
+  const existing = liveEvents.value.find((e) => e.uuid === payload.event.uuid)
+  const row = {
+    ...(existing || {}),
+    ...payload.event,
+    decision: payload.decision,
+    gate_pass: payload.gate_pass || existing?.gate_pass || null,
+    _receivedAt: Date.now(),
+  }
+  liveEvents.value = [row, ...liveEvents.value.filter((e) => e.uuid !== row.uuid)].slice(
+    0,
+    MAX_FEED_LENGTH,
+  )
 }
 
 // VEH-012: a plate read is a record, never a decision (ACR-VEH-01 D2) — it carries `plate`
@@ -133,6 +145,7 @@ async function loadRecentEvents(siteUuid) {
     liveEvents.value = (res.data || []).map((event) => ({
       ...event,
       decision: event.current_decision,
+      gate_pass: event.current_decision?.gate_pass || null,
       _receivedAt: Date.now(),
     }))
   } catch (err) {
@@ -409,13 +422,19 @@ function personMeta(event) {
                   {{ event.event_type }} · {{ event.camera_name || event.camera?.name || '-' }} ·
                   {{ event.zone_name || event.zone?.name || '-' }}
                 </div>
+                <GatePassInfo
+                  v-if="event.gate_pass"
+                  :gate-pass="event.gate_pass"
+                  compact
+                  class="mt-0.5"
+                />
                 <div v-if="event.decision?.reason_code" class="text-xs text-gray-400">
                   เหตุผล: {{ event.decision.reason_code }}
                 </div>
               </div>
               <div class="text-right shrink-0">
                 <span
-                  v-if="event.plate"
+                  v-if="event.plate && !event.decision"
                   data-test="plate-badge"
                   class="px-2.5 py-1 rounded-full text-xs font-semibold"
                   :class="plateBadgeClass(event)"

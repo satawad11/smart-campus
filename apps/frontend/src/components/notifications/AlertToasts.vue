@@ -1,6 +1,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useNotificationsStore, notificationLabel } from '@/stores/notifications'
+import { GATE_MATCH_RESULT_LABELS } from '@/constants/labels'
 
 /**
  * On-screen alerts for new UNKNOWN / DENY notifications (EVT-022). They stay
@@ -13,6 +14,16 @@ const router = useRouter()
 function formatTime(iso) {
   if (!iso) return ''
   return new Date(iso).toLocaleTimeString('th-TH')
+}
+
+function gateLine(data) {
+  return [
+    `จุดเข้าออก ${data.gate_name}`,
+    GATE_MATCH_RESULT_LABELS[data.match_result] || data.match_result,
+    data.plate_display,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 }
 
 async function view(alert) {
@@ -49,6 +60,14 @@ async function ignore(alert) {
             class="truncate text-xs text-gray-600"
           >
             กล้อง {{ alert.data.camera_name || alert.data.camera_code }}
+          </p>
+          <!-- GATE-007: a Smart Gate alert says which gate, what it saw and which plate -->
+          <p
+            v-if="alert.data?.gate_name"
+            data-test="alert-gate"
+            class="truncate text-xs text-gray-600"
+          >
+            {{ gateLine(alert.data) }}
           </p>
           <p class="text-xs text-gray-400">
             {{ formatTime(alert.data?.occurred_at || alert.created_at) }}

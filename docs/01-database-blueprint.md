@@ -382,6 +382,7 @@ Statuses:
 - decision
 - reason_code
 - access_policy_id nullable
+- gate_pass_id nullable (GATE-007; the Smart Gate pass this decision is for, null on delete)
 - decision_source
 - decided_by_user_id nullable
 - reason_text nullable

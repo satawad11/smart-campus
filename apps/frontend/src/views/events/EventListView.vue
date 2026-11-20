@@ -6,6 +6,7 @@ import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
 import { useFeaturesStore } from '@/stores/features'
+import GatePassInfo from '@/components/common/GatePassInfo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -269,6 +270,12 @@ onMounted(() => {
                 >
                   {{ event.current_decision?.decision || '-' }}
                 </span>
+                <GatePassInfo
+                  v-if="event.current_decision?.gate_pass"
+                  :gate-pass="event.current_decision.gate_pass"
+                  compact
+                  class="mt-1"
+                />
               </td>
               <td class="px-6 py-4 text-xs text-gray-500">
                 {{ event.occurred_at ? new Date(event.occurred_at).toLocaleString() : '-' }}

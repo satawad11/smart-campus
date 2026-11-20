@@ -162,7 +162,11 @@ class RecognitionEventIngestionService
                 ]);
             }
             try {
-                $this->notifier->notifyIfActionable($newEvent, $decision);
+                // GATE-007: at a Smart Gate camera the alert comes once, with the gate decision
+                // (owner choice 2026-11-20). The event's own decision is still stored and pushed.
+                if (! $this->gateCorrelation->covers($newEvent)) {
+                    $this->notifier->notifyIfActionable($newEvent, $decision);
+                }
             } catch (Throwable $e) {
                 Log::error('Access event notification failed', ['event_uuid' => $newEvent->uuid, 'error' => $e->getMessage()]);
             }

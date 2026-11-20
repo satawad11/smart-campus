@@ -9,6 +9,7 @@ use App\Models\AccessDecision;
 use App\Models\AccessEvent;
 use App\Models\User;
 use App\Services\Auth\PermissionService;
+use App\Support\Gates\GatePassSummary;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -66,6 +67,14 @@ class NotificationService
             'camera_name' => $event->camera?->name,
             'occurred_at' => $event->occurred_at?->toISOString(),
         ];
+        // GATE-007: a Smart Gate decision says which gate and what the plate camera saw.
+        if ($decision->gatePass !== null) {
+            $pass = GatePassSummary::of($decision->gatePass);
+            $data['gate_pass_uuid'] = $pass['uuid'];
+            $data['gate_name'] = $pass['gate']['name'] ?? null;
+            $data['match_result'] = $pass['match_result'];
+            $data['plate_display'] = $pass['plate']['plate_display'] ?? $pass['plate']['plate_number'] ?? null;
+        }
 
         foreach ($this->recipients() as $recipient) {
             if ($recipient->id === $excludeUserId) {

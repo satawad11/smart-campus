@@ -6,6 +6,7 @@ import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
 import { PLATE_EVENT_LABELS, VEHICLE_STATUS_LABELS } from '@/constants/labels'
+import GatePassInfo from '@/components/common/GatePassInfo.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +14,11 @@ const authStore = useAuthStore()
 
 const canView = computed(() => authStore.can('event.view'))
 const canReview = computed(() => authStore.can('event.review'))
+// A plate read is a record without decisions (VEH-012), except the plate read of a plate-only
+// Smart Gate pass, which carries that pass's gate decision and is reviewed like any event (GATE-007).
+const takesDecisions = computed(
+  () => !!event.value && (!event.value.plate || !!event.value.current_decision?.gate_pass),
+)
 
 const event = ref(null)
 const loading = ref(false)
@@ -149,7 +155,7 @@ onMounted(() => {
             </p>
           </div>
           <span
-            v-if="event.plate"
+            v-if="!takesDecisions"
             data-test="plate-badge"
             class="px-3 py-1.5 rounded-full text-sm font-semibold"
             :class="
@@ -167,6 +173,17 @@ onMounted(() => {
           >
             {{ event.current_decision?.decision || '-' }}
           </span>
+        </div>
+
+        <!-- GATE-007: Smart Gate pass this event's current decision is for -->
+        <div
+          v-if="event.current_decision?.gate_pass"
+          data-test="gate-section"
+          class="bg-surface rounded-xl border border-gray-200 p-6 space-y-2"
+        >
+          <h2 class="font-semibold text-gray-900">การผ่านจุดเข้าออก</h2>
+          <GatePassInfo :gate-pass="event.current_decision.gate_pass" />
+          <p class="text-xs text-gray-400">ระบบตัดสินและแจ้งเตือนเท่านั้น ไม่ได้สั่งเปิดไม้กั้น</p>
         </div>
 
         <!-- VEH-012: plate read (records only — no person, no decision) -->
@@ -226,8 +243,8 @@ onMounted(() => {
           </div>
         </div>
 
-        <!-- Decision timeline (Event Drawer); plate reads never have decisions -->
-        <div v-if="!event.plate" class="bg-surface rounded-xl border border-gray-200 p-6">
+        <!-- Decision timeline (Event Drawer); plain plate reads never have decisions -->
+        <div v-if="takesDecisions" class="bg-surface rounded-xl border border-gray-200 p-6">
           <h2 class="font-semibold text-gray-900 mb-3">
             ประวัติการตัดสินใจ ({{ event.decisions?.length || 0 }})
           </h2>
@@ -258,6 +275,9 @@ onMounted(() => {
               <div class="text-xs text-gray-400">
                 แหล่งที่มา: {{ sourceLabel(decision.decision_source) }}
                 <span v-if="decision.decided_by"> · โดย {{ decision.decided_by.username }}</span>
+                <span v-if="decision.gate_pass">
+                  · จุดเข้าออก {{ decision.gate_pass.gate?.name }}</span
+                >
               </div>
             </li>
           </ul>
@@ -265,7 +285,7 @@ onMounted(() => {
 
         <!-- Manual review form -->
         <div
-          v-if="canReview && !event.plate"
+          v-if="canReview && takesDecisions"
           class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4"
         >
           <h2 class="font-semibold text-gray-900">ตรวจสอบโดยเจ้าหน้าที่</h2>

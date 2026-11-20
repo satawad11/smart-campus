@@ -107,7 +107,7 @@ class EventController extends Controller
     public function show(Request $request, AccessEvent $accessEvent): JsonResponse
     {
         $this->assertInScope($request, 'event.view', $accessEvent->site_id, $accessEvent->zone_id);
-        $accessEvent->load(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision', 'decisions.decidedBy']);
+        $accessEvent->load(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision.gatePass.gate', 'latestDecision.gatePass.faceEvent', 'latestDecision.gatePass.plateEvent', 'decisions.decidedBy', 'decisions.gatePass.gate', 'decisions.gatePass.faceEvent', 'decisions.gatePass.plateEvent']);
 
         return response()->json([
             'success' => true,

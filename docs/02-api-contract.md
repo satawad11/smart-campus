@@ -457,8 +457,10 @@ camera within `ALPR_PLATE_COOLDOWN_SECONDS` (30) is one pass and answers 200 wit
   `plate_province_name`, `raw_text`, `ocr_score`, `vehicle_uuid`, `vehicle_status`; `null` otherwise.
 - Range reports (`/reports/daily|weekly|monthly|yearly|custom`) add `plates`: `recognized`,
   `unknown`, `low_confidence`, `blocked_vehicle_reads`. These are counted from events and are not part
-  of `totals` (plate events have no decision).
-- `POST /api/v1/events/{uuid}/review` on a plate event answers `422 PLATE_EVENT_NOT_REVIEWABLE`.
+  of `totals` (plate events have no decision), except the plate event of a PLATE_ONLY Smart Gate pass:
+  it carries that pass's decision and counts in `totals` like any decided event (§26.1).
+- `POST /api/v1/events/{uuid}/review` on a plate event answers `422 PLATE_EVENT_NOT_REVIEWABLE`,
+  except the plate event of a PLATE_ONLY Smart Gate pass, which carries the gate decision (§26.1).
 - Realtime: plate reads arrive on the site channel as `plate.read` (§25.3), separate from
   `event.decided`.
 
@@ -496,3 +498,24 @@ Audit (module `gate`): `GATE_CREATED`, `GATE_UPDATED`, `GATE_CAMERAS_CHANGED` (o
 Error codes: `GATE_CODE_EXISTS` (409), `GATE_CAMERA_IN_USE` (409), `GATE_NEEDS_FACE_CAMERA` (422),
 `GATE_ZONE_SITE_MISMATCH` (422), `GATE_CAMERA_SITE_MISMATCH` (422), `GATE_CAMERA_DUPLICATE` (422),
 `SITE_NOT_FOUND` (422), `ZONE_NOT_FOUND` (422), `CAMERA_NOT_FOUND` (422).
+
+### 26.1 Gate pass decisions (GATE-007)
+
+Each Smart Gate pass gets one decision, an ordinary access decision on the pass's face event (its plate
+event for a PLATE_ONLY pass), evaluated by the access policies (§ docs/09 "Smart Gate Policies").
+Additive fields only:
+
+- Decision resources (`current_decision`, `decisions[]`) carry `gate_pass`: `null` for an ordinary
+  decision, else `uuid`, `match_result` (`MATCHED|MISMATCH|UNKNOWN|FACE_ONLY|PLATE_ONLY`),
+  `occurred_at`, `gate` (`uuid`, `code`, `name`), `face_event_uuid`, `plate_event_uuid`, `plate`
+  (`plate_number`, `plate_display`, `plate_province`, `plate_province_name`, `vehicle_uuid`; `null`
+  once the plate read is redacted).
+- Realtime: the gate decision arrives as `event.decided` for that event with a top-level `gate_pass`
+  (same shape; `null` on ordinary decisions). The Live Monitor replaces the event's row.
+- Notifications for a gate decision add `gate_pass_uuid`, `gate_name`, `match_result` and
+  `plate_display` to `data`. At a camera linked to an ACTIVE gate (with `feature.vehicle` on) the face
+  event itself does not notify; the one alert comes with the gate decision (owner choice 2026-11-20).
+- Review: `POST /api/v1/events/{uuid}/review` as for any event; the officer's decision keeps the
+  `gate_pass` link. The review queue (`GET /events?decision=REVIEW`) lists gate decisions like others.
+
+Decision and notification only: nothing opens a barrier (D5).

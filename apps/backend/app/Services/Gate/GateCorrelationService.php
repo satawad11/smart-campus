@@ -17,13 +17,15 @@ use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Face + plate correlation for the Smart Gate (GATE-004, ACR-VEH-01 Phase 5 §7).
  *
  * Puts the face event and the plate event of one pass through a gate together into a
- * GatePass. Correlation only: it never modifies an access event, never writes an
- * AccessDecision (GATE-005..007) and never drives a barrier (D5).
+ * GatePass. It never modifies an access event and never drives a barrier (D5). Each new
+ * pass goes to GateDecisionService (GATE-007), which writes the pass's AccessDecision.
  *
  * Two entry points:
  * - onEventIngested(): called right after a face or plate event is stored. It pairs the event
@@ -55,7 +57,18 @@ class GateCorrelationService
 
     public function __construct(
         private readonly FeatureFlagService $flags,
+        private readonly GateDecisionService $decisions,
     ) {}
+
+    /**
+     * True when this event is handled by a Smart Gate: it will end up in a pass that gets its own
+     * decision and alert (GATE-007). The ingestion services skip the event's own notification
+     * then, so officers get one alert per pass (owner choice 2026-11-20).
+     */
+    public function covers(AccessEvent $event): bool
+    {
+        return $this->flags->isEnabled('vehicle') && $this->gateFor($event) !== null;
+    }
 
     /** Try to pair a freshly stored event. Returns the pass when one was created. */
     public function onEventIngested(AccessEvent $event): ?GatePass
@@ -113,10 +126,17 @@ class GateCorrelationService
             }
         }
 
+        // GATE-007: a pass whose decision failed right after creation is decided here.
+        $this->decisions->decideUndecided($now->copy()->subMinutes(self::LOOKBACK_MINUTES));
+
         return $created;
     }
 
-    private function correlate(AccessEvent $event, bool $closeAlone): ?GatePass
+    /**
+     * The ACTIVE gate this event counts for, or null: camera linked to the gate, camera role reads
+     * this kind of event, event in the gate's site and received after the camera was linked.
+     */
+    private function gateFor(AccessEvent $event): ?Gate
     {
         $link = $event->camera_id === null ? null : GateCamera::query()
             ->where('camera_id', $event->camera_id)
@@ -134,6 +154,16 @@ class GateCorrelationService
             return null;
         }
 
+        return $gate;
+    }
+
+    private function correlate(AccessEvent $event, bool $closeAlone): ?GatePass
+    {
+        $gate = $this->gateFor($event);
+        if ($gate === null) {
+            return null;
+        }
+
         $isFace = in_array($event->event_type, $this->typesOf('RECOGNITION'), true);
 
         // A retry, a second trigger or the sweep may see an event that is already in a pass.
@@ -145,17 +175,25 @@ class GateCorrelationService
 
         if ($partner !== null) {
             [$face, $plate] = $isFace ? [$event, $partner] : [$partner, $event];
-
-            return $this->createPass($gate, $face, $plate);
-        }
-
-        if (! $closeAlone) {
+            $pass = $this->createPass($gate, $face, $plate);
+        } elseif ($closeAlone) {
+            $pass = $isFace
+                ? $this->createPass($gate, $event, null)
+                : $this->createPass($gate, null, $event);
+        } else {
             return null;
         }
 
-        return $isFace
-            ? $this->createPass($gate, $event, null)
-            : $this->createPass($gate, null, $event);
+        if ($pass !== null) {
+            // GATE-007. A failure is retried by the sweep (decideUndecided).
+            try {
+                $this->decisions->decide($pass);
+            } catch (Throwable $e) {
+                Log::error('Gate decision failed', ['gate_pass_uuid' => $pass->uuid, 'error' => $e->getMessage()]);
+            }
+        }
+
+        return $pass;
     }
 
     /**

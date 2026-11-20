@@ -129,7 +129,8 @@ class GateCorrelationTest extends TestCase
         $this->assertSame($vehicle->id, $pass->vehicle_id);
         $this->assertTrue($pass->occurred_at->eq($face->occurred_at), 'A pass happens at its earliest event');
         $this->assertSame($before, [$face->fresh()->toArray(), $plate->fresh()->toArray()]);
-        $this->assertSame(0, AccessDecision::count(), 'Correlation never writes a decision');
+        // GATE-007: the pass's decision is a separate AccessDecision row; the events stay as they were.
+        $this->assertSame(1, AccessDecision::where('gate_pass_id', $pass->id)->count());
     }
 
     public function test_plate_first_then_face_also_pairs(): void
@@ -375,7 +376,8 @@ class GateCorrelationTest extends TestCase
         $this->assertSame(GateMatchResult::MATCHED, $pass->match_result);
         $this->assertSame($person->id, $pass->person_id);
         $this->assertSame($vehicle->id, $pass->vehicle_id);
-        // Only the face event has a decision; correlation added none.
-        $this->assertSame(1, AccessDecision::count());
+        // The face event's own decision, then the gate decision for the pass (GATE-007).
+        $this->assertSame(2, AccessDecision::count());
+        $this->assertSame(1, AccessDecision::where('gate_pass_id', $pass->id)->count());
     }
 }

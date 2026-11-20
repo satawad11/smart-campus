@@ -225,3 +225,18 @@ How D2 is seeded (rows listed in `docs/09-module-05-event-policy-monitor.md` "Sm
 - "Configurable to REVIEW per gate" is two disabled template policies (mismatch, plate unknown) at priority
   150, which can only make a decision stricter. Per-gate use means copying a template with `gate_id`.
   There is no policy editing UI or API; a gate-level setting for this would need an owner decision.
+
+## Gate pass decisions (GATE-007, 2026-11-20)
+
+- Owner decision in chat (2026-11-20, recommended option): **one alert per pass**. At a camera linked
+  to an ACTIVE gate (with `feature.vehicle` on) the face event's own decision is still stored and
+  pushed, but it sends no notification; the alert comes with the gate decision. A lone face therefore
+  alerts up to the window plus 5 s later (about 15 s with the default window).
+- Each pass gets one AccessDecision on its face event (its plate event for a PLATE_ONLY pass), tagged
+  with `access_decisions.gate_pass_id`. As that event's latest decision it is what the Live Monitor,
+  history and the review queue show; the face event's earlier decision stays in its history.
+- The gate never overrides a human: if an officer already ruled on the event before the pass formed,
+  no gate decision is added. A pass whose decision failed is retried by `gates:correlate`.
+- An officer reviews a gate decision like any event; the review appends and keeps the pass link. The
+  plate event of a PLATE_ONLY pass is reviewable for that reason; other plate reads still are not.
+- Reports by gate are GATE-008. Nothing here opens a barrier (D5).

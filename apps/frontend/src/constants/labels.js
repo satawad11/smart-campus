@@ -75,6 +75,15 @@ export const GATE_STATUS_LABELS = {
   INACTIVE: 'ปิดใช้งาน',
 }
 
+/** What the gate saw for one pass (GATE-007). A fact, not the decision. */
+export const GATE_MATCH_RESULT_LABELS = {
+  MATCHED: 'ใบหน้าตรงกับรถ',
+  MISMATCH: 'ไม่ใช่รถของบุคคลนี้',
+  UNKNOWN: 'ระบุใบหน้าหรือป้ายไม่ได้',
+  FACE_ONLY: 'เห็นเฉพาะใบหน้า',
+  PLATE_ONLY: 'เห็นเฉพาะป้ายทะเบียน',
+}
+
 /** Plate-read event types (VEH-006/VEH-012). */
 export const PLATE_EVENT_LABELS = {
   PLATE_RECOGNIZED: 'รถที่ลงทะเบียน',
