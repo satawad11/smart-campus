@@ -71,8 +71,8 @@ $DC exec backend php artisan locations:provision <SITE_CODE> "<Site name>" --zon
 $DC exec backend php artisan access:assign-role <username> <ROLE_CODE> --site=<SITE_CODE>   # repeat per operator
 ```
 Role facts for the pilot roster: only DISCIPLINE_OFFICER (and the wildcard admin roles) hold
-`event.review`. SECURITY_OFFICER can monitor and view events but can't review them, and can't open the
-dashboard API (it requires `report.view`; see V1 audit A-14).
+`event.review`. SECURITY_OFFICER can monitor and view events and open the dashboard (`dashboard.view`; V1 audit
+A-14, resolved), but can't review events or open reports, history or exports (no `report.view`).
 
 ## 5. Storage Volumes
 

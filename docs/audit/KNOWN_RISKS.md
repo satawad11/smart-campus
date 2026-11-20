@@ -14,7 +14,7 @@ Earlier findings (A-xx, B-x, P08-xx) keep their IDs from [V1-OPEN-FINDINGS](V1-O
 | R-06 | License private signing key custody: if it leaks, anyone can mint licenses; if lost, no renewals | M | H | NOT VERIFIED (no key exists yet) | Key generated and held offline by the vendor (HSM/encrypted vault); never in the repo, frontend or node images. Rotation procedure in LICENSE_MODEL |
 | R-07 | License enforcement mistakes could lock an institution out of safety-relevant monitoring or its own data | M | H | Design control | Enforcement never deletes data, never blocks export/audit/health, only blocks *growth* (new cameras/nodes) and new enrollment after grace; default mode `warn` on existing pilot |
 | A-15 | No MFA enrollment UI: admins can't enrol MFA from the app | H | M | VERIFIED | Build UI (backlog P1-06) |
-| A-14 | SECURITY_OFFICER lands on a 403 dashboard | H | L | REPORTED | Human RBAC decision |
+| A-14 | SECURITY_OFFICER lands on a 403 dashboard | H | L | RESOLVED | Dashboard accepts `dashboard.view` (`144164d`); owner decision 2026-11-20 (in chat): SECURITY_OFFICER keeps `dashboard.view`; no `report.*`/`system.*` added; migration `2026_11_20_700001` |
 | A-18 | Ingestion trusts node-asserted MATCH without re-checking similarity vs thresholds; a stolen node token could forge MATCH events | L | H | REPORTED | Human decision on server-side consistency check (behaviour change) |
 | A-21 | Camera "Snapshot" is a labelled mock placeholder | H | L | REPORTED | Accept for pilot or implement |
 | B-RET | Backup retention values + object-storage RPO (≈60 min vs 15 min target) unapproved | — | M | REPORTED | Human approval |

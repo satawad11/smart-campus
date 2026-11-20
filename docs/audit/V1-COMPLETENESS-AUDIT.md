@@ -40,7 +40,7 @@ The audit also caught its own SQLite-only blind spot (A-16) before commit.
 | Defects auto-fixed | 11 confirmed defects (A-03..A-13) + A-01, A-02 (CLI path) + A-16 (pre-commit). Not auto-fixed: A-24, P08-25 (LOW) |
 | Open BLOCKER | B5 (no production biometric model), which blocks **live biometric operation** only |
 | Open HIGH | A-15 (no MFA enrollment UI) |
-| Open MEDIUM | A-14, A-17, A-18, A-19, A-20, A-21, A-22, backup retention/RPO approval |
+| Open MEDIUM | A-17, A-18, A-19, A-20, A-21, A-22, backup retention/RPO approval |
 | Open LOW / INFO | A-23, A-24, A-29, P08-24, P08-25 / A-25..A-28, A-30, A-31 |
 
 ## 4. Architecture invariants (re-verified)
@@ -62,7 +62,7 @@ The repository can be placed on the real pilot host with the Phase 08 deployment
 1. **B5:** live biometric recognition and PAD stay **HOLD** until a human approves production models. With
    `AI_MODE=mock`, `pilot:preflight` FAILs by design, so a compliant live go-live is impossible until then.
 2. **A-15:** decide MFA enrollment (build the UI or accept API-only enrollment) before admin accounts go live.
-3. **A-14:** decide the dashboard permission for SECURITY_OFFICER.
+3. ~~**A-14:** decide the dashboard permission for SECURITY_OFFICER.~~ Resolved: owner decision 2026-11-20 (in chat): SECURITY_OFFICER keeps `dashboard.view`; no `report.*`/`system.*` added.
 4. **Backup retention values and the AR4 RPO exception:** human approval.
 5. Pilot host checks H1–H14 and PILOT-001..005 on the real host; operator onboarding (PILOT-004).
 

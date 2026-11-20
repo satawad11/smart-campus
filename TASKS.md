@@ -250,7 +250,9 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [x] AUDIT-RPT-019 Dashboard read flat fields/arrays while RPT-005/006 return nested `events`/`series`;
     cards threw and charts were empty on a real server, tests mocked the wrong shape — fixed PR #6
 [ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
-[ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
+[x] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — dashboard accepts `dashboard.view` (`144164d`);
+    owner decision 2026-11-20 (in chat): SECURITY_OFFICER keeps `dashboard.view`; no `report.*`/`system.*` added;
+    migration `2026_11_20_700001` ensures the grant on existing installs; tests in DashboardPermissionTest
 [ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
 [ ] AUDIT-A20 SEC-020 physical camera results have no raw evidence
 Open register: docs/audit/V1-OPEN-FINDINGS.md

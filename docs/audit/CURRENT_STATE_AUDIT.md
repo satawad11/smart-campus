@@ -73,7 +73,7 @@ Status legend used in every audit document:
 | Alert generation | AI_SERVICE_HEALTH, STORAGE_HEALTH, REDIS_HEALTH, BACKUP_FAILED raised automatically | REPORTED |
 | Production frontend doesn't depend on the Vite dev server | `Dockerfile.prod` → nginx static; pilot overlay uses it | VERIFIED |
 | Runbook references a real tag and procedure | Tag exists, but **it's the wrong tag** for current code (§1, R-01) | VERIFIED — defect |
-| Least-privilege roles and permissions | `LEAST-PRIVILEGE-ROLES.sql` idempotent; but SYSTEM_ADMIN = `*` (A-27) and SECURITY_OFFICER dashboard mismatch (A-14) | REPORTED + open decisions |
+| Least-privilege roles and permissions | `LEAST-PRIVILEGE-ROLES.sql` idempotent; but SYSTEM_ADMIN = `*` (A-27) and SECURITY_OFFICER dashboard mismatch (A-14, resolved: owner decision 2026-11-20 (in chat): SECURITY_OFFICER keeps `dashboard.view`; no `report.*`/`system.*` added) | REPORTED + open decisions |
 | Initial admin / default accounts have no shared known password | Production path is `access:bootstrap-admin` (forced change); dev seeder now allowlisted (C-04); preflight detects the dev password | VERIFIED |
 | Events can be handled from API and dashboard | Review queue + append-only manual decisions (API + UI); incidents API only (A-17) | REPORTED |
 

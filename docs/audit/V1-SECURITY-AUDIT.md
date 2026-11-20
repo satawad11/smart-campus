@@ -22,7 +22,7 @@ Evidence is TEST DATA. Probe script: `scripts/audit/real_path_probe.py`.
   notifications and sessions (owner-checked in code), and locked-feature stubs (feature gate, 403). No
   unintended open endpoint was found. `storage/{path}` (signed local-file serving) isn't routed by the gateway.
 - Role matrix (seeded): SUPER_ADMIN `*`, SYSTEM_ADMIN `*` (A-27), DISCIPLINE_OFFICER 13 permissions incl.
-  `event.review`, SECURITY_OFFICER 6 (view/monitor, **no review**, no `report.view` → A-14),
+  `event.review`, SECURITY_OFFICER 6 (view/monitor, **no review**, no `report.view` → A-14, since resolved: dashboard accepts `dashboard.view`),
   EXECUTIVE_VIEWER 3.
 - Negative tests over real sessions: site officer → `/users` 403, `POST /ai-nodes` 403.
 - **Scope (A-05, BLOCKER, fixed):** before the fix, cross-site list and open succeeded (200). After:
