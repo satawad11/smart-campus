@@ -70,12 +70,28 @@ class HttpRecognitionBackendClient(RecognitionBackendClient):
     def _parse(payload: dict[str, Any]) -> BackendRecognitionResponse:
         try:
             data = payload["data"]
-            matched = data.get("matched_candidate")
+            classification = data["classification"]
+            candidate = data.get("matched_candidate") if classification == "MATCH" else None
+
+            # The backend returns ranked `candidates` for REVIEW/UNKNOWN and a
+            # separate `matched_candidate` only for MATCH. Preserve genuine
+            # nearest-neighbour evidence so operators can diagnose recognition
+            # without inventing a result. UNKNOWN deliberately drops identity:
+            # its score is diagnostic evidence, never a person assignment.
+            if classification in {"REVIEW", "UNKNOWN"}:
+                candidates = data.get("candidates")
+                if isinstance(candidates, list) and candidates and isinstance(candidates[0], dict):
+                    candidate = candidates[0]
+
+            candidate_uuid = None
+            if classification in {"MATCH", "REVIEW"} and isinstance(candidate, dict):
+                candidate_uuid = candidate.get("candidate_person_uuid")
+
             return BackendRecognitionResponse(
-                classification=data["classification"],
-                candidate_person_uuid=matched.get("candidate_person_uuid") if matched else None,
-                similarity=matched.get("similarity") if matched else None,
-                distance=matched.get("distance") if matched else None,
+                classification=classification,
+                candidate_person_uuid=candidate_uuid,
+                similarity=candidate.get("similarity") if isinstance(candidate, dict) else None,
+                distance=candidate.get("distance") if isinstance(candidate, dict) else None,
                 reasons=data.get("reasons", []),
             )
         except (KeyError, TypeError) as exc:

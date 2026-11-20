@@ -244,6 +244,12 @@ onMounted(() => {
         <tbody class="divide-y divide-gray-200">
           <tr v-for="profile in profiles" :key="profile.face_profile_uuid" class="hover:bg-gray-50">
             <td class="px-6 py-4">
+              <div class="font-semibold text-gray-900">
+                {{ profile.person?.name || 'ไม่พบข้อมูลบุคคล' }}
+              </div>
+              <div v-if="profile.person?.student_code" class="text-xs text-gray-600">
+                รหัสนักเรียน: {{ profile.person.student_code }}
+              </div>
               <div class="font-mono text-xs font-semibold text-gray-900">
                 {{ profile.face_profile_uuid }}
               </div>

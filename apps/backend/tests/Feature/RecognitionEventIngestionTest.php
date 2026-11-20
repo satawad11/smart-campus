@@ -116,6 +116,56 @@ class RecognitionEventIngestionTest extends TestCase
         $res->assertJsonPath('data.person', null);
     }
 
+    public function test_unknown_keeps_real_score_but_never_candidate_identity(): void
+    {
+        $node = AiNode::factory()->create();
+        $camera = Camera::factory()->create(['ai_node_id' => $node->id]);
+
+        $res = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $this->basePayload([
+            'camera_uuid' => $camera->uuid,
+            'ai_node_uuid' => $node->uuid,
+            'classification' => 'UNKNOWN',
+            'candidate_person_uuid' => null,
+            'similarity' => 0.41,
+            'distance' => 0.59,
+        ]));
+
+        $res->assertStatus(201)
+            ->assertJsonPath('data.person', null)
+            ->assertJsonPath('data.face_score', 0.41)
+            ->assertJsonPath('data.review_candidate', null);
+    }
+
+    public function test_review_exposes_safe_candidate_but_does_not_assign_person(): void
+    {
+        $node = AiNode::factory()->create();
+        $camera = Camera::factory()->create(['ai_node_id' => $node->id]);
+        $candidate = Person::factory()->create([
+            'display_name' => 'Review Candidate',
+            'person_code' => 'P-REVIEW',
+        ]);
+
+        $res = $this->withHeaders($this->bearerFor($node))->postJson('/internal/v1/events/recognition', $this->basePayload([
+            'camera_uuid' => $camera->uuid,
+            'ai_node_uuid' => $node->uuid,
+            'classification' => 'REVIEW',
+            'candidate_person_uuid' => $candidate->uuid,
+            'similarity' => 0.72,
+            'distance' => 0.28,
+        ]));
+
+        $res->assertStatus(201)
+            ->assertJsonPath('data.person', null)
+            ->assertJsonPath('data.face_score', 0.72)
+            ->assertJsonPath('data.review_candidate.uuid', $candidate->uuid)
+            ->assertJsonPath('data.review_candidate.name', 'Review Candidate');
+
+        $event = AccessEvent::firstOrFail();
+        $this->assertNull($event->person_id);
+        $this->assertSame($candidate->uuid, $event->metadata['review_candidate']['uuid']);
+        $this->assertNotSame('ALLOW', $event->latestDecision()->firstOrFail()->decision->value);
+    }
+
     public function test_spoof_liveness_maps_to_liveness_failed_event_type_regardless_of_classification(): void
     {
         $node = AiNode::factory()->create();

@@ -63,6 +63,11 @@ class AccessEventResource extends JsonResource
             'quality_score' => $this->quality_score,
             'track_id' => $this->track_id,
             'snapshot_available' => $this->snapshot_path !== null,
+            // A REVIEW suggestion is evidence for an officer only. It is not
+            // event.person and cannot drive an automatic access decision.
+            'review_candidate' => ($this->metadata['classification'] ?? null) === 'REVIEW'
+                ? ($this->metadata['review_candidate'] ?? null)
+                : null,
             // Current (most recent) decision only — a compact summary for
             // list views. The full append-only history is `decisions`,
             // only present when explicitly eager-loaded (show()).

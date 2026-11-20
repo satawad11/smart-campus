@@ -62,18 +62,21 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
       permissions: ['face.view', 'face.revoke', 'face.reenroll', 'face.enroll'],
     }
 
-    vi.spyOn(facesService, 'listProfiles').mockResolvedValue({
-      data: [
-        {
-          face_profile_uuid: 'prof-1',
-          person_uuid: 'pers-1',
-          status: 'ACTIVE',
-          quality_score: 0.95,
-          enrolled_at: '2026-09-20T12:00:00Z',
-          model: { code: 'facenet512', version: '1.0.0' },
-        },
-      ],
-      meta: { current_page: 1, last_page: 1, total: 1 },
+    vi.spyOn(api, 'get').mockResolvedValue({
+      data: {
+        data: [
+          {
+            face_profile_uuid: 'prof-1',
+            person_uuid: 'pers-1',
+            person: { uuid: 'pers-1', name: 'สมชาย ใจดี', student_code: '650001' },
+            status: 'ACTIVE',
+            quality_score: 0.95,
+            enrolled_at: '2026-09-20T12:00:00Z',
+            model: { code: 'facenet512', version: '1.0.0' },
+          },
+        ],
+        meta: { current_page: 1, last_page: 1, total: 1 },
+      },
     })
 
     const wrapper = mount(FaceProfileListView, {
@@ -81,8 +84,11 @@ describe('Face Biometrics UI (FACE-016, FACE-017, FACE-018)', () => {
         plugins: [router],
       },
     })
+    await flushPromises()
 
     expect(wrapper.text()).toContain('ข้อมูลใบหน้า')
+    expect(wrapper.text()).toContain('สมชาย ใจดี')
+    expect(wrapper.text()).toContain('650001')
     expect(wrapper.find('select').exists()).toBe(true)
   })
 

@@ -155,6 +155,12 @@ onMounted(() => {
             <p v-if="event.person" class="mt-1 text-sm text-gray-600">
               ประเภทบุคคล: {{ personTypeLabel(event.person.person_type) }} · สถานะ: {{ statusLabel(event.person.status || event.person.person_status) }}
             </p>
+            <p v-else-if="event.review_candidate" class="mt-1 text-sm text-amber-700">
+              ผู้สมัครที่ระบบเสนอให้ตรวจสอบ: {{ event.review_candidate.name }}
+              <span v-if="event.review_candidate.student_code">
+                · รหัสนักเรียน {{ event.review_candidate.student_code }}
+              </span>
+            </p>
           </div>
           <span
             class="px-3 py-1.5 rounded-full text-sm font-semibold"
