@@ -30,7 +30,7 @@ class FaceLifecycleController extends Controller
      */
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = FaceProfile::with(['person', 'recognitionModel', 'samples'])
+        $query = FaceProfile::with(['person.studentProfile', 'recognitionModel', 'samples'])
             ->latest('id');
 
         if ($request->filled('status')) {
@@ -62,7 +62,7 @@ class FaceLifecycleController extends Controller
      */
     public function show(FaceProfile $faceProfile): JsonResponse
     {
-        $faceProfile->load(['person', 'recognitionModel', 'samples']);
+        $faceProfile->load(['person.studentProfile', 'recognitionModel', 'samples']);
 
         return response()->json([
             'success' => true,
@@ -78,7 +78,7 @@ class FaceLifecycleController extends Controller
     public function personFaces(Person $person): JsonResponse
     {
         $profile = FaceProfile::where('person_id', $person->id)
-            ->with(['person', 'recognitionModel', 'samples'])
+            ->with(['person.studentProfile', 'recognitionModel', 'samples'])
             ->first();
 
         if (! $profile) {

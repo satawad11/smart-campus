@@ -90,6 +90,7 @@ async function fetchCamera() {
     aiForm.snapshot_enabled = camera.value.snapshot_enabled
     aiForm.plate_recognition_enabled = !!camera.value.plate_recognition_enabled
     roiPoints.value = (camera.value.roi || []).map((p) => ({ x: p.x, y: p.y }))
+    if (route.query?.edit === '1' && canUpdate.value) startEdit()
   } catch (err) {
     errorMessage.value = apiErrorText(err, 'โหลดข้อมูลกล้องไม่สำเร็จ')
   } finally {

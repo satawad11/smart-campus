@@ -65,6 +65,11 @@ class AccessEventResource extends JsonResource
             // VEH-012: what was read from the plate (plate events only). A plate event never
             // carries a person or a decision.
             'plate' => str_starts_with((string) $this->event_type, 'PLATE_') ? $this->plateBlock() : null,
+            // A REVIEW suggestion is evidence for an officer only. It is not
+            // event.person and cannot drive an automatic access decision.
+            'review_candidate' => ($this->metadata['classification'] ?? null) === 'REVIEW'
+                ? ($this->metadata['review_candidate'] ?? null)
+                : null,
             // Current (most recent) decision only — a compact summary for
             // list views. The full append-only history is `decisions`,
             // only present when explicitly eager-loaded (show()).

@@ -23,6 +23,13 @@ class FaceProfileResource extends JsonResource
         return [
             'face_profile_uuid' => $this->uuid,
             'person_uuid' => $this->person?->uuid,
+            'person' => $this->person ? [
+                'uuid' => $this->person->uuid,
+                'name' => $this->person->displayLabel(),
+                'person_type' => $this->person->person_type?->value,
+                'person_code' => $this->person->person_code,
+                'student_code' => $this->person->studentProfile?->student_code,
+            ] : null,
             'status' => $this->status->value,
             'quality_score' => $this->quality_score,
             'enrolled_at' => $this->enrolled_at?->toIso8601String(),
