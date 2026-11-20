@@ -136,6 +136,7 @@ Required:
 - restore
 - disaster recovery
 - incident handling
+- Smart Gate pilot (optional module, ACR-VEH-01): `docs/pilot/SMART-GATE-PILOT-RUNBOOK.md`
 
 ## Production V1 Gate
 Production V1 requires human go/hold review after pilot and UAT.

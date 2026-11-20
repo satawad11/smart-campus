@@ -276,3 +276,16 @@ No new owner decision was needed; the choices follow the existing history and re
 - Range reports add a `gates` section: passes per gate by match result and by current decision, with
   passes still waiting for a decision counted as undecided. It groups events already in the totals and
   adds nothing to them. Report exports do not include it yet.
+
+## Smart Gate acceptance and pilot runbook (GATE-010, 2026-11-20)
+
+- `tests/Feature/SmartGateAcceptanceSecurityTest.php` asserts Phase 5 together: no barrier, relay or
+  node-side gate route and immutable passes (D5); one pass end to end through the real ingestion
+  endpoints, shown in events, history and reports, reviewed by appending, events never modified; the
+  D2 decision table; a plate alone never ALLOWs and never identifies a person; fail-closed without
+  `feature.vehicle` or the permissions.
+- Pilot steps, scenarios and rollback: `docs/pilot/SMART-GATE-PILOT-RUNBOOK.md`, linked from the
+  deployment runbook and Module 07.
+- Phase 5 software is complete. A live pilot with plates still needs VEH-007 (model choice, owner
+  approval) and VEH-008 (node plate pipeline); until then a gate only sees faces. Barrier control
+  stays out of scope (Phase 2, own ACR).
