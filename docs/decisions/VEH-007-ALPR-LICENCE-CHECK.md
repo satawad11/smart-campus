@@ -1,7 +1,7 @@
 # VEH-007 — ALPR model licence check (part 1 of 2)
 
 **Status:** licence check DONE (2026-11-16) · evaluation on real Thai plates NOT STARTED (needs photos) ·
-model choice NOT APPROVED. Part of ACR-VEH-01, decision D4.
+model choice: owner approved building with candidates 1+2 (2026-11-20, `OWNER-DECISIONS-2026-11-20.md`); thresholds and go-live still need the real-photo evaluation. Part of ACR-VEH-01, decision D4.
 **Scope:** which plate detector and which OCR model we may bundle into the AI node kit and run on CPU in
 a commercial, on-premises product. Same discipline as ACR-AI-01 (face models): code licence and
 **weights** licence are checked separately, training data is noted, open questions are listed.

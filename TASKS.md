@@ -148,7 +148,7 @@ Only mark `[x]` when the relevant tests pass.
     private user.{uuid} (polling stays as fallback)
 [x] EVT-024 Alert acknowledgement: “ละเว้นการแจ้งเตือน” marks only the notification read; the durable event stays
     in history/review. Frontend regression test covers the read endpoint and local unread state.
-[R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
+[ ] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 APPROVED 2026-11-20; no image is
     currently sent or stored on the recognition event path.
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
@@ -250,7 +250,7 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [x] AUDIT-RPT-019 Dashboard read flat fields/arrays while RPT-005/006 return nested `events`/`series`;
     cards threw and charts were empty on a real server, tests mocked the wrong shape — fixed PR #6
 [ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
-[ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
+[ ] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — owner approved dashboard.view for SECURITY_OFFICER (2026-11-20)
 [ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
 [ ] AUDIT-A20 SEC-020 physical camera results have no raw evidence
 Open register: docs/audit/V1-OPEN-FINDINGS.md
@@ -312,6 +312,8 @@ per-camera `plate_recognition_enabled`, both fail closed.
 [x] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
 [~] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)
     licence check DONE 2026-11-16 (docs/decisions/VEH-007-ALPR-LICENCE-CHECK.md); evaluation needs plate photos from the owner
+    2026-11-20: owner approved building VEH-008 with LPD-YuNet + PaddleOCR Thai; plate reading stays off until
+    evaluated on ~100 real gate-camera photos and thresholds approved (docs/decisions/OWNER-DECISIONS-2026-11-20.md)
 [ ] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle);
     wire BufferedPlateEventDeliveryService + PlateEventBuffer.retry_pending into the node loop
 [x] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
