@@ -17,6 +17,7 @@ Biometric data (face images, face embeddings) is **sensitive personal data** und
    │ detect → quality → align → embed (probe embedding, in memory only)
    │ POST /internal/v1/face/recognize  {embedding, model}      ──┐ node bearer token
    │ POST /internal/v1/events/recognition {event, candidate, score} │ (per-node credential)
+   │ POST /internal/v1/events/{uuid}/snapshot  face crop JPEG ≤256 px, UNKNOWN/REVIEW only │ (EVT-025)
    │ offline buffer: undelivered event payloads (SQLite on node disk)
    ▼                                                             │
  Campus backend (on campus server or dedicated VM)  ◄────────────┘
@@ -44,8 +45,8 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 | Person photos | personal | object storage `person-photos` | until replaced/deleted (STD-010) | VERIFIED |
 | Person / student profile (name, codes, class, status history) | personal (minors) | PostgreSQL `persons`, `student_profiles`, `student_status_histories` | indefinite (archive, no delete) | DECISION NEEDED |
 | Access events + decisions (who, where, when, score) | personal (location) | PostgreSQL `access_events`, `access_decisions` | `retention.events_days` = 90 | VERIFIED (setting) |
-| Event snapshots | personal | object storage `event-snapshots` | `retention.snapshots_days` = 30 | VERIFIED (setting; snapshots not produced yet, A-21) |
-| Offline event buffer on node | personal (person UUID + score) | node disk, SQLite, **unencrypted** | until delivered | VERIFIED; G-3 |
+| Event face crops (EVT-025) | **sensitive** (face image of an unknown or unrecognised person, may be a minor) | node memory → backend → private object storage `event-snapshots`; key in `access_events.snapshot_path`, never in event JSON | `retention.snapshots_days` = 30 (object deleted, reference cleared); also removed with the event | VERIFIED in code (EVT-025): UNKNOWN/REVIEW/DENY events only, ≤256 KB, ≤640 px per side, not cached or buffered on the node, viewing needs `event.view` + (`camera.live` or `face.view`) within scope and every view is audited `EVENT_SNAPSHOT_VIEWED` |
+| Offline event buffer on node | personal (person UUID + score) | node disk, SQLite, **unencrypted** | until delivered | VERIFIED; G-3. Never holds a face crop (EVT-025): an event delivered from the buffer has no image |
 | Staff accounts, login logs, sessions | personal | PostgreSQL `users`, `login_logs`, `user_sessions` | login logs 365 d | VERIFIED (setting) |
 | Audit logs | personal (staff actions) | PostgreSQL `audit_logs` | `retention.audit_logs_days` | VERIFIED (setting) |
 | Report exports | personal | object storage `report-exports` | 7 days | VERIFIED (setting) |

@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
+import EventSnapshotPanel from '@/components/events/EventSnapshotPanel.vue'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
 
 const route = useRoute()
@@ -12,6 +13,23 @@ const authStore = useAuthStore()
 
 const canView = computed(() => authStore.can('event.view'))
 const canReview = computed(() => authStore.can('event.review'))
+const canEnroll = computed(() => authStore.can('face.enroll'))
+
+// EVT-025: an alert's "ดูภาพ" opens this page with ?image=1.
+const autoLoadImage = route.query?.image === '1'
+
+// Enrollment from an event only opens the normal enrollment page (person
+// picker, consent, quality and audit). It never creates a person or profile.
+const enrollable = computed(
+  () =>
+    !!event.value &&
+    !event.value.person &&
+    ['UNKNOWN', 'REVIEW', 'DENY'].includes(event.value.current_decision?.decision),
+)
+
+function startEnrollment() {
+  router.push({ name: 'faces.enroll', query: { event: event.value.uuid } })
+}
 
 const event = ref(null)
 const loading = ref(false)
@@ -158,6 +176,30 @@ onMounted(() => {
             <div>
               <span class="text-gray-500">คะแนน Liveness:</span> {{ event.liveness_score ?? '-' }}
             </div>
+          </div>
+        </div>
+
+        <!-- Face image (EVT-025) -->
+        <div class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3">
+          <h2 class="font-semibold text-gray-900">ภาพใบหน้าจากเหตุการณ์</h2>
+          <EventSnapshotPanel
+            :event-uuid="event.uuid"
+            :available="!!event.snapshot_available"
+            :auto-load="autoLoadImage"
+          />
+          <div v-if="enrollable && canEnroll" class="border-t pt-3">
+            <button
+              type="button"
+              data-test="event-start-enrollment"
+              class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              @click="startEnrollment"
+            >
+              ลงทะเบียนใบหน้า
+            </button>
+            <p class="mt-1 text-xs text-gray-500">
+              เลือกบุคคลที่มีอยู่ในระบบ ขอความยินยอม แล้วถ่ายภาพตามขั้นตอนลงทะเบียนปกติ —
+              ระบบจะไม่สร้างบุคคลหรือข้อมูลใบหน้าจากภาพนี้โดยอัตโนมัติ
+            </p>
           </div>
         </div>
 

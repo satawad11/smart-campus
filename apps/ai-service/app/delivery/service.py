@@ -7,9 +7,13 @@ offline storage/retry on backend-unavailable is CAM-012's concern; this
 module raises EventDeliveryError and lets the caller decide.
 """
 
+import logging
+
 from app.delivery.client import EventDeliveryClient
 from app.delivery.schemas import DeliveryOutcome, RecognitionEventPayload
 from app.orchestration.schemas import RecognitionWorkerResult
+
+logger = logging.getLogger(__name__)
 
 
 def to_event_payload(result: RecognitionWorkerResult) -> RecognitionEventPayload:
@@ -32,6 +36,20 @@ def to_event_payload(result: RecognitionWorkerResult) -> RecognitionEventPayload
     )
 
 
+def upload_face_crop(client: EventDeliveryClient, result: RecognitionWorkerResult) -> bool:
+    """EVT-025: after the event itself was accepted, send its face crop once.
+    Best effort: a failure is logged (never the image) and the crop dropped;
+    the event stays delivered. Returns True when the crop was accepted."""
+    if not result.face_crop_jpeg:
+        return False
+    try:
+        client.upload_snapshot(result.event_uuid, result.face_crop_jpeg)
+    except Exception as exc:  # noqa: BLE001 — a crop must never affect event delivery
+        logger.info("Face crop for event %s not stored: %s", result.event_uuid, exc)
+        return False
+    return True
+
+
 class EventDeliveryService:
     """Delivers newly-computed recognition results as events.
 
@@ -50,4 +68,5 @@ class EventDeliveryService:
 
         payload = to_event_payload(result)
         self._client.deliver(payload)
+        upload_face_crop(self._client, result)
         return DeliveryOutcome(delivered=True)

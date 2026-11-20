@@ -361,6 +361,12 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
 Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
     Route::get('/events', [EventController::class, 'index'])->middleware('permission:event.view');
     Route::get('/events/{accessEvent}', [EventController::class, 'show'])->middleware('permission:event.view');
+    // EVT-025 (ACR-EVT-24): the event's face crop. Needs event.view plus a
+    // permission that already shows faces (camera.live or face.view); the
+    // controller checks the event's scope (out of scope = 404) and audits
+    // every successful view.
+    Route::get('/events/{accessEvent}/snapshot', [EventController::class, 'snapshot'])
+        ->middleware(['permission:event.view', 'permission:camera.live,face.view']);
     Route::post('/events/{accessEvent}/review', [EventController::class, 'review'])->middleware('permission:event.review');
 });
 

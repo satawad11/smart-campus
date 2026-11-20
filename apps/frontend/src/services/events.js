@@ -14,6 +14,15 @@ export default {
     return response.data
   },
 
+  /**
+   * EVT-025: the event's face crop (audited on the server, never cached).
+   * Returns { data: { content_type, image_base64 } }.
+   */
+  async getEventSnapshot(uuid) {
+    const response = await api.get(`/events/${uuid}/snapshot`)
+    return response.data
+  },
+
   async reviewEvent(uuid, payload) {
     const response = await api.post(`/events/${uuid}/review`, payload)
     return response.data

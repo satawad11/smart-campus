@@ -5,6 +5,7 @@ use App\Http\Controllers\Internal\AiNodeConfigInternalController;
 use App\Http\Controllers\Internal\AiNodeEnrollmentInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
+use App\Http\Controllers\Internal\EventSnapshotInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
 use App\Http\Controllers\Internal\RecognitionEventInternalController;
 use Illuminate\Support\Facades\Route;
@@ -50,6 +51,11 @@ Route::middleware('ai_node.token')->group(function () {
     // EVT-003: recognition-event ingestion. Perception only — no access
     // decision is ever accepted here or produced by this endpoint.
     Route::post('/events/recognition', [RecognitionEventInternalController::class, 'store']);
+
+    // EVT-025 (ACR-EVT-24): one bounded JPEG face crop for an UNKNOWN /
+    // REVIEW / DENY event this node delivered. Private storage only; never
+    // a full frame or an embedding.
+    Route::post('/events/{eventUuid}/snapshot', [EventSnapshotInternalController::class, 'store']);
 
     // COM-03: allowlisted remote operations. The node pulls its own pending
     // commands (marking them delivered) and reports each result.

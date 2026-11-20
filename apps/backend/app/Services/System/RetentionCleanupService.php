@@ -8,6 +8,7 @@ use App\Models\AuditLog;
 use App\Models\CameraHealthLog;
 use App\Models\ReportExport;
 use App\Services\Audit\AuditService;
+use App\Services\Event\EventSnapshotService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -16,7 +17,8 @@ class RetentionCleanupService
 {
     public function __construct(
         protected SystemSettingService $settingsService,
-        protected AuditService $auditService
+        protected AuditService $auditService,
+        protected EventSnapshotService $snapshots,
     ) {}
 
     /**
@@ -52,7 +54,9 @@ class RetentionCleanupService
     }
 
     /**
-     * Clean up snapshots older than retention.snapshots_days.
+     * Clean up event face crops (EVT-025) older than retention.snapshots_days:
+     * delete the object from the private event-snapshots disk and clear
+     * AccessEvent.snapshot_path. The event itself stays (events_days).
      */
     public function cleanupSnapshots(bool $dryRun = false): int
     {
@@ -61,23 +65,21 @@ class RetentionCleanupService
             return 0;
         }
 
-        $cutoff = Carbon::now()->subDays($days);
-        $events = AccessEvent::query()
+        $query = AccessEvent::query()
             ->whereNotNull('snapshot_path')
-            ->where('occurred_at', '<', $cutoff)
-            ->get(['id', 'snapshot_path']);
+            ->where('occurred_at', '<', Carbon::now()->subDays($days));
+
+        if ($dryRun) {
+            return $query->count();
+        }
 
         $count = 0;
-        foreach ($events as $event) {
-            $path = $event->snapshot_path;
-            if (! $dryRun) {
-                if (Storage::disk('public')->exists($path)) {
-                    Storage::disk('public')->delete($path);
-                }
-                $event->update(['snapshot_path' => null]);
+        $query->select(['id', 'snapshot_path'])->chunkById(500, function ($events) use (&$count) {
+            foreach ($events as $event) {
+                $this->snapshots->purge($event);
+                $count++;
             }
-            $count++;
-        }
+        });
 
         return $count;
     }
@@ -189,6 +191,15 @@ class RetentionCleanupService
         if ($dryRun) {
             return $query->count();
         }
+
+        // An event deleted before its face crop expired (events_days shorter
+        // than snapshots_days) must not leave an orphaned image behind.
+        (clone $query)->whereNotNull('snapshot_path')->select(['id', 'snapshot_path'])
+            ->chunkById(500, function ($events) {
+                foreach ($events as $event) {
+                    $this->snapshots->deleteObject($event->snapshot_path);
+                }
+            });
 
         // Delete decisions first to respect FK if not cascade
         $eventIds = (clone $query)->pluck('id');
