@@ -112,7 +112,7 @@ describe('EVT-017: Event detail/review UI', () => {
   })
 
   describe('EventDetailView', () => {
-    async function mountDetail(decisions) {
+    async function mountDetail(decisions, overrides = {}) {
       await router.push('/events/evt-1')
       await router.isReady()
 
@@ -130,6 +130,7 @@ describe('EVT-017: Event detail/review UI', () => {
             liveness_score: null,
             current_decision: decisions[decisions.length - 1],
             decisions,
+            ...overrides,
           },
         },
       })
@@ -177,6 +178,37 @@ describe('EVT-017: Event detail/review UI', () => {
       expect(wrapper.text()).toContain('NO_MATCHING_POLICY')
       expect(wrapper.text()).toContain('OFFICER_OVERRIDE')
       expect(wrapper.text()).toContain('admin')
+    })
+
+    it('shows a REVIEW candidate as a suggestion without assigning the event person', async () => {
+      const authStore = useAuthStore()
+      authStore.user = { uuid: 'u-review', username: 'reviewer', permissions: ['event.view'] }
+
+      const wrapper = await mountDetail(
+        [
+          {
+            uuid: 'd-review',
+            decision: 'REVIEW',
+            reason_code: 'FACE_REVIEW_REQUIRED',
+            decision_source: 'SYSTEM',
+            created_at: '2026-09-23T09:00:00Z',
+          },
+        ],
+        {
+          person: null,
+          face_score: 0.72,
+          review_candidate: {
+            uuid: 'person-review',
+            name: 'เด็กหญิง ทดสอบ',
+            student_code: 'ST-001',
+          },
+        },
+      )
+
+      expect(wrapper.text()).toContain('ไม่ทราบตัวตน')
+      expect(wrapper.text()).toContain('ผู้สมัครที่ระบบเสนอให้ตรวจสอบ: เด็กหญิง ทดสอบ')
+      expect(wrapper.text()).toContain('รหัสนักเรียน ST-001')
+      expect(wrapper.text()).toContain('0.72')
     })
 
     it('hides the review form without event.review', async () => {
