@@ -63,6 +63,7 @@ Run each at the gate with test people and test vehicles. Record the result in th
 | 12 | Report for the day (รายงานและการส่งออก) | การผ่านจุดเข้าออก table counts the passes above by result and decision |
 
 Pass criteria: every row as expected, no duplicate alerts for one pass, nothing opens a barrier.
+Record each run in `SMART-GATE-PILOT-LOG.md`.
 
 ## 4. What the operator sees
 
