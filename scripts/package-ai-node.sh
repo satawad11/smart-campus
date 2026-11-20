@@ -34,6 +34,9 @@ mkdir -p "${OUT}"
 # shellcheck source=SCRIPTDIR/face-models/ensure.sh
 . "${ROOT}/scripts/face-models/ensure.sh"
 ensure_face_models
+# shellcheck source=SCRIPTDIR/plate-models/ensure.sh
+. "${ROOT}/scripts/plate-models/ensure.sh"
+ensure_plate_models
 echo "Building ${IMAGE} for ${PLATFORM} from apps/ai-service (${VERSION})..."
 docker buildx build -q --platform "${PLATFORM}" --load -t "${IMAGE}" apps/ai-service >/dev/null
 BUILT_ARCH="$(docker image inspect "${IMAGE}" --format '{{.Architecture}}')"

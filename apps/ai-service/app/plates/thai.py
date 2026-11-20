@@ -169,3 +169,39 @@ def resolve_province(text: str | None) -> str | None:
         if code is not None:
             return code
     return None
+
+
+def _edit_distance(a: str, b: str) -> int:
+    previous = list(range(len(b) + 1))
+    for i, ca in enumerate(a, 1):
+        current = [i]
+        for j, cb in enumerate(b, 1):
+            current.append(min(previous[j] + 1, current[j - 1] + 1, previous[j - 1] + (ca != cb)))
+        previous = current
+    return previous[-1]
+
+
+def closest_province(text: str | None) -> str | None:
+    """Province code for an OCR'd province row (VEH-008, node side only).
+
+    OCR often drops or swaps a vowel or tone mark, so after the exact resolve_province() this
+    accepts the nearest name when it is within max(1, len // 4) edits and strictly closer than
+    any other name. Anything less certain is None: the backend then treats the province as
+    unreadable instead of guessing a wrong one.
+    """
+    exact = resolve_province(text)
+    if exact is not None or text is None:
+        return exact
+    value = _PROVINCE_SPACES.sub("", unicodedata.normalize("NFC", text))
+    value = re.sub(r"^จังหวัด", "", value)
+    if len(value) < 3:
+        return None
+    names = [*((name, code) for code, name in PROVINCES.items()), *PROVINCE_ALIASES.items()]
+    ranked = sorted((_edit_distance(value, name), len(name), code) for name, code in names)
+    best_distance, best_length, best_code = ranked[0]
+    runner_up = next((d for d, _, c in ranked[1:] if c != best_code), None)
+    if best_distance > max(1, best_length // 4):
+        return None
+    if runner_up is not None and runner_up <= best_distance:
+        return None
+    return best_code

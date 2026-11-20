@@ -279,7 +279,7 @@ feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
 [x] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — complete; FEATURE_VISITOR remains disabled by default: docs/12-module-09-people-visitor.md
-[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 009..013 done (PR #18), see PHASE 4/5
+[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 008..013 done (PR #18), see PHASE 4/5
     below; plate model still needs choosing and licence-checking (VEH-007)
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
@@ -314,8 +314,11 @@ per-camera `plate_recognition_enabled`, both fail closed.
     licence check DONE 2026-11-16 (docs/decisions/VEH-007-ALPR-LICENCE-CHECK.md); evaluation needs plate photos from the owner
     2026-11-20: owner approved building VEH-008 with LPD-YuNet + PaddleOCR Thai; plate reading stays off until
     evaluated on ~100 real gate-camera photos and thresholds approved (docs/decisions/OWNER-DECISIONS-2026-11-20.md)
-[ ] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle);
+[x] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle);
     wire BufferedPlateEventDeliveryService + PlateEventBuffer.retry_pending into the node loop
+    2026-11-20: app/plates/, scripts/fetch-plate-models.sh, evaluation tool
+    (docs/pilot/PLATE-MODEL-EVALUATION.md); plate reading stays off until the owner approves the
+    real-photo evaluation
 [x] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
     (app/delivery/plate.py; the node's retry loop starts calling it in VEH-008, when plate reads exist)
 [x] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast

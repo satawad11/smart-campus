@@ -38,4 +38,5 @@ Only what was reported is recorded here; nothing below was observed by the agent
 
 - Owner to describe the issues (what was done, what the screen showed, any error text or screenshot).
 - Owner to confirm which other scenarios were run.
-- Plate scenarios (#1–5, 7, 8) cannot run on real cameras until VEH-007/VEH-008 are done.
+- Plate scenarios (#1–5, 7, 8) cannot run on real cameras until the plate evaluation
+  (`PLATE-MODEL-EVALUATION.md`) is approved and plate reading is switched on; VEH-008 is built.

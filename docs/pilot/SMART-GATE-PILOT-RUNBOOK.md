@@ -1,9 +1,10 @@
 # Smart Gate Pilot Runbook (GATE-010, ACR-VEH-01 Phase 5)
 
 **Status:** software accepted by automated tests (`SmartGateAcceptanceSecurityTest` and GATE-001..009
-tests). **Not yet run on a live gate.** Plate reading on AI nodes (VEH-008) and the ALPR model choice
-(VEH-007, needs real Thai plate photos and owner approval) are still open, so until then a live
-pilot can only exercise face events at a gate (FACE_ONLY passes).
+tests). **Not yet run on a live gate.** The node plate pipeline (VEH-008) is built, but plate
+reading stays off until the models are evaluated on real gate photos and the owner approves the
+thresholds (`PLATE-MODEL-EVALUATION.md`), so until then a live pilot can only exercise face events
+at a gate (FACE_ONLY passes).
 
 **Decision and notification only.** The Smart Gate never opens a barrier, relay or door. Physical
 barrier control needs Phase 2 and its own ACR (ACR-VEH-01 D5). Officers act on what the screen shows.
@@ -14,7 +15,7 @@ barrier control needs Phase 2 and its own ACR (ACR-VEH-01 D5). Officers act on w
 
 - [ ] Production V1 pilot is live and passing PILOT-005 smoke checks.
 - [ ] Owner has decided to use the optional modules. In `.env`: `FEATURE_VEHICLE_ENABLED=true`
-      (and `FEATURE_ALPR_ENABLED=true` once VEH-008 is delivered). This only allows an administrator
+      (and `FEATURE_ALPR_ENABLED=true` once the plate evaluation is approved). This only allows an administrator
       to switch them on; they stay off until switched on in การตั้งค่าระบบ.
 - [ ] Privacy notice updated for plate reading at the gate (PDPA_DATA_MAP G-VEH-2, legal review).
 - [ ] Vehicle record retention decided (G-VEH-1). Plate reads are wiped after

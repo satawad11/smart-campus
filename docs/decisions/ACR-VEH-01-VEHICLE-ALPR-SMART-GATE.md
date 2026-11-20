@@ -289,3 +289,37 @@ No new owner decision was needed; the choices follow the existing history and re
 - Phase 5 software is complete. A live pilot with plates still needs VEH-007 (model choice, owner
   approval) and VEH-008 (node plate pipeline); until then a gate only sees faces. Barrier control
   stays out of scope (Phase 2, own ACR).
+
+## Node plate pipeline (VEH-008, 2026-11-20)
+
+Built with the models the owner approved on 2026-11-20 (D4), alongside the face pipeline in
+`apps/ai-service/app/plates/`:
+
+- LPD-YuNet (OpenCV DNN) finds the plate and its four corners; the plate is warped flat, split into
+  the registration row and the province row, and each row is read by th_PP-OCRv5_mobile_rec
+  (converted to ONNX, run through OpenCV DNN; no new runtime dependency).
+- The registration keeps Thai consonants and digits and is normalised with the shared rules
+  (`contracts/thai-plates.json`); the province row is resolved exactly, then to the nearest province
+  name within a small edit distance, else left unresolved (never guessed).
+- Plates are tracked per camera; each track gives **one** result after 8 reads or when the plate
+  leaves the frame. The winning plate has the highest total OCR score; `occurred_at` is the capture
+  time of its best frame. Reasons `PLATE_TEXT_INVALID`, `PROVINCE_UNRESOLVED`, `VOTE_DISAGREEMENT`
+  travel with the read. The backend still normalises, applies `ALPR_OCR_MIN_CONFIDENCE` and picks
+  the event type; the node sends no type, vehicle, person or decision, and no plate image.
+- Delivery uses the VEH-009 plate buffer; the node's retry loop now drains it next to the face
+  buffer.
+- Fail closed: reads only when the synced config says `plate_recognition_enabled: true` and the
+  models loaded; switching it off drops unreported reads; `AI_MODE=mock` never invents plates. A
+  camera with face detection off and plates on now runs (plate-only gate camera).
+- Models: `scripts/fetch-plate-models.sh` (pinned, SHA-256, conversion checked against Paddle in a
+  throwaway container), bundled by `scripts/package-ai-node.sh`, licence texts and
+  `PLATE-NOTICE.txt` beside them.
+- Evaluation tool: `python -m app.plates.evaluate` (`docs/pilot/PLATE-MODEL-EVALUATION.md`).
+  Measured on the build PC (4 threads, synthetic plates): detection about 0.45 s per frame at
+  width 640 (0.1 s at 320, which missed the synthetic plates), OCR about 0.1 s per row; the
+  synthetic Thai plates were read and their provinces resolved correctly. Real accuracy and the
+  CPU budget with faces are unknown until the evaluation and VEH-014.
+  Thresholds (detector 0.8, width 640, 8 reads, OCR 0.90 on the backend) are provisional until the owner
+  approves them after the real-photo evaluation; plate reading stays off until then.
+- Not done here: special-purpose plate formats outside `contracts/thai-plates.json` (needs a shared
+  contract change on both sides and an owner decision); load benchmark with faces (VEH-014).
