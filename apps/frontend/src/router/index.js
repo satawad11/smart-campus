@@ -334,6 +334,13 @@ const routes = [
         component: () => import('@/views/history/HistorySearchView.vue'),
         meta: { requiresAuth: true, permission: 'report.view' },
       },
+      // Gate pass history (GATE-008, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'history/gate-passes',
+        name: 'history.gate-passes',
+        component: () => import('@/views/history/GatePassHistoryView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
       {
         path: 'persons/:uuid/timeline',
         name: 'persons.timeline',

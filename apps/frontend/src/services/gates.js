@@ -30,6 +30,12 @@ export default {
     return response.data
   },
 
+  /** Gate pass history (GATE-008): report.view, read only. */
+  async listPasses(params = {}) {
+    const response = await api.get('/history/gate-passes', { params })
+    return response.data
+  },
+
   /** Replace the whole camera set: [{ camera_uuid, role }]. */
   async replaceCameras(uuid, cameras) {
     const response = await api.put(`/gates/${uuid}/cameras`, { cameras })

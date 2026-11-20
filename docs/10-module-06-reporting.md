@@ -30,6 +30,9 @@ Filters:
 - decision
 - academic status
 
+Gate pass history (GATE-008, `feature.vehicle`, page "ประวัติการผ่านจุดเข้าออก"): gate, match result,
+current decision, plate read, person, vehicle, from/to. Plate searches are audited.
+
 ## Reports
 - daily
 - weekly
@@ -41,6 +44,7 @@ Filters:
 - unknown
 - camera
 - AI node
+- Smart Gate passes per gate, in the range reports (GATE-008, `feature.vehicle`)
 - data quality
 - face enrollment progress
 

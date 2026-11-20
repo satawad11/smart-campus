@@ -240,3 +240,16 @@ How D2 is seeded (rows listed in `docs/09-module-05-event-policy-monitor.md` "Sm
 - An officer reviews a gate decision like any event; the review appends and keeps the pass link. The
   plate event of a PLATE_ONLY pass is reviewable for that reason; other plate reads still are not.
 - Reports by gate are GATE-008. Nothing here opens a barrier (D5).
+
+## Gate pass history and reports (GATE-008, 2026-11-20)
+
+No new owner decision was needed; the choices follow the existing history and report rules.
+
+- `GET /api/v1/history/gate-passes` sits on the reporting boundary like historical search:
+  `feature.vehicle` and `report.view`, scoped by the pass's gate site/zone. `gate.view` only adds the
+  gate filter in the UI. Read only; passes and events are never changed.
+- A pass's decision is its current one (the latest decision tagged with the pass), so an officer's
+  review shows and filters as the result. Plate searches are audited like other plate searches.
+- Range reports add a `gates` section: passes per gate by match result and by current decision, with
+  passes still waiting for a decision counted as undecided. It groups events already in the totals and
+  adds nothing to them. Report exports do not include it yet.

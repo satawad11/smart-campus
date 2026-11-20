@@ -519,3 +519,28 @@ Additive fields only:
   `gate_pass` link. The review queue (`GET /events?decision=REVIEW`) lists gate decisions like others.
 
 Decision and notification only: nothing opens a barrier (D5).
+
+### 26.2 Gate pass history and reports (GATE-008)
+
+`GET /api/v1/history/gate-passes` — `feature.vehicle` (403 `FEATURE_DISABLED`) then `report.view`, with
+the caller's site/zone scope applied through the pass's gate (like `/history/search`). Read only.
+
+Query: `from`, `to` (date-times), `gate_uuid`, `site_uuid`, `person_uuid`, `vehicle_uuid`,
+`match_result` (`MATCHED|MISMATCH|UNKNOWN|FACE_ONLY|PLATE_ONLY`), `decision` (`ALLOW|REVIEW|DENY|UNKNOWN`,
+the pass's current decision, so an officer's review counts), `plate` (what the plate camera read,
+normalised like stored plates; unreadable input returns nothing; audited as `PLATE_SEARCHED` with
+`source` `gate_passes`), `order` (`desc` default, by `occurred_at`), `page`, `per_page` (max 100).
+An unknown uuid is a real filter that returns nothing.
+
+Each row: the §26.1 `gate_pass` fields, plus `site` (`uuid`, `name`), `person` (`uuid`, `name`,
+`person_code`, `person_type`; `null` when the face was not recognised), `vehicle` (`uuid`,
+`plate_number`, `plate_province`, `plate_province_name`, `status`; `null` when no registered vehicle,
+or after the plate read was redacted), `decision` (`uuid`, `decision`, `reason_code`,
+`decision_source`, `created_at`; `null` while the decision is still pending). `meta.pagination` as
+other lists.
+
+Range reports (`/reports/daily|weekly|monthly|yearly|custom`) add `gates`: one row per gate with a
+pass in the range (sorted by name; `[]` when none, and within the caller's site): `gate_uuid`,
+`gate_code`, `gate_name`, `total`, `by_match_result` (all five codes), `by_decision` (`ALLOW`,
+`REVIEW`, `DENY`, `UNKNOWN`, `UNDECIDED`; current decision). Passes group events already counted in
+`totals`; nothing is added to `totals`. Report exports do not include `gates` yet.

@@ -123,6 +123,13 @@ const NAV_SECTIONS = [
       { to: '/unknown-persons', label: 'บุคคลไม่ทราบตัวตน', icon: 'unknown', perm: 'event.view' },
       { to: '/attendance', label: 'บันทึกเวลาเข้า-ออก', icon: 'events', perm: 'report.view' },
       { to: '/history', label: 'ค้นหาประวัติการเข้า-ออก', icon: 'search', perm: 'report.view' },
+      {
+        to: '/history/gate-passes',
+        label: 'ประวัติการผ่านจุดเข้าออก',
+        icon: 'gate',
+        perm: 'report.view',
+        feature: 'vehicle',
+      },
       { to: '/reports', label: 'รายงานและการส่งออก', icon: 'reports', perm: 'report.view' },
     ],
   },

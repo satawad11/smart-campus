@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
-import { apiErrorText, statusLabel } from '@/constants/labels'
+import { apiErrorText, statusLabel, GATE_MATCH_RESULT_LABELS } from '@/constants/labels'
 import { useFeaturesStore } from '@/stores/features'
 
 // VEH-012: plate totals only while the ALPR module is on.
@@ -379,6 +379,65 @@ onMounted(() => {
             </div>
           </div>
           <p class="text-xs text-gray-500">นับแยกจากเหตุการณ์ใบหน้า ไม่รวมในตัวเลขด้านบน</p>
+        </div>
+
+        <!-- GATE-008: Smart Gate passes per gate (a view over the events above, not added to them) -->
+        <div
+          v-if="reportData.gates?.length && featuresStore.isOn('vehicle')"
+          data-test="gate-report"
+          class="bg-surface p-4 rounded-xl border border-gray-200 space-y-2"
+        >
+          <h3 class="text-sm font-semibold text-gray-900">การผ่านจุดเข้าออก</h3>
+          <div class="overflow-x-auto">
+            <table class="min-w-full text-sm">
+              <thead class="text-left text-xs text-gray-500">
+                <tr>
+                  <th class="py-2 pr-4">จุดเข้าออก</th>
+                  <th class="py-2 pr-4 text-right">ทั้งหมด</th>
+                  <th
+                    v-for="(label, code) in GATE_MATCH_RESULT_LABELS"
+                    :key="code"
+                    class="py-2 pr-4 text-right"
+                  >
+                    {{ label }}
+                  </th>
+                  <th class="py-2 pr-4 text-right">อนุญาต</th>
+                  <th class="py-2 pr-4 text-right">รอตรวจสอบ</th>
+                  <th class="py-2 pr-4 text-right">ปฏิเสธ</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100">
+                <tr
+                  v-for="gate in reportData.gates"
+                  :key="gate.gate_uuid"
+                  data-test="gate-report-row"
+                >
+                  <td class="py-2 pr-4 font-medium text-gray-900">{{ gate.gate_name }}</td>
+                  <td class="py-2 pr-4 text-right font-bold">{{ gate.total.toLocaleString() }}</td>
+                  <td
+                    v-for="(label, code) in GATE_MATCH_RESULT_LABELS"
+                    :key="code"
+                    class="py-2 pr-4 text-right"
+                  >
+                    {{ (gate.by_match_result[code] || 0).toLocaleString() }}
+                  </td>
+                  <td class="py-2 pr-4 text-right text-green-700">
+                    {{ (gate.by_decision.ALLOW || 0).toLocaleString() }}
+                  </td>
+                  <td class="py-2 pr-4 text-right text-amber-700">
+                    {{ (gate.by_decision.REVIEW || 0).toLocaleString() }}
+                  </td>
+                  <td class="py-2 pr-4 text-right text-red-700">
+                    {{ (gate.by_decision.DENY || 0).toLocaleString() }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="text-xs text-gray-500">
+            นับจากเหตุการณ์ที่อยู่ในตัวเลขด้านบนแล้ว ไม่ได้บวกเพิ่ม · ระบบตัดสินและแจ้งเตือนเท่านั้น
+            ไม่ได้สั่งเปิดไม้กั้น
+          </p>
         </div>
 
         <!-- Note if present (e.g. unknown report) -->

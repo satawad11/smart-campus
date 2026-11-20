@@ -26,6 +26,7 @@ use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\Face\FaceScanController;
 use App\Http\Controllers\Gate\GateController;
+use App\Http\Controllers\Gate\GatePassHistoryController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
@@ -505,6 +506,9 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
         Route::put('/{gate}', [GateController::class, 'update'])->middleware('permission:gate.manage');
         Route::put('/{gate}/cameras', [GateController::class, 'replaceCameras'])->middleware('permission:gate.manage');
     });
+    // Gate pass history (GATE-008). Reporting boundary (report.view) with the caller's scope,
+    // like historical search; read only.
+    Route::middleware('feature:vehicle')->get('/history/gate-passes', [GatePassHistoryController::class, 'index'])->middleware('permission:report.view');
     Route::middleware('feature:alpr')->prefix('alpr')->group(function () {
         Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
     });

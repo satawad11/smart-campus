@@ -20,7 +20,7 @@ class PlateSearchAuditor
     ) {}
 
     /**
-     * @param  string  $source  where the search ran: events | history | vehicles
+     * @param  string  $source  where the search ran: events | history | vehicles | gate_passes
      */
     public function record(Request $request, string $source, string $searched): void
     {

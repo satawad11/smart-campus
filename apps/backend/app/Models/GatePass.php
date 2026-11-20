@@ -8,6 +8,8 @@ use Database\Factories\GatePassFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use LogicException;
 
 /**
@@ -138,5 +140,17 @@ class GatePass extends Model
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(Vehicle::class)->withTrashed();
+    }
+
+    /** Decisions for this pass (GATE-007): the gate decision plus any officer review of it. */
+    public function decisions(): HasMany
+    {
+        return $this->hasMany(AccessDecision::class);
+    }
+
+    /** The pass's current decision (GATE-008): the latest one, like an event's current decision. */
+    public function latestDecision(): HasOne
+    {
+        return $this->hasOne(AccessDecision::class)->latestOfMany('id');
     }
 }

@@ -2,12 +2,16 @@
 
 namespace App\Services\Report;
 
+use App\Enums\GateMatchResult;
+use App\Models\AccessDecision;
 use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
 use App\Models\Department;
 use App\Models\EventDailySummary;
 use App\Models\EventHourlySummary;
+use App\Models\Gate;
+use App\Models\GatePass;
 use Illuminate\Support\Carbon;
 
 /**
@@ -106,6 +110,7 @@ class ReportBuilderService
             'by_camera' => $this->formatDimensionBreakdown($byCameraCounts, Camera::class, 'camera_uuid', 'camera_name', 'ไม่ระบุกล้อง'),
             'by_department' => $this->formatDimensionBreakdown($byDepartmentCounts, Department::class, 'department_uuid', 'department_name', 'ไม่มีแผนกวิชา'),
             'plates' => $this->buildPlateSection($from, $to, $siteId),
+            'gates' => $this->buildGateSection($from, $to, $siteId),
         ];
     }
 
@@ -136,6 +141,75 @@ class ReportBuilderService
             'low_confidence' => (int) ($byType['PLATE_LOW_CONFIDENCE'] ?? 0),
             'blocked_vehicle_reads' => $blocked,
         ];
+    }
+
+    /**
+     * GATE-008: Smart Gate passes in the range, one row per gate that had a pass. Counted straight
+     * from gate_passes (by match_result) and each pass's current decision (its latest decision,
+     * so an officer's review counts). A pass whose decision is still pending counts as undecided.
+     * Passes are a view over events already in the totals above, so nothing here adds to them.
+     *
+     * @return list<array{gate_uuid:string, gate_code:string, gate_name:string, total:int, by_match_result:array<string,int>, by_decision:array<string,int>}>
+     */
+    public function buildGateSection(Carbon $from, Carbon $to, ?int $siteId = null): array
+    {
+        $passes = GatePass::query()
+            ->where('gate_passes.occurred_at', '>=', $from->copy()->startOfDay())
+            ->where('gate_passes.occurred_at', '<=', $to->copy()->endOfDay());
+        if ($siteId !== null) {
+            $passes->whereIn('gate_passes.gate_id', Gate::withTrashed()->where('site_id', $siteId)->select('id'));
+        }
+
+        $byMatch = (clone $passes)
+            ->selectRaw('gate_passes.gate_id, gate_passes.match_result, COUNT(*) as c')
+            ->groupBy('gate_passes.gate_id', 'gate_passes.match_result')
+            ->toBase()->get();
+        if ($byMatch->isEmpty()) {
+            return [];
+        }
+
+        $latestIds = AccessDecision::query()->whereNotNull('gate_pass_id')->selectRaw('MAX(id)')->groupBy('gate_pass_id');
+        $byDecision = (clone $passes)
+            ->join('access_decisions', 'access_decisions.gate_pass_id', '=', 'gate_passes.id')
+            ->whereIn('access_decisions.id', $latestIds)
+            ->selectRaw('gate_passes.gate_id, access_decisions.decision, COUNT(*) as c')
+            ->groupBy('gate_passes.gate_id', 'access_decisions.decision')
+            ->toBase()->get();
+
+        $rows = [];
+        foreach ($byMatch as $row) {
+            $gateId = (int) $row->gate_id;
+            $rows[$gateId] ??= [
+                'total' => 0,
+                'by_match_result' => array_fill_keys(array_column(GateMatchResult::cases(), 'value'), 0),
+                'by_decision' => ['ALLOW' => 0, 'REVIEW' => 0, 'DENY' => 0, 'UNKNOWN' => 0, 'UNDECIDED' => 0],
+            ];
+            $rows[$gateId]['total'] += (int) $row->c;
+            $rows[$gateId]['by_match_result'][(string) $row->match_result] = (int) $row->c;
+        }
+        foreach ($byDecision as $row) {
+            $gateId = (int) $row->gate_id;
+            if (isset($rows[$gateId])) {
+                $rows[$gateId]['by_decision'][(string) $row->decision] = (int) $row->c;
+            }
+        }
+
+        $gates = Gate::withTrashed()->whereIn('id', array_keys($rows))->get(['id', 'uuid', 'code', 'name'])->keyBy('id');
+        $list = [];
+        foreach ($rows as $gateId => $row) {
+            $decided = array_sum($row['by_decision']);
+            $row['by_decision']['UNDECIDED'] = max(0, $row['total'] - $decided);
+            $gate = $gates->get($gateId);
+            $list[] = [
+                'gate_uuid' => (string) $gate?->uuid,
+                'gate_code' => (string) $gate?->code,
+                'gate_name' => (string) $gate?->name,
+                ...$row,
+            ];
+        }
+        usort($list, fn (array $a, array $b) => strcmp($a['gate_name'], $b['gate_name']));
+
+        return $list;
     }
 
     /**
