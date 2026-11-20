@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import aiNodesService from '@/services/aiNodes'
@@ -24,6 +24,25 @@ const activeTab = ref('overview')
 
 const canManage = computed(() => authStore.can('ai_node.manage'))
 
+// Administrative fields only. Identity/status and runtime-reported fields
+// remain on their dedicated flows and are never submitted from this form.
+const editing = ref(false)
+const editSaving = ref(false)
+const editError = ref('')
+const editFieldErrors = ref({})
+const editForm = reactive({
+  site_uuid: '',
+  name: '',
+  hostname: '',
+  ip_address: '',
+  api_url: '',
+  hardware_type: '',
+  cpu_model: '',
+  gpu_name: '',
+  gpu_memory_mb: '',
+  max_camera: '',
+})
+
 // Credentials tab
 const credentials = ref([])
 const credentialsLoading = ref(false)
@@ -41,10 +60,77 @@ async function fetchNode() {
   try {
     const res = await aiNodesService.getNode(route.params.uuid)
     node.value = res.data
+    if (route.query?.edit === '1' && canManage.value) startEdit()
   } catch (err) {
     errorMessage.value = apiErrorText(err, 'โหลดข้อมูลหน่วยประมวลผลไม่สำเร็จ')
   } finally {
     loading.value = false
+  }
+}
+
+function startEdit() {
+  const current = node.value
+  Object.assign(editForm, {
+    site_uuid: current.site?.uuid || '',
+    name: current.name || '',
+    hostname: current.hostname || '',
+    ip_address: current.ip_address || '',
+    api_url: current.api_url || '',
+    hardware_type: current.hardware_type || '',
+    cpu_model: current.cpu_model || '',
+    gpu_name: current.gpu_name || '',
+    gpu_memory_mb: current.gpu_memory_mb ?? '',
+    max_camera: current.max_camera ?? '',
+  })
+  editError.value = ''
+  editFieldErrors.value = {}
+  editing.value = true
+}
+
+function cancelEdit() {
+  editing.value = false
+  editError.value = ''
+  editFieldErrors.value = {}
+}
+
+function nullableText(value) {
+  const normalized = String(value ?? '').trim()
+  return normalized || null
+}
+
+function nullableNumber(value) {
+  return value === '' || value == null ? null : Number(value)
+}
+
+async function saveEdit() {
+  editError.value = ''
+  editFieldErrors.value = {}
+  if (!editForm.name.trim()) {
+    editFieldErrors.value = { name: ['กรุณาระบุชื่อหน่วยประมวลผล'] }
+    return
+  }
+
+  editSaving.value = true
+  try {
+    const res = await aiNodesService.updateNode(node.value.uuid, {
+      site_uuid: editForm.site_uuid.trim() || null,
+      name: editForm.name.trim(),
+      hostname: nullableText(editForm.hostname),
+      ip_address: nullableText(editForm.ip_address),
+      api_url: nullableText(editForm.api_url),
+      hardware_type: nullableText(editForm.hardware_type),
+      cpu_model: nullableText(editForm.cpu_model),
+      gpu_name: nullableText(editForm.gpu_name),
+      gpu_memory_mb: nullableNumber(editForm.gpu_memory_mb),
+      max_camera: nullableNumber(editForm.max_camera),
+    })
+    node.value = res.data
+    editing.value = false
+  } catch (err) {
+    editFieldErrors.value = err?.fields || {}
+    editError.value = apiErrorText(err, 'บันทึกข้อมูลหน่วยประมวลผลไม่สำเร็จ')
+  } finally {
+    editSaving.value = false
   }
 }
 
@@ -181,9 +267,150 @@ onMounted(() => {
         </button>
       </div>
 
+      <!-- Overview edit -->
+      <form
+        v-if="activeTab === 'overview' && editing"
+        data-testid="ai-node-edit-form"
+        class="bg-surface rounded-xl border border-gray-200 p-6 space-y-4 text-sm"
+        @submit.prevent="saveEdit"
+      >
+        <div>
+          <h2 class="font-semibold text-gray-900">แก้ไขข้อมูลหน่วยประมวลผล</h2>
+          <p class="mt-1 text-xs text-gray-500">
+            รหัสหน่วย สถานะ รุ่นซอฟต์แวร์ โมเดล และข้อมูลสุขภาพเป็นค่าที่ระบบควบคุมหรือรายงานจาก
+            Node
+          </p>
+        </div>
+
+        <div v-if="editError" class="p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+          {{ editError }}
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="text-gray-600">ชื่อหน่วยประมวลผล *</span>
+            <input
+              v-model="editForm.name"
+              name="name"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+            <span v-if="editFieldErrors.name" class="text-xs text-red-600">{{
+              editFieldErrors.name[0]
+            }}</span>
+          </label>
+          <label class="block">
+            <span class="text-gray-600">รหัสพื้นที่ (UUID)</span>
+            <input
+              v-model="editForm.site_uuid"
+              name="site_uuid"
+              placeholder="เว้นว่างหากไม่กำหนดพื้นที่"
+              class="mt-1 w-full px-3 py-2 border rounded-lg font-mono text-xs"
+            />
+            <span v-if="editFieldErrors.site_uuid" class="text-xs text-red-600">{{
+              editFieldErrors.site_uuid[0]
+            }}</span>
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ชื่อเครื่อง</span>
+            <input
+              v-model="editForm.hostname"
+              name="hostname"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ที่อยู่ไอพี</span>
+            <input
+              v-model="editForm.ip_address"
+              name="ip_address"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+            <span v-if="editFieldErrors.ip_address" class="text-xs text-red-600">{{
+              editFieldErrors.ip_address[0]
+            }}</span>
+          </label>
+          <label class="block md:col-span-2">
+            <span class="text-gray-600">ที่อยู่ API</span>
+            <input
+              v-model="editForm.api_url"
+              name="api_url"
+              maxlength="2048"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">ประเภทฮาร์ดแวร์</span>
+            <input
+              v-model="editForm.hardware_type"
+              name="hardware_type"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">รุ่นซีพียู</span>
+            <input
+              v-model="editForm.cpu_model"
+              name="cpu_model"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">รุ่น GPU</span>
+            <input
+              v-model="editForm.gpu_name"
+              name="gpu_name"
+              maxlength="255"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">หน่วยความจำ GPU (MB)</span>
+            <input
+              v-model="editForm.gpu_memory_mb"
+              name="gpu_memory_mb"
+              type="number"
+              min="0"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+          <label class="block">
+            <span class="text-gray-600">จำนวนกล้องสูงสุด</span>
+            <input
+              v-model="editForm.max_camera"
+              name="max_camera"
+              type="number"
+              min="0"
+              max="65535"
+              class="mt-1 w-full px-3 py-2 border rounded-lg"
+            />
+          </label>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t border-gray-200">
+          <button
+            type="button"
+            @click="cancelEdit"
+            class="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            ยกเลิก
+          </button>
+          <button
+            type="submit"
+            :disabled="editSaving"
+            class="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            {{ editSaving ? 'กำลังบันทึก...' : 'บันทึกการแก้ไข' }}
+          </button>
+        </div>
+      </form>
+
       <!-- Overview -->
       <div
-        v-if="activeTab === 'overview'"
+        v-if="activeTab === 'overview' && !editing"
         class="bg-surface rounded-xl border border-gray-200 p-6 space-y-3 text-sm"
       >
         <div class="grid grid-cols-2 gap-4">
@@ -229,6 +456,14 @@ onMounted(() => {
               node.last_seen_at ? new Date(node.last_seen_at).toLocaleString('th-TH') : 'ยังไม่เคย'
             }}
           </div>
+        </div>
+        <div v-if="canManage" class="pt-4 border-t border-gray-200">
+          <button
+            @click="startEdit"
+            class="px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
+            แก้ไขข้อมูลหน่วยประมวลผล
+          </button>
         </div>
       </div>
 

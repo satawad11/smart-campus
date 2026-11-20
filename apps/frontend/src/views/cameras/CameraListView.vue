@@ -28,6 +28,7 @@ const pagination = reactive({
 
 const canView = computed(() => authStore.can('camera.view'))
 const canCreate = computed(() => authStore.can('camera.create'))
+const canUpdate = computed(() => authStore.can('camera.update'))
 const canEnable = computed(() => authStore.can('camera.enable'))
 
 async function fetchCameras() {
@@ -188,6 +189,19 @@ onMounted(() => {
                 class="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded text-xs"
               >
                 ดูรายละเอียด
+              </button>
+              <button
+                v-if="canUpdate"
+                @click="
+                  router.push({
+                    name: 'cameras.show',
+                    params: { uuid: camera.uuid },
+                    query: { edit: '1' },
+                  })
+                "
+                class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs"
+              >
+                แก้ไข
               </button>
               <button
                 v-if="canEnable"

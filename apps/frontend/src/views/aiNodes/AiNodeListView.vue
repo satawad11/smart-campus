@@ -194,6 +194,19 @@ onMounted(() => {
               </button>
               <button
                 v-if="canManage"
+                @click="
+                  router.push({
+                    name: 'ai-nodes.show',
+                    params: { uuid: node.uuid },
+                    query: { edit: '1' },
+                  })
+                "
+                class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-xs"
+              >
+                แก้ไข
+              </button>
+              <button
+                v-if="canManage"
                 @click="toggleStatus(node)"
                 class="px-2.5 py-1 rounded text-xs"
                 :class="

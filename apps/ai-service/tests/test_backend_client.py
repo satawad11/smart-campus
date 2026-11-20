@@ -65,6 +65,87 @@ class TestHttpRecognitionBackendClient:
         assert result.classification == "UNKNOWN"
         assert result.candidate_person_uuid is None
 
+    def test_review_preserves_the_real_top_candidate(self, monkeypatch) -> None:
+        def fake_post(url, json, headers, timeout):
+            return FakeResponse(
+                200,
+                {
+                    "data": {
+                        "classification": "REVIEW",
+                        "matched_candidate": None,
+                        "candidates": [
+                            {
+                                "candidate_person_uuid": "person-review-1",
+                                "similarity": 0.72,
+                                "distance": 0.28,
+                            }
+                        ],
+                        "reasons": ["AMBIGUOUS_REVIEW"],
+                    }
+                },
+            )
+
+        import httpx
+
+        monkeypatch.setattr(httpx, "post", fake_post)
+        result = HttpRecognitionBackendClient("http://backend", "test-token").recognize(
+            [0.1] * 512, "arcface-r50-v1", "1.0.0"
+        )
+
+        assert result.classification == "REVIEW"
+        assert result.candidate_person_uuid == "person-review-1"
+        assert result.similarity == pytest.approx(0.72)
+        assert result.distance == pytest.approx(0.28)
+
+    def test_unknown_preserves_only_real_score_not_candidate_identity(self, monkeypatch) -> None:
+        def fake_post(url, json, headers, timeout):
+            return FakeResponse(
+                200,
+                {
+                    "data": {
+                        "classification": "UNKNOWN",
+                        "matched_candidate": None,
+                        "candidates": [
+                            {
+                                "candidate_person_uuid": "must-not-be-assigned",
+                                "similarity": 0.41,
+                                "distance": 0.59,
+                            }
+                        ],
+                        "reasons": ["BELOW_REVIEW_THRESHOLD"],
+                    }
+                },
+            )
+
+        import httpx
+
+        monkeypatch.setattr(httpx, "post", fake_post)
+        result = HttpRecognitionBackendClient("http://backend", "test-token").recognize(
+            [0.1] * 512, "arcface-r50-v1", "1.0.0"
+        )
+
+        assert result.candidate_person_uuid is None
+        assert result.similarity == pytest.approx(0.41)
+        assert result.distance == pytest.approx(0.59)
+
+    def test_malformed_candidates_do_not_fabricate_evidence(self, monkeypatch) -> None:
+        def fake_post(url, json, headers, timeout):
+            return FakeResponse(
+                200,
+                {"data": {"classification": "REVIEW", "candidates": ["invalid"], "reasons": []}},
+            )
+
+        import httpx
+
+        monkeypatch.setattr(httpx, "post", fake_post)
+        result = HttpRecognitionBackendClient("http://backend", "test-token").recognize(
+            [0.1] * 512, "arcface-r50-v1", "1.0.0"
+        )
+
+        assert result.candidate_person_uuid is None
+        assert result.similarity is None
+        assert result.distance is None
+
     def test_non_200_status_raises_backend_error(self, monkeypatch) -> None:
         def fake_post(url, json, headers, timeout):
             return FakeResponse(422, {"error": {"code": "EMBEDDING_SEARCH_FAILED"}})

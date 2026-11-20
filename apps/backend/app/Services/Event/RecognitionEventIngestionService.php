@@ -93,6 +93,26 @@ class RecognitionEventIngestionService
                     $personId = Person::where('uuid', $data['candidate_person_uuid'])->value('id');
                 }
 
+                // REVIEW keeps a safe identity suggestion for an officer, but
+                // never sets event.person_id. That preserves Event != Decision
+                // and prevents a tentative candidate from satisfying an ALLOW
+                // policy. UNKNOWN never carries candidate identity at all.
+                $reviewCandidate = null;
+                if ($data['classification'] === 'REVIEW' && ! empty($data['candidate_person_uuid'])) {
+                    $candidate = Person::with('studentProfile')
+                        ->where('uuid', $data['candidate_person_uuid'])
+                        ->first();
+                    if ($candidate !== null) {
+                        $reviewCandidate = [
+                            'uuid' => $candidate->uuid,
+                            'name' => $candidate->displayLabel(),
+                            'person_type' => $candidate->person_type?->value,
+                            'person_code' => $candidate->person_code,
+                            'student_code' => $candidate->studentProfile?->student_code,
+                        ];
+                    }
+                }
+
                 $suppressedBy = $this->findWithinSemanticCooldown($camera, $eventType, $personId, $data['track_id']);
                 if ($suppressedBy !== null) {
                     return $suppressedBy;
@@ -117,6 +137,7 @@ class RecognitionEventIngestionService
                         'model_code' => $data['model_code'],
                         'model_version' => $data['model_version'],
                         'classification' => $data['classification'],
+                        'review_candidate' => $reviewCandidate,
                         'distance' => $data['distance'] ?? null,
                         'rejected_locally' => $data['rejected_locally'],
                         'reasons' => $data['reasons'] ?? [],
