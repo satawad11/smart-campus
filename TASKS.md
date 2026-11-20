@@ -334,5 +334,5 @@ Decision and notification only. Physical barrier control needs Phase 2 and its o
 [x] GATE-006 Seed FACE_PRIMARY gate policies (decision D2)
 [x] GATE-007 Gate pass decisions in Live Monitor, notifications and review queue
 [x] GATE-008 Gate pass history search and reports
-[ ] GATE-009 Correlation edge cases: two cars, tailgating, out-of-order and late events
+[x] GATE-009 Correlation edge cases: two cars, tailgating, out-of-order and late events
 [ ] GATE-010 Smart Gate acceptance tests and pilot runbook update

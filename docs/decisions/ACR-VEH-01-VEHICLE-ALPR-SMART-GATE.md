@@ -190,6 +190,7 @@ decision was needed; the choices below follow the ACR and the existing ingestion
   events, PLATE/BOTH for plate events), event in the gate's site and received after the camera was
   linked. All face types (FACE_RECOGNIZED, UNKNOWN_PERSON, LIVENESS_FAILED) and all plate types count.
 - Several candidates in the window: the closest in time wins; an event is used by one pass only.
+  (Replaced by GATE-009 below: passing order, decided by the sweep.)
 - match_result: MATCHED when the face is FACE_RECOGNIZED with a person, the plate is PLATE_RECOGNIZED
   with a vehicle, and that person has a current ownership link to that vehicle at the face event's
   time; MISMATCH when both are known without such a link; UNKNOWN when either is not recognised.
@@ -240,6 +241,28 @@ How D2 is seeded (rows listed in `docs/09-module-05-event-policy-monitor.md` "Sm
 - An officer reviews a gate decision like any event; the review appends and keeps the pass link. The
   plate event of a PLATE_ONLY pass is reviewable for that reason; other plate reads still are not.
 - Reports by gate are GATE-008. Nothing here opens a barrier (D5).
+
+## Correlation edge cases (GATE-009, 2026-11-20)
+
+Owner decisions in chat (2026-11-20, recommended options): **late events skip the gate**, and
+**tailgating stays a PLATE_ONLY review** (no separate label or reason code).
+
+- Ingest pairs at once only when unambiguous: exactly one unpaired event of the other kind within the
+  window, and no other unpaired gate event within the window of the two. Anything else waits for the
+  sweep, so two cars or a driver with a passenger can delay that pass's decision by up to the window
+  plus 5 s.
+- The sweep matches each gate's unpaired faces and plates in passing order: pairs never cross (the
+  first face with the first plate), and among those matchings the one with the least total time apart
+  wins, where leaving an event alone costs a whole window. A face whose person currently owns the car
+  counts as zero apart, so a passenger never takes the driver's car. A pass is written only once all
+  its events have had their window plus grace since they were received, so a busy gate keeps deciding
+  earlier cars while traffic continues.
+- Tailgating: a car with no face seen becomes a PLATE_ONLY pass, set to REVIEW with an alert.
+- Out of order: arrival order does not matter; pairing uses occurred_at.
+- Late: an event received more than 120 s after it happened (`STALE_SECONDS`, e.g. a node's offline
+  buffer) is not a gate event. A face gets its own decision and alert as at an ordinary camera; a
+  plate read stays a record. A partner that arrives after its pass closed alone gets its own lone
+  pass; passes are never reopened.
 
 ## Gate pass history and reports (GATE-008, 2026-11-20)
 

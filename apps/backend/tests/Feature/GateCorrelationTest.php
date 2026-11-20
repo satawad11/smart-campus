@@ -233,10 +233,13 @@ class GateCorrelationTest extends TestCase
         $far = $this->face(Person::factory()->create(), -8);
         $near = $this->face(Person::factory()->create(), -1);
 
-        $pass = $this->service->onEventIngested($this->plate(Vehicle::factory()->create()));
+        // GATE-009: with a choice to make, ingest leaves it to the sweep.
+        $this->assertNull($this->service->onEventIngested($this->plate(Vehicle::factory()->create())));
+        $this->travel(30)->seconds();
+        $this->service->closeExpired();
 
-        $this->assertSame($near->id, $pass->face_event_id);
-        $this->assertFalse(GatePass::where('face_event_id', $far->id)->exists());
+        $this->assertNotNull(GatePass::where('face_event_id', $near->id)->whereNotNull('plate_event_id')->first());
+        $this->assertSame(GateMatchResult::FACE_ONLY, GatePass::where('face_event_id', $far->id)->value('match_result'));
     }
 
     public function test_an_event_is_used_by_one_pass_only(): void
