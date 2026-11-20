@@ -10,6 +10,7 @@ use App\Services\Auth\UserManagementService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * Host-level account recovery: reset a forgotten password from the server
@@ -85,7 +86,7 @@ class ResetPasswordCommand extends Command
                 : 'Two-factor authentication was not enabled; nothing to remove.');
         }
         $this->warn('One-time password (shown once, must be changed at next login):');
-        $this->line($password);
+        $this->line(OutputFormatter::escape($password));
 
         return self::SUCCESS;
     }
