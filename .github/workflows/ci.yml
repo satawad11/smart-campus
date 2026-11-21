@@ -165,5 +165,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Validate compose
         run: docker compose config
+      - name: Simulate restrictive production checkout permissions
+        # A server using umask 0077 can create newly checked-out files as 0600.
+        # The backend image must normalize runtime source permissions for php-fpm.
+        run: chmod 600 apps/backend/app/Services/Event/RecognitionEventIngestionService.php
       - name: Build images
         run: docker compose build backend frontend ai-service
+      - name: Verify php-fpm can load event ingestion code
+        run: >-
+          docker compose run --rm --no-deps --user www-data backend
+          php -r "require 'vendor/autoload.php'; exit(class_exists('App\\Services\\Event\\RecognitionEventIngestionService') ? 0 : 1);"
