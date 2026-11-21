@@ -173,7 +173,7 @@ jobs:
         # Model binaries are intentionally not committed. A production ONNX
         # image must contain the pinned, checksum-verified detector, embedder
         # and PAD models rather than passing CI with silently skipped tests.
-        run: scripts/fetch-face-models.sh
+        run: bash scripts/fetch-face-models.sh
       - name: Build images
         run: docker compose build backend frontend ai-service
       - name: Verify production AI model readiness
