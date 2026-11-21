@@ -29,9 +29,16 @@ RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts -
 COPY . .
 RUN composer dump-autoload --optimize
 
+# A production checkout may be created under a restrictive umask (for example
+# 0077). Docker COPY preserves those source modes, so a newly-added PHP file
+# can otherwise arrive as root-only 0600 and Composer will fail to include it
+# from php-fpm. The build context excludes .env and runtime secrets; normalize
+# only the application/runtime trees that www-data must be able to read.
+#
 # php-fpm's worker processes run as www-data (see the pool config baked into
-# this image), but everything above was just COPY'd in as root — without
-# this, www-data can write to none of storage/, bootstrap/cache/, or
+# this image), but everything above was just COPY'd in as root — without the
+# ownership change below, www-data can write to none of storage/,
+# bootstrap/cache/, or
 # database/ (the SQLite dev DB's directory: SQLite needs to write a
 # rollback-journal file *alongside* database.sqlite on every write, so the
 # directory itself must be writable, not just the .sqlite file). Left
@@ -39,7 +46,9 @@ RUN composer dump-autoload --optimize
 # write from a real request silently fails ("attempt to write a readonly
 # database"), while CLI commands (which typically run as root) keep working
 # — masking the bug until it's hit through a real HTTP request.
-RUN mkdir -p database \
+RUN chmod -R a+rX app bootstrap config database public resources routes \
+    && chmod a+r composer.json composer.lock artisan \
+    && mkdir -p database \
     && chown -R www-data:www-data storage bootstrap/cache database
 
 EXPOSE 9000
