@@ -169,8 +169,17 @@ jobs:
         # A server using umask 0077 can create newly checked-out files as 0600.
         # The backend image must normalize runtime source permissions for php-fpm.
         run: chmod 600 apps/backend/app/Services/Event/RecognitionEventIngestionService.php
+      - name: Fetch and verify production face models
+        # Model binaries are intentionally not committed. A production ONNX
+        # image must contain the pinned, checksum-verified detector, embedder
+        # and PAD models rather than passing CI with silently skipped tests.
+        run: scripts/fetch-face-models.sh
       - name: Build images
         run: docker compose build backend frontend ai-service
+      - name: Verify production AI model readiness
+        run: >-
+          docker compose run --rm --no-deps -e AI_MODE=onnx ai-service
+          python -c "from app.core.health import readiness_checker; ready, checks = readiness_checker.evaluate_readiness(); print(checks); raise SystemExit(0 if ready else 1)"
       - name: Verify php-fpm can load event ingestion code
         run: >-
           docker compose run --rm --no-deps --user www-data backend

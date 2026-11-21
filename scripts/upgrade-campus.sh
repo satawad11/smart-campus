@@ -89,6 +89,14 @@ run "${DC} exec -T backend php artisan down --retry=60 ${SECRET_ARG}" || fail "m
 echo "== 3. Checkout and build"
 run "git checkout -q tags/${TAG}" || fail "checkout ${TAG}"
 run "${DC} config --quiet" || fail "compose config (missing secret?)"
+if [ "${AI_MODE:-}" = "onnx" ]; then
+  # The model weights are intentionally not committed. Fetch the pinned files,
+  # verify their checksums, and bake them into the campus AI service. The same
+  # verified directory is then available to the edge-node packaging script.
+  # shellcheck source=SCRIPTDIR/face-models/ensure.sh
+  . "${ROOT}/scripts/face-models/ensure.sh"
+  run "ensure_face_models" || fail "verify production face models"
+fi
 run "${DC} build backend frontend ai-service" || fail "image build"
 
 echo "== 4. Migrate and approved seed"
