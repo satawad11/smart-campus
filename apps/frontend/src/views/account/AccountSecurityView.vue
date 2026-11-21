@@ -1,5 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
+import QrcodeVue from 'qrcode.vue'
 import { useAuthStore } from '@/stores/auth'
 import { authService } from '@/services/auth'
 import SessionList from '@/components/account/SessionList.vue'
@@ -9,9 +10,9 @@ import SessionList from '@/components/account/SessionList.vue'
  * disabling for the signed-in user, using the existing AUTH-007 API.
  *
  * The TOTP secret lives only in this component's memory while enrolling and
- * is cleared on confirm, cancel or unmount. It is never sent to a third-party
- * QR service; the user types it into the authenticator app (or opens the
- * otpauth:// link on the phone).
+ * is cleared on confirm, cancel or unmount. The QR is rendered locally in the
+ * browser from the otpauth URI; the secret is never sent to a third-party QR
+ * service. Manual entry remains available as a fallback.
  */
 const authStore = useAuthStore()
 
@@ -192,15 +193,32 @@ onBeforeUnmount(clearSetup)
         novalidate
         @submit.prevent="confirmSetup"
       >
+        <div
+          class="flex flex-col items-center gap-2 rounded-lg border border-gray-200 bg-white p-4"
+        >
+          <QrcodeVue
+            data-test="mfa-qr-code"
+            :value="setup.qr_code_url"
+            :size="240"
+            level="M"
+            render-as="svg"
+            background="#ffffff"
+            foreground="#111827"
+            class="max-w-full"
+          />
+          <p class="text-center text-sm text-gray-600">
+            สแกน QR นี้ด้วย Google Authenticator, Microsoft Authenticator หรือแอป TOTP ที่รองรับ
+          </p>
+        </div>
         <ol class="list-decimal space-y-2 pl-5 text-sm text-gray-700">
-          <li>เปิดแอปยืนยันตัวตนแล้วเลือก "เพิ่มบัญชี" → "ป้อนคีย์ด้วยตนเอง"</li>
+          <li>เปิดแอปยืนยันตัวตนแล้วเลือก "เพิ่มบัญชี" → "สแกนคิวอาร์โค้ด"</li>
           <li>
             ชื่อบัญชี: <span class="font-medium">{{ setup.account_name }}</span> ({{
               setup.issuer
             }})
           </li>
           <li>
-            คีย์ลับ:
+            หากสแกนไม่ได้ ให้เลือก "ป้อนคีย์ด้วยตนเอง" แล้วใช้คีย์ลับ:
             <code
               data-test="mfa-secret"
               class="select-all rounded bg-gray-100 px-2 py-1 font-mono text-sm tracking-wider"
