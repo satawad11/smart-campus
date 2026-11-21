@@ -79,6 +79,15 @@ class Person extends Model
     }
 
     /**
+     * Vehicle links over time (VEH-002, ACR-VEH-01). Append-only history; use
+     * ->current() for links that apply now.
+     */
+    public function vehicleOwnerships(): HasMany
+    {
+        return $this->hasMany(VehicleOwnershipHistory::class);
+    }
+
+    /**
      * Name to show on screens: display_name when set, otherwise "first last".
      * Many records (imports, RMS sync) have no display_name.
      */

@@ -9,6 +9,7 @@ use App\Models\AccessEvent;
 use App\Models\AiNode;
 use App\Models\Camera;
 use App\Models\Person;
+use App\Services\Gate\GateCorrelationService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -48,6 +49,7 @@ class RecognitionEventIngestionService
         private readonly AccessContextResolver $contextResolver,
         private readonly AccessPolicyMatcher $matcher,
         private readonly NotificationService $notifier,
+        private readonly GateCorrelationService $gateCorrelation,
     ) {}
 
     public function ingest(AiNode $resolvedNode, array $data): AccessEvent
@@ -181,9 +183,20 @@ class RecognitionEventIngestionService
                 ]);
             }
             try {
-                $this->notifier->notifyIfActionable($newEvent, $decision);
+                // GATE-007: at a Smart Gate camera the alert comes once, with the gate decision
+                // (owner choice 2026-11-20). The event's own decision is still stored and pushed.
+                if (! $this->gateCorrelation->covers($newEvent)) {
+                    $this->notifier->notifyIfActionable($newEvent, $decision);
+                }
             } catch (Throwable $e) {
                 Log::error('Access event notification failed', ['event_uuid' => $newEvent->uuid, 'error' => $e->getMessage()]);
+            }
+            // GATE-004: pair with a plate event at the same Smart Gate. A failure here never
+            // loses the stored event; the gates:correlate sweep retries.
+            try {
+                $this->gateCorrelation->onEventIngested($newEvent);
+            } catch (Throwable $e) {
+                Log::error('Gate correlation failed', ['event_uuid' => $newEvent->uuid, 'error' => $e->getMessage()]);
             }
         }
 

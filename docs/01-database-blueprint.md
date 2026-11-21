@@ -382,6 +382,7 @@ Statuses:
 - decision
 - reason_code
 - access_policy_id nullable
+- gate_pass_id nullable (GATE-007; the Smart Gate pass this decision is for, null on delete)
 - decision_source
 - decided_by_user_id nullable
 - reason_text nullable
@@ -407,6 +408,10 @@ Decision source:
 - site_id nullable
 - zone_id nullable
 - event_type nullable
+- gate_id nullable (GATE-005; restrict delete)
+- gate_mode nullable (GATE-005; GateMode)
+- match_result nullable (GATE-005; GateMatchResult)
+- vehicle_status nullable (GATE-005; VehicleStatus)
 - decision
 - reason_code
 - priority
@@ -414,6 +419,10 @@ Decision source:
 - valid_from nullable
 - valid_until nullable
 - timestamps
+
+Every dimension is a wildcard when null. The four Smart Gate dimensions (ACR-VEH-01 Phase 5 item 8)
+are null in an ordinary event's AccessContext, so a policy that sets any of them applies only to a
+gate pass (`AccessContextResolver::resolvePass`).
 
 ### event_notes
 - id
@@ -615,5 +624,102 @@ Future, feature-disabled:
 - visitor_profiles
 - visits
 - visitor_passes
-- vehicles
-- vehicle_ownership_histories
+
+## 16. Vehicle Tables (ACR-VEH-01, VEH-002)
+
+Approved optional module (`feature.vehicle`, off by default). Face stays the primary identity; a
+vehicle is linked to persons, never to users or students.
+
+### vehicles
+- id
+- uuid
+- plate_number (canonical Thai plate text: Arabic digits, no spaces/dashes, e.g. `1กข1234`, `701234`)
+- plate_province (ISO 3166-2:TH province code, e.g. `TH-10` = กรุงเทพมหานคร)
+
+Plate and province rules are defined once in `contracts/thai-plates.json` (VEH-003) and implemented
+in the backend (`App\Support\Vehicles\ThaiPlate`, `ThaiProvince`) and the AI service
+(`app/plates/thai.py`); both test suites check the contract file.
+- vehicle_type CAR | MOTORCYCLE | PICKUP | VAN | TRUCK | BUS | OTHER
+- brand nullable
+- model nullable
+- color nullable
+- status ACTIVE | INACTIVE | BLOCKED
+- notes nullable
+- created_by_user_id nullable
+- timestamps
+- deleted_at nullable
+
+Unique `(plate_number, plate_province)` among rows where `deleted_at IS NULL`.
+
+### vehicle_ownership_histories
+- id
+- uuid
+- vehicle_id (restrict delete)
+- person_id (restrict delete)
+- relation OWNER | DRIVER | AUTHORIZED
+- effective_from
+- effective_to nullable
+- reason nullable
+- created_by_user_id nullable
+- created_at
+
+Append-oriented: a row is never rewritten or deleted. The only allowed change is closing it once by
+setting `effective_to` (not earlier than `effective_from`). A vehicle may have several current links.
+
+## 17. Smart Gate Tables (ACR-VEH-01 Phase 5, GATE-001)
+
+Configuration for the face-first Smart Gate. Decision and notification only: no table here drives a
+barrier (decision D5; actuation needs Phase 2 and its own ACR). Gate passes are written only by the
+correlation service `App\Services\Gate\GateCorrelationService` (GATE-004), with `feature.vehicle` on.
+
+### gates
+- id
+- uuid
+- site_id (restrict delete)
+- zone_id (restrict delete; must belong to `site_id`, enforced in `App\Models\Gate`)
+- code
+- name
+- direction IN | OUT | BOTH (default BOTH)
+- correlation_window_seconds (default 10; face and plate events of one pass must fall within it)
+- mode FACE_PRIMARY (the only approved mode, decision D2: a plate alone never produces ALLOW)
+- status ACTIVE | INACTIVE
+- notes nullable
+- created_by_user_id nullable
+- timestamps
+- deleted_at nullable
+
+Unique `(site_id, code)` among rows where `deleted_at IS NULL`.
+
+### gate_cameras
+- id
+- gate_id (cascade delete: configuration link)
+- camera_id (restrict delete; unique, so a camera serves at most one gate and an event's camera
+  resolves to one gate; must be in the gate's site, enforced in `App\Models\GateCamera`)
+- role FACE | PLATE | BOTH (decision D3: separate face and plate cameras, or one camera for both)
+- timestamps
+
+### gate_passes (GATE-003)
+One row per pass through a gate. It links the face event and/or the plate event the correlation
+service (GATE-004) put together; the `access_events` rows themselves are never modified. Holds no
+ALLOW/DENY: the decision stays in `access_decisions`.
+- id
+- uuid
+- gate_id (restrict delete)
+- face_event_id nullable (restrict delete; unique: an event belongs to at most one pass; must be a
+  RECOGNITION event)
+- plate_event_id nullable (restrict delete; unique; must be a PLATE event)
+- person_id nullable (null on delete; identity at correlation time)
+- vehicle_id nullable (null on delete; identity at correlation time)
+- match_result MATCHED | MISMATCH | UNKNOWN | FACE_ONLY | PLATE_ONLY
+  - MATCHED: face and plate events, both recognised, and the person is linked to the vehicle
+  - MISMATCH: face and plate events, both recognised, but no link
+  - UNKNOWN: face and plate events, but the face or the plate was not recognised
+  - FACE_ONLY / PLATE_ONLY: only that event in the window
+- occurred_at (earliest occurred_at of its events)
+- created_at (no updated_at)
+
+Immutable, enforced in `App\Models\GatePass`: on create it checks that the events fit
+`match_result`, MATCHED/MISMATCH carry both person_id and vehicle_id, each event has the right
+category and is in the gate's site; it is never updated or deleted through the model. Retention is
+the only later writer: passes are deleted with their events (`retention.events_days`) and lose
+`vehicle_id` when their plate read is redacted (`retention.plate_reads_days`).

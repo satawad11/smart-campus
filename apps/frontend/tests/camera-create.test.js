@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { mount, flushPromises } from '@vue/test-utils'
+import { setActivePinia, createPinia } from 'pinia'
+import api from '@/services/api'
 import camerasService from '@/services/cameras'
 import aiNodesService from '@/services/aiNodes'
 import CameraCreateView from '@/views/cameras/CameraCreateView.vue'
@@ -32,6 +34,9 @@ describe('Add camera: auto fields and pre-save preview', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     push.mockReset()
+    // The form reads feature flags (VEH-011: plate-reading switch) from a Pinia store.
+    setActivePinia(createPinia())
+    vi.spyOn(api, 'get').mockResolvedValue({ data: { data: {} } })
     vi.spyOn(aiNodesService, 'listNodes').mockResolvedValue({ data: [] })
   })
 

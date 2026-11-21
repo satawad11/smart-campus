@@ -5,6 +5,7 @@ namespace App\Services\Camera;
 use App\Exceptions\ApiException;
 use App\Models\AiNode;
 use App\Models\Camera;
+use App\Services\System\FeatureFlagService;
 use Illuminate\Support\Facades\Crypt;
 
 /**
@@ -21,22 +22,25 @@ class AiNodeConfigService
 {
     public function __construct(
         private readonly AiNodeRuntimeConfigService $runtime,
+        private readonly FeatureFlagService $flags,
     ) {}
 
     public function getConfig(AiNode $node): array
     {
         $cameras = Camera::where('ai_node_id', $node->id)->get();
+        // Read once per request (never cached on the service: it outlives requests).
+        $alpr = $this->flags->isEnabled('alpr');
 
         return [
             'ai_node_uuid' => $node->uuid,
             'generated_at' => now()->toISOString(),
-            'cameras' => $cameras->map(fn (Camera $camera) => $this->cameraConfig($camera))->all(),
+            'cameras' => $cameras->map(fn (Camera $camera) => $this->cameraConfig($camera, $alpr))->all(),
             // COM-03: latest versioned runtime settings (null until one exists)
             'runtime' => $this->runtime->forNode($node),
         ];
     }
 
-    private function cameraConfig(Camera $camera): array
+    private function cameraConfig(Camera $camera, bool $alpr): array
     {
         return [
             'camera_uuid' => $camera->uuid,
@@ -51,6 +55,9 @@ class AiNodeConfigService
             'face_recognition_enabled' => $camera->face_recognition_enabled,
             'liveness_enabled' => $camera->liveness_enabled,
             'snapshot_enabled' => $camera->snapshot_enabled,
+            // VEH-005: the effective value — the camera switch AND the system flag feature.alpr.
+            // A node never sees true while ALPR is off, so it cannot read plates by mistake.
+            'plate_recognition_enabled' => $camera->plate_recognition_enabled && $alpr,
             'roi' => $camera->roi_polygon,
             'status' => $camera->status?->value ?? $camera->status,
         ];

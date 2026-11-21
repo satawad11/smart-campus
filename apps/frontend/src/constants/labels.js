@@ -36,6 +36,82 @@ export const ERROR_MESSAGES = {
   FACE_PROFILE_REVOKED: 'ข้อมูลใบหน้านี้ถูกเพิกถอนแล้ว',
   UPLOAD_SCAN_UNAVAILABLE: 'ระบบตรวจไวรัสไม่พร้อมใช้งาน ไม่สามารถรับไฟล์ได้ในขณะนี้',
   AI_NODE_NOT_ACTIVE: 'ต้องเปิดใช้งานหน่วยประมวลผลก่อน',
+  FEATURE_DISABLED: 'โมดูลนี้ยังไม่เปิดใช้งาน กรุณาติดต่อผู้ดูแลระบบ',
+  // Vehicles / plate reading (ACR-VEH-01)
+  VEHICLE_PLATE_EXISTS: 'ทะเบียนนี้ลงทะเบียนไว้แล้ว',
+  VEHICLE_PROVINCE_INVALID: 'ไม่พบจังหวัดนี้',
+  VEHICLE_LINK_EXISTS: 'บุคคลนี้ผูกกับรถคันนี้ในฐานะเดียวกันอยู่แล้ว',
+  VEHICLE_LINK_ENDED: 'การผูกนี้สิ้นสุดไปแล้ว',
+  VEHICLE_LINK_END_BEFORE_START: 'วันที่สิ้นสุดต้องไม่ก่อนวันที่เริ่ม',
+  PERSON_NOT_FOUND: 'ไม่พบบุคคลนี้',
+  ALPR_DISABLED: 'ระบบอ่านป้ายทะเบียนยังไม่เปิดใช้งาน',
+  // Smart Gate (ACR-VEH-01, GATE-002)
+  GATE_CODE_EXISTS: 'รหัสจุดเข้าออกนี้มีอยู่แล้วในไซต์นี้',
+  GATE_ZONE_SITE_MISMATCH: 'โซนนี้ไม่ได้อยู่ในไซต์ของจุดเข้าออก',
+  GATE_NEEDS_FACE_CAMERA: 'จุดเข้าออกที่เปิดใช้งานต้องมีกล้องจับใบหน้าอย่างน้อย 1 ตัว',
+  GATE_CAMERA_SITE_MISMATCH: 'กล้องนี้ไม่ได้อยู่ในไซต์ของจุดเข้าออก',
+  GATE_CAMERA_IN_USE: 'กล้องนี้ถูกใช้กับจุดเข้าออกอื่นแล้ว',
+  GATE_CAMERA_DUPLICATE: 'เลือกกล้องตัวเดียวกันซ้ำ',
+  SITE_NOT_FOUND: 'ไม่พบไซต์นี้',
+  ZONE_NOT_FOUND: 'ไม่พบโซนนี้',
+  CAMERA_NOT_FOUND: 'ไม่พบกล้องนี้',
+}
+
+/** Smart Gate labels (ACR-VEH-01, GATE-002). */
+export const GATE_DIRECTION_LABELS = {
+  IN: 'ขาเข้า',
+  OUT: 'ขาออก',
+  BOTH: 'เข้าและออก',
+}
+
+export const GATE_CAMERA_ROLE_LABELS = {
+  FACE: 'จับใบหน้า',
+  PLATE: 'อ่านป้ายทะเบียน',
+  BOTH: 'ใบหน้าและป้ายทะเบียน',
+}
+
+export const GATE_STATUS_LABELS = {
+  ACTIVE: 'เปิดใช้งาน',
+  INACTIVE: 'ปิดใช้งาน',
+}
+
+/** What the gate saw for one pass (GATE-007). A fact, not the decision. */
+export const GATE_MATCH_RESULT_LABELS = {
+  MATCHED: 'ใบหน้าตรงกับรถ',
+  MISMATCH: 'ไม่ใช่รถของบุคคลนี้',
+  UNKNOWN: 'ระบุใบหน้าหรือป้ายไม่ได้',
+  FACE_ONLY: 'เห็นเฉพาะใบหน้า',
+  PLATE_ONLY: 'เห็นเฉพาะป้ายทะเบียน',
+}
+
+/** Plate-read event types (VEH-006/VEH-012). */
+export const PLATE_EVENT_LABELS = {
+  PLATE_RECOGNIZED: 'รถที่ลงทะเบียน',
+  PLATE_UNKNOWN: 'รถไม่ได้ลงทะเบียน',
+  PLATE_LOW_CONFIDENCE: 'อ่านทะเบียนไม่ชัด',
+}
+
+/** Vehicle registry labels (ACR-VEH-01). */
+export const VEHICLE_TYPE_LABELS = {
+  CAR: 'รถยนต์',
+  MOTORCYCLE: 'รถจักรยานยนต์',
+  PICKUP: 'รถกระบะ',
+  VAN: 'รถตู้',
+  TRUCK: 'รถบรรทุก',
+  BUS: 'รถโดยสาร',
+  OTHER: 'อื่น ๆ',
+}
+
+export const VEHICLE_STATUS_LABELS = {
+  ACTIVE: 'ใช้งาน',
+  INACTIVE: 'ไม่ใช้งาน',
+  BLOCKED: 'ระงับ',
+}
+
+export const VEHICLE_RELATION_LABELS = {
+  OWNER: 'เจ้าของ',
+  DRIVER: 'ผู้ขับขี่ประจำ',
+  AUTHORIZED: 'ผู้ได้รับอนุญาต',
 }
 
 /** Status/state codes shown across pages (values stay as the API sends them). */
@@ -138,6 +214,11 @@ export function apiErrorText(err, fallback) {
   if (ERROR_MESSAGES[err?.code]) return ERROR_MESSAGES[err.code]
   if (err?.status === 403) return ERROR_MESSAGES.PERMISSION_DENIED
   return fallback
+}
+
+/** True when the backend refused because the module's feature flag is off (SEC-002). */
+export function isFeatureDisabled(err) {
+  return err?.raw?.response?.data?.error_code === 'FEATURE_DISABLED'
 }
 
 export function onOff(value) {

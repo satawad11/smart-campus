@@ -37,6 +37,12 @@ class AccessPolicySeeder extends Seeder
                 $policy,
             );
         }
+
+        // Smart Gate templates are created once and then left alone: an admin enables them per
+        // site, and reseeding must not switch them back off.
+        foreach ($this->getGateTemplatePolicies() as $policy) {
+            AccessPolicy::firstOrCreate(['name' => $policy['name']], $policy);
+        }
     }
 
     /**
@@ -204,6 +210,77 @@ class AccessPolicySeeder extends Seeder
                 'enabled' => true,
             ],
             ...$this->reviewPolicies('PARENT', ['NO_ACTIVE_STUDENT'], 'PARENT'),
+            ...$this->getGatePolicies(),
+        ];
+    }
+
+    /**
+     * FACE_PRIMARY Smart Gate policies (GATE-006, ACR-VEH-01 decision D2). They apply only to gate
+     * passes (gate_mode is set), never to an ordinary face event.
+     *
+     * - A BLOCKED vehicle is denied whoever drives it (priority 1, ahead of everything).
+     * - A plate alone, an unknown face or a failed liveness check goes to review (priority 5,
+     *   ahead of the event-type rules at 10). A plate never lets anyone in.
+     * - A recognised face is deliberately not covered here: it falls through to the person's own
+     *   policies, so an entitled person is allowed whatever the plate says (D2 "ALLOW with
+     *   note"; the note is the pass's match_result) and an inactive, suspended or expelled person
+     *   keeps their REVIEW or DENY. No ALLOW is seeded for gates at all.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getGatePolicies(): array
+    {
+        return [
+            $this->gatePolicy('Gate Vehicle Blocked -> Deny', 'DENY', 'GATE_VEHICLE_BLOCKED', 1, vehicleStatus: 'BLOCKED'),
+            $this->gatePolicy('Gate Plate Only -> Review', 'REVIEW', 'GATE_PLATE_ONLY', 5, matchResult: 'PLATE_ONLY'),
+            $this->gatePolicy('Gate Face Unknown -> Review', 'REVIEW', 'GATE_FACE_UNKNOWN', 5, eventType: 'UNKNOWN_PERSON'),
+            $this->gatePolicy('Gate Liveness Failed -> Review', 'REVIEW', 'GATE_LIVENESS_FAILED', 5, eventType: 'LIVENESS_FAILED'),
+        ];
+    }
+
+    /**
+     * D2 "configurable to REVIEW": disabled templates that send a recognised person with someone
+     * else's car, or with an unread plate, to review. Priority 150 sits between the person's
+     * REVIEW/DENY rules (100) and the ALLOW rules (200), so enabling one can only make a decision
+     * stricter, never turn a REVIEW or DENY into an ALLOW. Enable as is for every FACE_PRIMARY
+     * gate, or copy with gate_id set for one gate.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function getGateTemplatePolicies(): array
+    {
+        return [
+            $this->gatePolicy('Gate Vehicle Mismatch -> Review', 'REVIEW', 'GATE_VEHICLE_MISMATCH', 150, matchResult: 'MISMATCH', enabled: false),
+            $this->gatePolicy('Gate Plate Unknown -> Review', 'REVIEW', 'GATE_PLATE_UNKNOWN', 150, matchResult: 'UNKNOWN', eventType: 'FACE_RECOGNIZED', enabled: false),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function gatePolicy(
+        string $name,
+        string $decision,
+        string $reasonCode,
+        int $priority,
+        ?string $matchResult = null,
+        ?string $vehicleStatus = null,
+        ?string $eventType = null,
+        bool $enabled = true,
+    ): array {
+        return [
+            'name' => $name,
+            'subject_type' => null,
+            'subject_status' => null,
+            'site_id' => null,
+            'zone_id' => null,
+            'event_type' => $eventType,
+            'gate_id' => null,
+            'gate_mode' => 'FACE_PRIMARY',
+            'match_result' => $matchResult,
+            'vehicle_status' => $vehicleStatus,
+            'decision' => $decision,
+            'reason_code' => $reasonCode,
+            'priority' => $priority,
+            'enabled' => $enabled,
         ];
     }
 

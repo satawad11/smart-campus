@@ -13,6 +13,8 @@ Wires the existing components together into a cohesive production edge runtime:
 - CAM-013: Camera health collection and reporting
 - CAM-015: Periodic configuration sync (dynamic camera add/remove/update)
 - CAM-016: Region-of-Interest (ROI) filtering
+- VEH-008: plate pipeline on cameras the backend enables, delivered through the plate
+  offline buffer (VEH-009)
 
 Enforces clean shutdown of all threads, OpenCV streams, and worker pools.
 Never logs passwords, tokens, or raw embeddings.
@@ -35,6 +37,13 @@ from app.core.config import settings
 from app.delivery.buffer import OfflineEventBuffer
 from app.delivery.buffered_service import BufferedEventDeliveryService
 from app.delivery.client import EventDeliveryClient, HttpEventDeliveryClient
+from app.delivery.plate import (
+    BufferedPlateEventDeliveryService,
+    HttpPlateEventDeliveryClient,
+    PlateEventBuffer,
+    PlateEventDeliveryClient,
+    new_plate_payload,
+)
 from app.detection.factory import get_face_detector
 from app.detection.schemas import FaceDetection
 from app.embeddings.factory import get_face_embedder
@@ -45,6 +54,9 @@ from app.orchestration.backend_client import HttpRecognitionBackendClient, Recog
 from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
 from app.orchestration.telemetry import SystemTelemetry
 from app.orchestration.worker import RecognitionWorker, RecognitionWorkerPool
+from app.plates.factory import get_plate_reader
+from app.plates.pipeline import CameraPlateSession, PlateReader
+from app.plates.schemas import VotedPlate
 from app.quality.factory import get_face_quality_evaluator
 from app.roi.filter import is_detection_in_roi
 from app.roi.schemas import RegionOfInterest, RoiPoint
@@ -56,6 +68,10 @@ from app.tracking.schemas import Track
 from app.tracking.tracker import IoUTracker
 
 logger = logging.getLogger("ai_node.orchestrator")
+
+# Identity of the plate models (ACR-VEH-01 D4), sent with every plate read.
+PLATE_MODEL_CODE = "lpd-yunet-th-ppocrv5-mobile"
+PLATE_MODEL_VERSION = "2023mar-v5"
 
 
 def _build_authenticated_rtsp_url(raw_url: str, username: str | None, password: str | None) -> str:
@@ -92,6 +108,9 @@ class CameraPipelineRunner:
         model_code: str,
         model_version: str,
         target_fps: float = 5.0,
+        plate_reader: PlateReader | None = None,
+        plate_delivery_service: BufferedPlateEventDeliveryService | None = None,
+        plate_reads_per_vehicle: int = 8,
     ):
         self.camera_uuid: str = camera_config["camera_uuid"]
         self.camera_code: str = camera_config.get("camera_code", self.camera_uuid[:8])
@@ -143,6 +162,13 @@ class CameraPipelineRunner:
         )
         self.pool = RecognitionWorkerPool(self.worker, max_workers=2, queue_size=15)
 
+        # VEH-008 plate pipeline: only with a reader and a delivery service.
+        self._plate_delivery = plate_delivery_service
+        self.plate_session: CameraPlateSession | None = None
+        if plate_reader is not None and plate_delivery_service is not None:
+            self.plate_session = CameraPlateSession(plate_reader, max_reads=plate_reads_per_vehicle)
+        self._plate_active = False
+
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
 
@@ -166,6 +192,28 @@ class CameraPipelineRunner:
         """Dynamically update ROI or flags without recreating the stream."""
         self.config = new_config
         self._update_roi(new_config.get("roi"))
+
+    @property
+    def plate_recognition_enabled(self) -> bool:
+        """VEH-005: read plates on this camera only when the backend explicitly says so.
+
+        The backend sends the effective value (camera switch AND system flag feature.alpr).
+        Anything other than a literal True — missing key, older backend, "true" string —
+        means off (fail closed). The plate pipeline itself arrives in VEH-008.
+        """
+        return self.config.get("plate_recognition_enabled") is True
+
+    @property
+    def face_detection_enabled(self) -> bool:
+        """Face pipeline on unless the backend explicitly switches it off (a plate-only
+        camera at a Smart Gate)."""
+        return self.config.get("face_detection_enabled", True) is not False
+
+    @property
+    def reads_plates(self) -> bool:
+        """Plates are read only when the backend enables it AND the models are loaded."""
+        session = getattr(self, "plate_session", None)
+        return self.plate_recognition_enabled and session is not None and session.reader.is_ready
 
     @property
     def reconnect_count(self) -> int:
@@ -192,6 +240,8 @@ class CameraPipelineRunner:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=timeout)
         self.pool.shutdown(wait=False)
+        if self.plate_session is not None and self.reads_plates:
+            self._deliver_plates(self.plate_session.flush())
         self.source.close()
         logger.info("Camera pipeline stopped for %s", self.camera_code)
 
@@ -222,13 +272,16 @@ class CameraPipelineRunner:
                 time.sleep(poll_interval)
             else:
                 self.collector.record_frame(sampled.frame)
+                self._process_plates(sampled)
 
                 # Detection
-                try:
-                    detections = self.detector.detect(sampled.frame.data)
-                except Exception as exc:
-                    logger.debug("Detection error on %s: %s", self.camera_code, exc)
-                    detections = []
+                detections = []
+                if self.face_detection_enabled:
+                    try:
+                        detections = self.detector.detect(sampled.frame.data)
+                    except Exception as exc:
+                        logger.debug("Detection error on %s: %s", self.camera_code, exc)
+                        detections = []
 
                 # Region of Interest filter
                 if self.roi is not None and detections:
@@ -252,6 +305,48 @@ class CameraPipelineRunner:
                             self.pool.submit(sampled, matched_det, track)
 
             self._drain_results()
+
+    def _process_plates(self, sampled: Any) -> None:
+        """VEH-008: read plates in this frame and deliver finished vehicle passes. Switching
+        plate reading off drops every unreported read (fail closed)."""
+        session = self.plate_session
+        if session is None:
+            return
+        if not self.reads_plates:
+            if self._plate_active:
+                session.reset()
+                self._plate_active = False
+            return
+        self._plate_active = True
+        try:
+            voted = session.process(sampled.frame.data, sampled.frame.captured_at, self.roi)
+        except Exception as exc:
+            logger.debug("Plate pipeline error on %s: %s", self.camera_code, exc)
+            return
+        self._deliver_plates(voted)
+
+    def _deliver_plates(self, voted: list[VotedPlate]) -> None:
+        if self._plate_delivery is None:
+            return
+        for plate in voted:
+            try:
+                payload = new_plate_payload(
+                    camera_uuid=self.camera_uuid,
+                    ai_node_uuid=self.ai_node_uuid,
+                    track_id=plate.track_id,
+                    occurred_at=plate.occurred_at,
+                    plate_text=plate.plate_text[:64],
+                    province_text=plate.province_text[:64] if plate.province_text else None,
+                    ocr_score=min(max(plate.ocr_score, 0.0), 1.0),
+                    detection_score=plate.detection_score,
+                    frames_voted=plate.frames_voted,
+                    model_code=PLATE_MODEL_CODE,
+                    model_version=PLATE_MODEL_VERSION,
+                    reasons=plate.reasons,
+                )
+                self._plate_delivery.deliver(payload)
+            except Exception as exc:
+                logger.error("Plate delivery error on %s: %s", self.camera_code, exc)
 
     def _drain_results(self) -> int:
         """Deliver every finished recognition result (buffered offline on failure)."""
@@ -296,6 +391,8 @@ class NodeOrchestrator:
         backend_client: RecognitionBackendClient | None = None,
         delivery_client: EventDeliveryClient | None = None,
         health_client: CameraHealthClient | None = None,
+        plate_delivery_client: PlateEventDeliveryClient | None = None,
+        plate_reader: PlateReader | None = None,
         heartbeat_interval: float | None = None,
         config_sync_interval: float | None = None,
         retry_interval: float | None = None,
@@ -341,6 +438,20 @@ class NodeOrchestrator:
         self.health_client = health_client or HttpCameraHealthClient(self.base_url, self.node_token)
 
         self.delivery_service = BufferedEventDeliveryService(self.delivery_client, self.buffer)
+
+        # VEH-008/009: plate reads use their own tables in the same buffer file.
+        self.plate_buffer = PlateEventBuffer(
+            db_path=buffer_path, initial_backoff_seconds=buffer_initial_backoff_seconds
+        )
+        self.plate_delivery_client = plate_delivery_client or HttpPlateEventDeliveryClient(
+            self.base_url, self.node_token
+        )
+        self.plate_delivery_service = BufferedPlateEventDeliveryService(
+            self.plate_delivery_client, self.plate_buffer
+        )
+        self.plate_reader = plate_reader or get_plate_reader(self.ai_mode)
+        if not self.plate_reader.is_ready:
+            logger.info("Plate models not loaded: this node reads no plates (VEH-008).")
 
         # AI Perception Providers
         self.detector = get_face_detector(provider=self.ai_mode)
@@ -409,6 +520,8 @@ class NodeOrchestrator:
             "uptime_seconds": round(uptime, 1),
             "buffer_pending_count": self.pending_buffer_count,
             "buffer_rejected_count": self.buffer.rejected_count,
+            "plate_buffer_pending_count": self.plate_buffer.size,
+            "plate_reader_ready": self.plate_reader.is_ready,
             "active_camera_count": len(cameras_summary),
             "cameras": cameras_summary,
             "last_heartbeat_at": self._last_heartbeat_at,
@@ -480,11 +593,14 @@ class NodeOrchestrator:
             except Exception:
                 pass
             sw_version = settings.version
+            capabilities = ["FACE_DETECTION", "FACE_RECOGNITION", "RTSP_STREAMING"]
+            if self.plate_reader.is_ready:
+                capabilities.append("PLATE_RECOGNITION")
             self.node_client.check_in(
                 hostname=hostname,
                 ip_address=ip_address,
                 software_version=sw_version,
-                capabilities=["FACE_DETECTION", "FACE_RECOGNITION", "RTSP_STREAMING"],
+                capabilities=capabilities,
             )
             logger.info("Check-in confirmed with backend for node %s", self.node_uuid)
         except Exception as exc:
@@ -571,9 +687,10 @@ class NodeOrchestrator:
                 if not cam_uuid:
                     continue
 
-                is_active = (
-                    cam_conf.get("status") == "ACTIVE"
-                    and cam_conf.get("face_detection_enabled", True) is not False
+                # A camera runs for faces, plates (VEH-008, a plate-only gate camera) or both.
+                is_active = cam_conf.get("status") == "ACTIVE" and (
+                    cam_conf.get("face_detection_enabled", True) is not False
+                    or cam_conf.get("plate_recognition_enabled") is True
                 )
 
                 if is_active:
@@ -596,11 +713,14 @@ class NodeOrchestrator:
                             model_code=self.model_code,
                             model_version=self.model_version,
                             target_fps=self.target_fps,
+                            plate_reader=self.plate_reader,
+                            plate_delivery_service=self.plate_delivery_service,
+                            plate_reads_per_vehicle=settings.plate_reads_per_vehicle,
                         )
                         runner.start()
                         self._cameras[cam_uuid] = runner
                 else:
-                    # Camera is not ACTIVE or face_detection is disabled
+                    # Camera is not ACTIVE, or reads neither faces nor plates
                     if cam_uuid in self._cameras:
                         logger.info("Stopping disabled camera %s", cam_uuid)
                         self._cameras[cam_uuid].stop()
@@ -694,7 +814,7 @@ class NodeOrchestrator:
                 self.sync_config()
 
     def _retry_loop(self) -> None:
-        """Drains durable offline SQLite event buffer (CAM-012)."""
+        """Drains the durable offline buffers: face events (CAM-012) and plate reads (VEH-009)."""
         while not self._stop_event.is_set():
             if self.buffer.size > 0:
                 try:
@@ -707,6 +827,17 @@ class NodeOrchestrator:
                         )
                 except Exception as exc:
                     logger.debug("Buffer retry blip: %s", exc)
+            if self.plate_buffer.size > 0:
+                try:
+                    res = self.plate_delivery_service.retry_pending(limit=50)
+                    if res.delivered > 0:
+                        logger.info(
+                            "Plate buffer retry: %d delivered, %d remaining",
+                            res.delivered,
+                            res.still_pending,
+                        )
+                except Exception as exc:
+                    logger.debug("Plate buffer retry blip: %s", exc)
 
             self._stop_event.wait(self.retry_interval)
 

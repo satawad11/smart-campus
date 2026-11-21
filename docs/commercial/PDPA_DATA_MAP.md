@@ -46,6 +46,12 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 | Access events + decisions (who, where, when, score) | personal (location) | PostgreSQL `access_events`, `access_decisions` | `retention.events_days` = 90 | VERIFIED (setting) |
 | Event snapshots | personal | object storage `event-snapshots` | `retention.snapshots_days` = 30 | VERIFIED (setting; snapshots not produced yet, A-21) |
 | Offline event buffer on node | personal (person UUID + score) | node disk, SQLite, **unencrypted** | until delivered | VERIFIED; G-3 |
+| Vehicle registry (plate, province, type, brand, model, colour, status, notes) — ACR-VEH-01 | personal when linked to a person | PostgreSQL `vehicles` | until soft-deleted; soft-deleted rows kept for history | VERIFIED (VEH-002/004); only with `feature.vehicle` on |
+| Vehicle ↔ person links (owner / driver / authorised, from–to dates) | personal (minors' parents' cars, staff cars) | PostgreSQL `vehicle_ownership_histories` (append-only) | as the vehicle record | VERIFIED (VEH-002); retention DECISION NEEDED (G-VEH-1) |
+| Plate reads (plate text, province, OCR score, matched vehicle) | personal (where a car was, when) | PostgreSQL `access_events` (`PLATE_*`, `metadata.plate`) | plate text and vehicle link wiped after `retention.plate_reads_days` = 30; event row deleted after `retention.events_days` = 90 | VERIFIED (VEH-010/013); only with `feature.alpr` on and the camera switch on |
+| Smart Gate passes (which face and plate events made one pass, person, vehicle, match result) | personal (who drove which car through which gate, when) | PostgreSQL `gate_passes` | vehicle link wiped with the plate read after `retention.plate_reads_days` = 30; row deleted with its events after `retention.events_days` = 90 | VERIFIED (GATE-003); written only by the Smart Gate correlation (GATE-004), behind `feature.vehicle` |
+| Offline plate-read buffer on node | personal (plate text) | node disk, SQLite (`pending_plate_events`), **unencrypted** | until delivered | VERIFIED (VEH-009); same gap as G-3 |
+| Plate searches by staff | personal (who looked up which plate) | PostgreSQL `audit_logs` (`PLATE_SEARCHED`) | `retention.audit_logs_days` | VERIFIED (VEH-013; gate pass history searches too, GATE-008) |
 | Staff accounts, login logs, sessions | personal | PostgreSQL `users`, `login_logs`, `user_sessions` | login logs 365 d | VERIFIED (setting) |
 | Audit logs | personal (staff actions) | PostgreSQL `audit_logs` | `retention.audit_logs_days` | VERIFIED (setting) |
 | Report exports | personal | object storage `report-exports` | 7 days | VERIFIED (setting) |
@@ -64,6 +70,8 @@ leaves the institution**; the vendor's central plane would hold only licence/fle
 | G-5 | No Data Subject Request (DSR) workflow (access/export, correction, erasure, objection) | Runbook using existing student export + G-1 purge; ticket template; SLA set by controller | Controller + engineering |
 | G-6 | No privacy notice, consent/legal-basis record, DPIA, or DPA template | Legal documents; the platform can store a consent/legal-basis reference per person later | Legal |
 | G-7 | ~~Node → backend traffic may be plain HTTP on the LAN~~ **Mitigated:** node `health_check` FAILs on plain HTTP to a remote backend (`backend_transport`); lab override `AI_NODE_ALLOW_INSECURE_BACKEND` | — | Engineering (done) |
+| **G-VEH-1** | Vehicle ↔ person links and the vehicle registry have no retention period (kept as long as the vehicle record) | Controller decides how long to keep ended links and inactive vehicles; plate reads already expire (30/90 days) | Controller |
+| **G-VEH-2** | Privacy notice must tell parents, staff and visitors that plates are read at the gates when ALPR is on | Draft wording added to PRIVACY_NOTICE_TH_DRAFT.md §2/§4; legal review | Controller + counsel |
 
 ## 4. Technical controls already in place (VERIFIED in code or earlier audits)
 RBAC with GLOBAL/SITE/ZONE scope on REST and realtime; raw embeddings never returned to the browser; private

@@ -126,6 +126,22 @@ class PilotPreflightCommand extends Command
                 $this->add('locked-features', $feature.' effectively disabled', 'FAIL', 'could not evaluate: '.class_basename($e));
             }
         }
+
+        // ACR-VEH-01: vehicle/alpr may be on, but the operator must decide explicitly.
+        foreach (FeatureFlagService::OPTIONAL_FEATURES as $feature) {
+            $env = 'FEATURE_'.strtoupper($feature).'_ENABLED';
+            $configured = $flags->isKillSwitchConfigured($feature);
+
+            $this->add('optional-features', $env.' explicitly set', $configured ? 'PASS' : 'FAIL',
+                $configured ? ($flags->isKillSwitchEngaged($feature) ? 'false (kill switch engaged)' : 'true (administrator may enable)') : 'variable unset');
+
+            try {
+                $this->add('optional-features', $feature.' state', 'PASS',
+                    $flags->isEnabled($feature) ? 'ENABLED' : 'disabled');
+            } catch (Throwable $e) {
+                $this->add('optional-features', $feature.' state', 'FAIL', 'could not evaluate: '.class_basename($e));
+            }
+        }
     }
 
     private function checkProductionConfig(): void

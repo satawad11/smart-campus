@@ -9,6 +9,7 @@ use App\Models\Person;
 use App\Models\Site;
 use App\Models\StudentProfile;
 use App\Models\Zone;
+use App\Support\Vehicles\ThaiPlate;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 
@@ -27,7 +28,7 @@ class EventSearchQuery
      */
     public function build(array $filters): Builder
     {
-        $query = AccessEvent::query()->with(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision']);
+        $query = AccessEvent::query()->with(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision.gatePass.gate', 'latestDecision.gatePass.faceEvent', 'latestDecision.gatePass.plateEvent']);
 
         if (! empty($filters['from'])) {
             // Parse to Carbon, not the raw string — see EventController's
@@ -59,6 +60,17 @@ class EventSearchQuery
         if (! empty($filters['student_code'])) {
             $personId = StudentProfile::where('student_code', $filters['student_code'])->value('person_id');
             $query->where('person_id', $personId ?? 0); // 0 matches nothing — a real but unmatched filter, not "all"
+        }
+
+        // VEH-012: exact plate search on plate events, normalised like stored plates
+        // ("1กข-1234" finds "1กข1234"). Unreadable input is a real, empty filter.
+        if (! empty($filters['plate'])) {
+            $plate = ThaiPlate::tryNormalize((string) $filters['plate']);
+            $query->whereIn('event_type', ['PLATE_RECOGNIZED', 'PLATE_UNKNOWN', 'PLATE_LOW_CONFIDENCE']);
+            // Never a NUL "impossible value": PostgreSQL rejects NUL bytes in parameters.
+            $plate === null
+                ? $query->whereRaw('1 = 0')
+                : $query->where('metadata->plate->plate_number', $plate);
         }
 
         if (! empty($filters['academic_status'])) {

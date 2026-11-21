@@ -156,8 +156,18 @@ const routes = [
         component: () => import('@/views/academics/AcademicDataView.vue'),
         meta: { requiresAuth: true, permission: 'academic.view' },
       },
-      { path: 'guardians', name: 'guardians.index', component: () => import('@/views/people/GuardiansView.vue'), meta: { requiresAuth: true, permission: 'guardian.view' } },
-      { path: 'visitors', name: 'visitors.index', component: () => import('@/views/people/VisitorsView.vue'), meta: { requiresAuth: true, permission: 'visitor.view' } },
+      {
+        path: 'guardians',
+        name: 'guardians.index',
+        component: () => import('@/views/people/GuardiansView.vue'),
+        meta: { requiresAuth: true, permission: 'guardian.view' },
+      },
+      {
+        path: 'visitors',
+        name: 'visitors.index',
+        component: () => import('@/views/people/VisitorsView.vue'),
+        meta: { requiresAuth: true, permission: 'visitor.view' },
+      },
       {
         path: 'roles',
 
@@ -244,6 +254,32 @@ const routes = [
         component: () => import('@/views/cameras/CameraDetailView.vue'),
         meta: { requiresAuth: true, permission: 'camera.view' },
       },
+      // Vehicle registry (VEH-011, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'vehicles',
+        name: 'vehicles.index',
+        component: () => import('@/views/vehicles/VehicleListView.vue'),
+        meta: { requiresAuth: true, permission: 'vehicle.view' },
+      },
+      {
+        path: 'vehicles/:uuid',
+        name: 'vehicles.show',
+        component: () => import('@/views/vehicles/VehicleDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'vehicle.view' },
+      },
+      // Smart Gate configuration (GATE-002, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'gates',
+        name: 'gates.index',
+        component: () => import('@/views/gates/GateListView.vue'),
+        meta: { requiresAuth: true, permission: 'gate.view' },
+      },
+      {
+        path: 'gates/:uuid',
+        name: 'gates.show',
+        component: () => import('@/views/gates/GateDetailView.vue'),
+        meta: { requiresAuth: true, permission: 'gate.view' },
+      },
       {
         path: 'ai-nodes',
         name: 'ai-nodes.index',
@@ -296,6 +332,13 @@ const routes = [
         path: 'history',
         name: 'history.search',
         component: () => import('@/views/history/HistorySearchView.vue'),
+        meta: { requiresAuth: true, permission: 'report.view' },
+      },
+      // Gate pass history (GATE-008, ACR-VEH-01); the backend also requires feature.vehicle.
+      {
+        path: 'history/gate-passes',
+        name: 'history.gate-passes',
+        component: () => import('@/views/history/GatePassHistoryView.vue'),
         meta: { requiresAuth: true, permission: 'report.view' },
       },
       {

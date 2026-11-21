@@ -44,6 +44,8 @@ class UpdateCameraRequest extends FormRequest
             'face_recognition_enabled' => ['sometimes', 'boolean'],
             'liveness_enabled' => ['sometimes', 'boolean'],
             'snapshot_enabled' => ['sometimes', 'boolean'],
+            // VEH-005: turning it on also needs feature.alpr (checked in CameraService).
+            'plate_recognition_enabled' => ['sometimes', 'boolean'],
 
             // Dedicated status operation, immutable keys, internal ids.
             'status' => ['prohibited'],

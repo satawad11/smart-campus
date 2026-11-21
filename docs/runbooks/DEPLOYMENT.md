@@ -29,9 +29,12 @@ DC="docker compose --env-file apps/backend/.env -f docker-compose.yml -f docker-
 - [ ] Future feature flags confirmed disabled in production configuration:
   - `FEATURE_DOOR_ENABLED=false`
   - `FEATURE_VISITOR_ENABLED=false`
-  - `FEATURE_VEHICLE_ENABLED=false`
-  - `FEATURE_ALPR_ENABLED=false`
   - `FEATURE_AI_ASSISTANT_ENABLED=false`
+- [ ] Optional modules (ACR-VEH-01) set explicitly, `false` unless the campus has decided to use them:
+  - `FEATURE_VEHICLE_ENABLED=false` (vehicle registry)
+  - `FEATURE_ALPR_ENABLED=false` (licence plate reading on AI nodes)
+  `true` only allows an administrator to switch the module on in System Settings; it stays off until then.
+  Using the Smart Gate: follow `docs/pilot/SMART-GATE-PILOT-RUNBOOK.md` (scheduler and NTP are required).
 - [ ] For upgrades only: a verified pre-deployment backup exists (`$DC exec backend php artisan backup:run --type=ALL --verify`).
 
 ## 3. Step-by-Step Deployment Procedure

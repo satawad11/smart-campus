@@ -4,6 +4,7 @@ namespace App\Events;
 
 use App\Models\AccessDecision;
 use App\Models\AccessEvent;
+use App\Support\Gates\GatePassSummary;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PrivateChannel;
@@ -79,6 +80,9 @@ class AccessEventBroadcast implements ShouldBroadcastNow
                 'reason_code' => $this->decision->reason_code,
                 'decision_source' => $this->decision->decision_source->value,
             ],
+            // GATE-007: the Smart Gate pass this decision is for (null for an ordinary event). The
+            // Live Monitor updates the event's row in place when this arrives.
+            'gate_pass' => $this->decision->gatePass === null ? null : GatePassSummary::of($this->decision->gatePass),
         ];
     }
 }

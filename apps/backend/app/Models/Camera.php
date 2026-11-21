@@ -46,6 +46,7 @@ class Camera extends Model
         'face_recognition_enabled',
         'liveness_enabled',
         'snapshot_enabled',
+        'plate_recognition_enabled',
         'roi_polygon',
         'status',
         'last_seen_at',
@@ -75,6 +76,7 @@ class Camera extends Model
             'face_recognition_enabled' => 'boolean',
             'liveness_enabled' => 'boolean',
             'snapshot_enabled' => 'boolean',
+            'plate_recognition_enabled' => 'boolean',
             'roi_polygon' => 'array',
             'last_seen_at' => 'datetime',
         ];
@@ -93,6 +95,14 @@ class Camera extends Model
     public function aiNode(): BelongsTo
     {
         return $this->belongsTo(AiNode::class);
+    }
+
+    /**
+     * The Smart Gate this camera serves, if any (GATE-001). A camera serves at most one gate.
+     */
+    public function gateCamera(): HasOne
+    {
+        return $this->hasOne(GateCamera::class);
     }
 
     public function healthLogs(): HasMany

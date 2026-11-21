@@ -150,6 +150,16 @@ In accordance with Phase 08 governance and audit finding `AUDIT-B5`:
      EMBEDDER_MODEL_PATH=/models/embedder.onnx
      ```
 
+### Plate models (VEH-008, optional module)
+
+Kits built after VEH-008 also contain the plate models (LPD-YuNet + PaddleOCR Thai,
+`scripts/fetch-plate-models.sh`, checked by `PLATE_MODELS.sha256`). With `AI_MODE=onnx` the node
+loads them and announces `PLATE_RECOGNITION` at check-in; the health summary shows
+`plate_reader_ready`. Having the models does **not** read any plate: the node reads plates only on
+a camera the backend enables (`feature.alpr` and the camera's **อ่านป้ายทะเบียน** switch), and the
+owner keeps that off until the evaluation in `PLATE-MODEL-EVALUATION.md` is approved. A camera
+with face detection off and plate reading on (a plate-only gate camera) runs plates only.
+
 ---
 
 ## 4. Service Startup & Telemetry Verification

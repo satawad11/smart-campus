@@ -7,9 +7,12 @@ event_types:
   - REVIEW_REQUIRED
   - ACCESS_ALLOWED
   - ACCESS_DENIED
+  # ACR-VEH-01 (VEH-006): plate results; produced only when feature.alpr is on.
+  - PLATE_RECOGNIZED
+  - PLATE_UNKNOWN
+  - PLATE_LOW_CONFIDENCE
 future_event_types:
   - VEHICLE_DETECTED
-  - PLATE_RECOGNIZED
   - VISITOR_CHECK_IN
   - DOOR_OPENED
   - DOOR_CLOSED

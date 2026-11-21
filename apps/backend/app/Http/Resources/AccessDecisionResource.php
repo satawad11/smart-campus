@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\AccessDecision;
+use App\Support\Gates\GatePassSummary;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -28,6 +29,8 @@ class AccessDecisionResource extends JsonResource
                 'uuid' => $this->decidedBy->uuid,
                 'username' => $this->decidedBy->username,
             ]),
+            // GATE-007: the Smart Gate pass this decision is for; null for an ordinary decision.
+            'gate_pass' => $this->gate_pass_id === null ? null : GatePassSummary::of($this->gatePass),
             'created_at' => $this->created_at?->toISOString(),
         ];
     }

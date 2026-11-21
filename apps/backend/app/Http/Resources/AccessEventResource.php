@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Models\AccessEvent;
+use App\Support\Vehicles\ThaiProvince;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -61,6 +62,9 @@ class AccessEventResource extends JsonResource
             'liveness_score' => $this->liveness_score,
             'quality_score' => $this->quality_score,
             'track_id' => $this->track_id,
+            // VEH-012: what was read from the plate (plate events only). A plate event never
+            // carries a person or a decision.
+            'plate' => str_starts_with((string) $this->event_type, 'PLATE_') ? $this->plateBlock() : null,
             // A REVIEW suggestion is evidence for an officer only. It is not
             // event.person and cannot drive an automatic access decision.
             'review_candidate' => ($this->metadata['classification'] ?? null) === 'REVIEW'
@@ -74,6 +78,23 @@ class AccessEventResource extends JsonResource
                 fn () => $this->latestDecision === null ? null : new AccessDecisionResource($this->latestDecision),
             ),
             'decisions' => AccessDecisionResource::collection($this->whenLoaded('decisions')),
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function plateBlock(): array
+    {
+        $plate = $this->metadata['plate'] ?? [];
+
+        return [
+            'plate_number' => $plate['plate_number'] ?? null,
+            'plate_display' => $plate['plate_display'] ?? null,
+            'plate_province' => $plate['plate_province'] ?? null,
+            'plate_province_name' => isset($plate['plate_province']) ? ThaiProvince::name($plate['plate_province']) : null,
+            'raw_text' => $plate['raw_text'] ?? null,
+            'ocr_score' => $plate['ocr_score'] ?? null,
+            'vehicle_uuid' => $plate['vehicle_uuid'] ?? null,
+            'vehicle_status' => $plate['vehicle_status'] ?? null,
         ];
     }
 }

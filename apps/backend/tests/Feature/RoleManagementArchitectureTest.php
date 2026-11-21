@@ -65,8 +65,9 @@ class RoleManagementArchitectureTest extends TestCase
     public function test_no_future_domain_modules(): void // 53
     {
         // Person (STD-002) and Site/Zone/Camera (CAM-001) are now legitimate
-        // Module 02/04 artifacts; Door/Visitor/Vehicle remain locked future modules.
-        foreach (['Door', 'Visitor', 'Vehicle'] as $model) {
+        // Module 02/04 artifacts; Vehicle is an approved optional module since
+        // ACR-VEH-01 (VEH-002); Door/Visitor remain locked future modules.
+        foreach (['Door', 'Visitor'] as $model) {
             $this->assertFileDoesNotExist(base_path("app/Models/{$model}.php"));
         }
     }
