@@ -228,13 +228,37 @@ Internal AI-node operations:
 
 Internal ingestion:
 - POST `/internal/v1/events/recognition`
+- POST `/internal/v1/events/{eventUuid}/snapshot` (EVT-025)
 
 Public/admin:
 - GET `/events`
 - GET `/events/{uuid}`
 - POST `/events/{uuid}/review`
 - POST `/events/{uuid}/notes`
+- GET `/events/{uuid}/snapshot` (EVT-025)
 - GET `/persons/{uuid}/events`
+
+Event face image (EVT-025, [ACR-EVT-24](decisions/ACR-EVT-24-UNKNOWN-FACE-SNAPSHOT-ENROLLMENT.md), approved 2026-11-20):
+- Event responses (`GET /events`, `GET /events/{uuid}`) carry only `snapshot_available` (boolean). They never
+  carry the image, its storage key or `snapshot_path`.
+- POST `/internal/v1/events/{eventUuid}/snapshot` — `ai_node.token`; `multipart/form-data` with one field
+  `image` (JPEG). Only the node that delivered the event, only while the event camera is assigned to it, only
+  for an event whose system decision is UNKNOWN, REVIEW or DENY, once per event, within
+  `EVENT_SNAPSHOT_UPLOAD_WINDOW_SECONDS` (600) of `received_at`. Limits: `EVENT_SNAPSHOT_MAX_BYTES` (262144),
+  each side 32..`EVENT_SNAPSHOT_MAX_DIMENSION` (640) px — a face crop, never a full frame or an embedding.
+  Stored on the private `event_snapshots` disk and audited `EVENT_SNAPSHOT_STORED`. `201` returns
+  `{event_uuid, snapshot_available: true}`. Errors: `404 EVENT_NOT_FOUND` (missing or another node's event),
+  `422 CAMERA_NOT_ASSIGNED_TO_NODE`, `422 EVENT_SNAPSHOT_NOT_ELIGIBLE`, `422 EVENT_SNAPSHOT_WINDOW_EXPIRED`,
+  `422 EVENT_SNAPSHOT_TOO_LARGE`, `422 EVENT_SNAPSHOT_INVALID_IMAGE`, `422 VALIDATION_ERROR`,
+  `409 EVENT_SNAPSHOT_ALREADY_STORED`, `503 EVENT_SNAPSHOT_STORAGE_UNAVAILABLE`.
+- GET `/events/{uuid}/snapshot` — needs `event.view` **and** (`camera.live` or `face.view`); an event outside the
+  caller's site/zone scope answers `404`. Returns `{event_uuid, content_type: "image/jpeg", image_base64}` with
+  `Cache-Control: no-store, private`. Every successful read is audited `EVENT_SNAPSHOT_VIEWED`. No crop, or the
+  object is gone: `404 EVENT_SNAPSHOT_NOT_AVAILABLE`. Temporary viewing is implemented as this authenticated,
+  per-request read instead of a pre-signed object-storage URL, so no reusable link exists and the object
+  store is never exposed to browsers.
+- Retention: `retention.snapshots_days` deletes the object and clears the reference; the event stays until
+  `retention.events_days`, which also deletes any remaining object.
 
 Filters:
 - from
@@ -360,6 +384,7 @@ Examples:
 - FACE_NO_MATCH
 - LIVENESS_FAILED
 - EVENT_DUPLICATED
+- EVENT_SNAPSHOT_NOT_AVAILABLE
 - POLICY_NOT_FOUND
 - POLICY_EVALUATION_ERROR
 - STUDENT_PROFILE_MISSING

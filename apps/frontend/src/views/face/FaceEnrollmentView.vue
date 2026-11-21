@@ -13,6 +13,7 @@ import { personsService } from '@/services/students'
 import { apiErrorText, statusLabel } from '@/constants/labels'
 import WebcamCapture from '@/components/face/WebcamCapture.vue'
 import FaceQualityIndicators from '@/components/face/FaceQualityIndicators.vue'
+import EventSnapshotPanel from '@/components/events/EventSnapshotPanel.vue'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const AUTO_CAPTURE_STREAK = 3
@@ -105,6 +106,14 @@ if (UUID_RE.test(presetUuid)) {
   selectPerson({ uuid: presetUuid, display_name: presetName })
   personQuery.value = presetName
 }
+
+// EVT-025: opened from an alert or event (?event=<uuid>). The event's face
+// image is shown for reference only; enrollment still needs a selected
+// person, consent and a capture through the normal checks below.
+const sourceEventUuid =
+  typeof currentQuery.event === 'string' && UUID_RE.test(currentQuery.event)
+    ? currentQuery.event
+    : ''
 
 watch(personType, () => {
   if (personQuery.value.trim().length >= 2) runSearch(personQuery.value.trim())
@@ -262,6 +271,26 @@ onBeforeUnmount(() => {
         class="rounded-lg border border-gray-300 bg-surface px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
       >
         ดูข้อมูลใบหน้าทั้งหมด
+      </button>
+    </div>
+
+    <div
+      v-if="canEnroll && sourceEventUuid"
+      data-test="enroll-source-event"
+      class="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-4"
+    >
+      <p class="text-sm font-medium text-amber-900">ลงทะเบียนจากเหตุการณ์ที่แจ้งเตือน</p>
+      <p class="text-xs text-amber-800">
+        ภาพจากเหตุการณ์ใช้เป็นภาพอ้างอิงเท่านั้น กรุณาเลือกบุคคลที่ถูกต้อง ขอความยินยอม
+        แล้วถ่ายหรืออัปโหลดภาพตามขั้นตอนปกติ
+      </p>
+      <EventSnapshotPanel :event-uuid="sourceEventUuid" :available="true" />
+      <button
+        type="button"
+        class="text-xs font-medium text-blue-600 hover:text-blue-800"
+        @click="router.push({ name: 'events.show', params: { uuid: sourceEventUuid } })"
+      >
+        ดูเหตุการณ์
       </button>
     </div>
 

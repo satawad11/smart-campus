@@ -22,6 +22,11 @@ class EventDeliveryClient(ABC):
     @abstractmethod
     def deliver(self, payload: RecognitionEventPayload) -> None: ...
 
+    def upload_snapshot(self, event_uuid: str, jpeg_bytes: bytes) -> None:  # noqa: B027
+        """EVT-025: attach a face crop to an already-delivered event. Optional
+        for a client; the default sends nothing."""
+        return None
+
 
 class HttpEventDeliveryClient(EventDeliveryClient):
     """Real backend client. Imports httpx lazily (module load must not fail
@@ -78,3 +83,28 @@ class HttpEventDeliveryClient(EventDeliveryClient):
             )
         if response.status_code not in (200, 201, 202):
             raise EventDeliveryError(f"Event delivery call returned HTTP {response.status_code}")
+
+    def upload_snapshot(self, event_uuid: str, jpeg_bytes: bytes) -> None:
+        """POST /internal/v1/events/{event_uuid}/snapshot (EVT-025) as
+        multipart/form-data. Raises EventDeliveryError on any failure; the
+        caller drops the crop — it is never retried from disk."""
+        try:
+            import httpx  # noqa: PLC0415 (intentionally lazy)
+        except ImportError as exc:
+            raise EventDeliveryError("httpx is not installed") from exc
+
+        try:
+            response = httpx.post(
+                f"{self._base_url}/internal/v1/events/{event_uuid}/snapshot",
+                files={"image": ("face.jpg", jpeg_bytes, "image/jpeg")},
+                headers={
+                    "Authorization": f"Bearer {self._node_token}",
+                    "Accept": "application/json",
+                },
+                timeout=self._timeout_seconds,
+            )
+        except Exception as exc:  # noqa: BLE001 — normalize any transport failure
+            raise EventDeliveryError(f"Snapshot upload failed: {type(exc).__name__}") from exc
+
+        if response.status_code not in (200, 201):
+            raise EventDeliveryError(f"Snapshot upload returned HTTP {response.status_code}")
