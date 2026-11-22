@@ -16,11 +16,13 @@ fi
 source .env 2>/dev/null || true
 
 if [ -z "${AI_NODE_UUID:-}" ] || [ "${AI_NODE_UUID:-}" = "00000000-0000-0000-0000-000000000000" ]; then
-    echo "WARNING: AI_NODE_UUID is not set or contains default placeholder."
+    echo "ERROR: AI_NODE_UUID is not enrolled; run ./enroll.sh <ENROLLMENT-CODE>." >&2
+    exit 1
 fi
 
 if [ -z "${AI_NODE_TOKEN:-}" ] || [ "${AI_NODE_TOKEN:-}" = "sc_node_your_issued_token_here" ]; then
-    echo "WARNING: AI_NODE_TOKEN is not configured. Node will not be able to authenticate with backend."
+    echo "ERROR: AI_NODE_TOKEN is not enrolled; run ./enroll.sh <ENROLLMENT-CODE>." >&2
+    exit 1
 fi
 
 echo "Starting AI Node services..."
