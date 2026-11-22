@@ -7,6 +7,9 @@ readiness (ready to perform AI workload).
 import importlib.util
 
 from app.core.config import Settings, settings
+from app.detection.yunet import YuNetFaceDetector
+from app.embeddings.sface import SFaceEmbedder
+from app.liveness.minifasnet import MiniFASNetLivenessDetector
 
 
 class ReadinessChecker:
@@ -46,9 +49,38 @@ class ReadinessChecker:
         return False, "unknown_runtime"
 
     def check_models(self) -> tuple[bool, str]:
-        """Verify model readiness state without running inference."""
+        """Verify every provider required by the configured mode can load its model.
+
+        A process with OpenCV installed is alive, but it cannot perform real
+        recognition when one of the pinned model files is absent or corrupt.
+        Constructing each provider makes OpenCV parse the model without exposing
+        paths or running inference in the health response.
+        """
         if self.settings.ai_mode == "mock":
             return True, "ok"
+
+        if self.settings.ai_mode != "onnx":
+            return False, "unknown_model_provider"
+
+        detector = YuNetFaceDetector(self.settings.detector_model_path)
+        if not detector.is_ready:
+            return False, "detector_model_unavailable"
+
+        embedder = SFaceEmbedder(
+            self.settings.embedder_model_path,
+            model_code=self.settings.model_code,
+            model_version=self.settings.model_version,
+        )
+        if not embedder.is_ready:
+            return False, "embedding_model_unavailable"
+
+        liveness = MiniFASNetLivenessDetector(
+            self.settings.liveness_model_dir,
+            threshold_real=self.settings.liveness_threshold_real,
+            threshold_spoof=self.settings.liveness_threshold_spoof,
+        )
+        if not liveness.is_ready:
+            return False, "liveness_model_unavailable"
 
         return True, "ok"
 
