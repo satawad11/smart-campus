@@ -211,6 +211,84 @@ describe('EVT-017: Event detail/review UI', () => {
       expect(wrapper.text()).toContain('0.72')
     })
 
+    describe('EVT-026: recognition reasons', () => {
+      const systemDecision = [
+        {
+          uuid: 'd-1',
+          decision: 'UNKNOWN',
+          reason_code: 'RECOGNITION_UNKNOWN',
+          decision_source: 'POLICY',
+          created_at: '2026-09-23T09:00:00Z',
+        },
+      ]
+
+      it('explains that a node-rejected face was never compared, in Thai, with the raw code', async () => {
+        const authStore = useAuthStore()
+        authStore.user = { uuid: 'u-r1', username: 'officer', permissions: ['event.view'] }
+
+        const wrapper = await mountDetail(systemDecision, {
+          recognition: {
+            classification: 'UNKNOWN',
+            rejected_locally: true,
+            reasons: ['BAD_POSE', 'IMAGE_BLUR'],
+          },
+        })
+
+        const section = wrapper.find('[data-testid="recognition-reasons"]')
+        expect(section.exists()).toBe(true)
+        expect(wrapper.find('[data-testid="rejected-locally-note"]').text()).toContain(
+          'ไม่ได้นำไปเปรียบเทียบ',
+        )
+        expect(section.text()).toContain('มุมใบหน้าไม่ตรง')
+        expect(section.text()).toContain('BAD_POSE')
+        expect(section.text()).toContain('ภาพเบลอ')
+        expect(section.text()).toContain('IMAGE_BLUR')
+      })
+
+      it('shows matching reasons without the "never compared" note', async () => {
+        const authStore = useAuthStore()
+        authStore.user = { uuid: 'u-r2', username: 'officer', permissions: ['event.view'] }
+
+        const wrapper = await mountDetail(systemDecision, {
+          face_score: 0.41,
+          recognition: {
+            classification: 'UNKNOWN',
+            rejected_locally: false,
+            reasons: ['NO_CANDIDATE_ABOVE_THRESHOLD'],
+          },
+        })
+
+        expect(wrapper.find('[data-testid="rejected-locally-note"]').exists()).toBe(false)
+        expect(wrapper.find('[data-testid="recognition-reasons"]').text()).toContain(
+          'เปรียบเทียบแล้ว ไม่มีผู้ใดคล้ายถึงเกณฑ์',
+        )
+      })
+
+      it('shows an unrecognised code as sent and hides the section when there is nothing to show', async () => {
+        const authStore = useAuthStore()
+        authStore.user = { uuid: 'u-r3', username: 'officer', permissions: ['event.view'] }
+
+        const withUnknown = await mountDetail(systemDecision, {
+          recognition: {
+            classification: 'UNKNOWN',
+            rejected_locally: false,
+            reasons: ['SOMETHING_NEW'],
+          },
+        })
+        expect(withUnknown.find('[data-testid="recognition-reasons"]').text()).toContain(
+          'SOMETHING_NEW',
+        )
+
+        const empty = await mountDetail(systemDecision, {
+          recognition: { classification: null, rejected_locally: null, reasons: [] },
+        })
+        expect(empty.find('[data-testid="recognition-reasons"]').exists()).toBe(false)
+
+        const legacy = await mountDetail(systemDecision) // older API response: no recognition key
+        expect(legacy.find('[data-testid="recognition-reasons"]').exists()).toBe(false)
+      })
+    })
+
     it('hides the review form without event.review', async () => {
       const authStore = useAuthStore()
       authStore.user = { uuid: 'u-6', username: 'viewer', permissions: ['event.view'] }
