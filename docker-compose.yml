@@ -126,7 +126,7 @@ services:
       context: ./apps/ai-service   # Dockerfile + FastAPI app added in FND-005
     image: smart-campus/ai-service:dev
     environment:
-      AI_MODE: ${AI_MODE:-mock}
+      AI_MODE: ${AI_MODE:-onnx}
     expose:
       - "8001"
     networks: [smartcampus]

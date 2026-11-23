@@ -39,11 +39,17 @@ class YuNetFaceDetector(FaceDetector):
         top_k: int = 50,
         name: str = "yunet",
         version: str = "2023mar",
+        max_input_width: int | None = None,
     ):
         self._name = name
         self._version = version
         self.model_path = model_path
         self.score_threshold = score_threshold
+        # Wider frames are downscaled for detection only (YuNet cost grows with pixels:
+        # ~300 ms at 1920 px vs ~130 ms at 1280 px on 4 CPU cores); boxes and landmarks
+        # are mapped back to full-resolution coordinates, so alignment, quality,
+        # liveness and embedding still use the full-resolution face.
+        self.max_input_width = max_input_width if max_input_width and max_input_width > 0 else None
         self._detector = None
         if model_path and os.path.isfile(model_path):
             try:
@@ -77,7 +83,15 @@ class YuNetFaceDetector(FaceDetector):
             if bgr.dtype != np.uint8:
                 bgr = np.clip(bgr, 0, 255).astype(np.uint8)
             height, width = bgr.shape[:2]
-            self._detector.setInputSize((width, height))
+            scale = 1.0
+            if self.max_input_width is not None and width > self.max_input_width:
+                scale = self.max_input_width / width
+                bgr = cv2.resize(
+                    bgr,
+                    (self.max_input_width, max(1, round(height * scale))),
+                    interpolation=cv2.INTER_AREA,
+                )
+            self._detector.setInputSize((bgr.shape[1], bgr.shape[0]))
             _, faces = self._detector.detect(bgr)
         except cv2.error as exc:
             raise DetectionRuntimeError(f"YuNet inference error: {exc}") from exc
@@ -86,7 +100,10 @@ class YuNetFaceDetector(FaceDetector):
             return []
 
         detections: list[FaceDetection] = []
-        for row in faces:
+        for raw in faces:
+            row = raw.astype(np.float64)
+            if scale != 1.0:
+                row[:14] = row[:14] / scale
             x, y, w, h = (float(v) for v in row[:4])
             bbox = BoundingBox(x1=x, y1=y, x2=x + max(w, 1e-3), y2=y + max(h, 1e-3)).clamp(
                 width, height

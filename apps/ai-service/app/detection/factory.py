@@ -28,6 +28,7 @@ def get_face_detector(provider: str | None = None, **kwargs: Any) -> FaceDetecto
 
     if resolved_provider in ("onnx", "onnx_detector", "yunet"):
         kwargs.setdefault("model_path", settings.detector_model_path)
+        kwargs.setdefault("max_input_width", settings.detector_max_input_width)
         return YuNetFaceDetector(**kwargs)
 
     raise ValueError(

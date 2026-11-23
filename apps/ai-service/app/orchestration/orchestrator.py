@@ -46,6 +46,7 @@ from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
 from app.orchestration.telemetry import SystemTelemetry
 from app.orchestration.worker import RecognitionWorker, RecognitionWorkerPool
 from app.quality.factory import get_face_quality_evaluator
+from app.quality.schemas import QualityThresholds
 from app.roi.filter import is_detection_in_roi
 from app.roi.schemas import RegionOfInterest, RoiPoint
 from app.sampling.sampler import FrameSampler
@@ -128,7 +129,7 @@ class CameraPipelineRunner:
         self.collector = CameraHealthCollector(camera_uuid=self.camera_uuid)
 
         # Recognition worker & pool with per-camera cache
-        self.cache = RecognitionCache()
+        self.cache = RecognitionCache(ttl_seconds=settings.recognition_cache_ttl_seconds)
         self.worker = RecognitionWorker(
             camera_uuid=self.camera_uuid,
             ai_node_uuid=self.ai_node_uuid,
@@ -140,6 +141,9 @@ class CameraPipelineRunner:
             model_version=model_version,
             liveness_detector=liveness_detector,
             cache=self.cache,
+            liveness_mode=settings.liveness_mode,
+            liveness_min_face_px=settings.liveness_min_face_px,
+            retry_ttl_seconds=settings.recognition_retry_seconds,
         )
         self.pool = RecognitionWorkerPool(self.worker, max_workers=2, queue_size=15)
 
@@ -268,6 +272,19 @@ class CameraPipelineRunner:
         return delivered
 
 
+def cctv_quality_thresholds() -> QualityThresholds:
+    """Surveillance quality gate from settings (enrollment keeps its stricter defaults)."""
+    return QualityThresholds(
+        min_blur_score=settings.cctv_min_blur_score,
+        min_face_size_score=min(max(settings.cctv_min_face_px / 100.0, 0.0), 1.0),
+        max_yaw_degrees=settings.cctv_max_yaw_degrees,
+        max_pitch_degrees=settings.cctv_max_pitch_degrees,
+        max_roll_degrees=settings.cctv_max_roll_degrees,
+        min_pose_score=0.30,
+        min_quality_score=settings.cctv_min_quality_score,
+    )
+
+
 def detection_for_track(track: Track, detections: list[FaceDetection]) -> FaceDetection | None:
     """The detection this track was matched to in the current frame, if any.
 
@@ -347,7 +364,10 @@ class NodeOrchestrator:
         aligner_prov = "standard" if self.ai_mode != "mock" else "mock"
         self.aligner = get_face_aligner(provider=aligner_prov)
         quality_prov = "standard" if self.ai_mode != "mock" else "mock"
-        self.quality_evaluator = get_face_quality_evaluator(provider=quality_prov)
+        quality_kwargs: dict[str, Any] = {}
+        if quality_prov == "standard":
+            quality_kwargs["thresholds"] = cctv_quality_thresholds()
+        self.quality_evaluator = get_face_quality_evaluator(provider=quality_prov, **quality_kwargs)
         embedder_prov = "onnx" if self.ai_mode == "onnx" else "mock"
         embedder_kwargs: dict[str, Any] = {
             "model_code": self.model_code,

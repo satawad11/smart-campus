@@ -300,7 +300,7 @@ class RecognitionEventIngestionService
             return $data;
         }
 
-        $threshold = (float) config('face.recognition.match_threshold', 0.80);
+        $threshold = (float) config('face.recognition.match_threshold', 0.45);
         $similarity = $data['similarity'] ?? null;
         if ($similarity !== null && (float) $similarity >= $threshold) {
             return $data;
