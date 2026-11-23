@@ -37,6 +37,14 @@ class FaceQualityEvaluator(ABC):
         """Configured quality thresholds and weights."""
         pass
 
+    def set_thresholds(self, thresholds: QualityThresholds) -> None:
+        """Swap the thresholds at runtime (CAM-022: node runtime settings).
+
+        The new object replaces the old one in a single assignment, so a frame
+        being evaluated concurrently sees either the old or the new set.
+        """
+        self._thresholds = thresholds
+
     @abstractmethod
     def evaluate(
         self,

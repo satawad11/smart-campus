@@ -117,6 +117,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-019 Build camera/node health UI
 [x] CAM-020 Benchmark 1/2/4/8-camera load
 [x] CAM-021 Add camera/AI-node acceptance tests
+[x] CAM-022 Tunable recognition quality gate (owner request 2026-11-22): COM-03 runtime settings gain bounded
+    quality_* keys (max yaw/pitch/roll, min pose/blur/face-size/quality score, luminance range); the node rebuilds
+    its gate per revision (missing key = default, so rollback restores it). Liveness/PAD, FACE-021 match/review
+    thresholds and enrollment quality are unchanged. Schema response gains an additive `default` per key.
 
 # MODULE 05 — EVENT + POLICY + REALTIME
 
