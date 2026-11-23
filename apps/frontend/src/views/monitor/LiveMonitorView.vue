@@ -8,6 +8,7 @@ import { getEcho, disconnectEcho } from '@/services/echo'
 import { apiErrorText, PLATE_EVENT_LABELS, VEHICLE_STATUS_LABELS } from '@/constants/labels'
 import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
 import GatePassInfo from '@/components/common/GatePassInfo.vue'
+import CameraZoneWall from '@/components/cameras/CameraZoneWall.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -351,6 +352,13 @@ function personMeta(event) {
           <div class="text-xs text-gray-400">วันนี้</div>
         </div>
       </div>
+
+      <!-- EVT-027: every camera of the site, grouped by zone -->
+      <CameraZoneWall
+        v-if="canViewCameras && selectedSiteUuid"
+        :cameras="camerasForSelectedSite"
+        :can-view-live="canViewLive"
+      />
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Selected camera preview -->
