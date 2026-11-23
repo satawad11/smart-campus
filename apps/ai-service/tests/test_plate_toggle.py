@@ -36,6 +36,7 @@ def test_update_config_switches_plate_recognition() -> None:
     runner = _runner_with({"plate_recognition_enabled": False, "roi": None})
     runner.roi = None
     runner.camera_code = "C1"
+    runner.name = "Gate 1"
 
     runner.update_config({"plate_recognition_enabled": True, "roi": None})
     assert runner.plate_recognition_enabled is True
