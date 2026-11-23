@@ -313,6 +313,121 @@ class TestNodeOrchestrator:
         finally:
             orchestrator.stop(timeout=1.0)
 
+    def test_recognition_flag_disables_matching_and_event_delivery(self, mock_camera_config):
+        disabled_config = dict(mock_camera_config)
+        disabled_config["face_recognition_enabled"] = False
+        fake_delivery = FakeDeliveryClient()
+        orchestrator = NodeOrchestrator(
+            node_uuid="node-uuid-test",
+            ai_mode="mock",
+            event_buffer_path=":memory:",
+            node_client=FakeNodeClient(cameras=[disabled_config]),
+            delivery_client=fake_delivery,
+            backend_client=FakeRecognitionClient(),
+            health_client=FakeHealthClient(),
+        )
+
+        try:
+            orchestrator.start()
+            assert orchestrator.active_camera_count == 1
+            runner = orchestrator._cameras[disabled_config["camera_uuid"]]
+            assert runner.recognition_enabled is False
+            time.sleep(0.2)
+            assert fake_delivery.delivered_events == []
+        finally:
+            orchestrator.stop(timeout=1.0)
+
+    def test_config_sync_restarts_pipeline_after_stream_credentials_change(
+        self, mock_camera_config
+    ):
+        fake_node_client = FakeNodeClient(cameras=[mock_camera_config])
+        orchestrator = NodeOrchestrator(
+            node_uuid="node-uuid-test",
+            ai_mode="mock",
+            event_buffer_path=":memory:",
+            node_client=fake_node_client,
+            delivery_client=FakeDeliveryClient(),
+            backend_client=FakeRecognitionClient(),
+            health_client=FakeHealthClient(),
+        )
+
+        try:
+            orchestrator.start()
+            old_runner = orchestrator._cameras[mock_camera_config["camera_uuid"]]
+
+            changed = dict(mock_camera_config)
+            changed["username"] = "camera-user"
+            changed["password"] = "new-secret"
+            fake_node_client.cameras = [changed]
+
+            assert orchestrator.sync_config() is True
+            new_runner = orchestrator._cameras[mock_camera_config["camera_uuid"]]
+            assert new_runner is not old_runner
+            assert new_runner.stream_url.startswith("mock://camera-user:")
+            assert "new-secret" in new_runner.stream_url
+        finally:
+            orchestrator.stop(timeout=1.0)
+
+    def test_recognition_flag_hot_update_does_not_restart_stream(self, mock_camera_config):
+        fake_node_client = FakeNodeClient(cameras=[mock_camera_config])
+        orchestrator = NodeOrchestrator(
+            node_uuid="node-uuid-test",
+            ai_mode="mock",
+            event_buffer_path=":memory:",
+            node_client=fake_node_client,
+            delivery_client=FakeDeliveryClient(),
+            backend_client=FakeRecognitionClient(),
+            health_client=FakeHealthClient(),
+        )
+
+        try:
+            orchestrator.start()
+            runner = orchestrator._cameras[mock_camera_config["camera_uuid"]]
+            assert runner.recognition_enabled is True
+
+            changed = dict(mock_camera_config)
+            changed["face_recognition_enabled"] = False
+            fake_node_client.cameras = [changed]
+
+            assert orchestrator.sync_config() is True
+            updated = orchestrator._cameras[mock_camera_config["camera_uuid"]]
+            assert updated is runner
+            assert updated.recognition_enabled is False
+        finally:
+            orchestrator.stop(timeout=1.0)
+
+    def test_liveness_flag_change_restarts_worker_with_new_pad_state(self, mock_camera_config):
+        initial = dict(mock_camera_config)
+        initial["liveness_enabled"] = False
+        fake_node_client = FakeNodeClient(cameras=[initial])
+        orchestrator = NodeOrchestrator(
+            node_uuid="node-uuid-test",
+            ai_mode="mock",
+            event_buffer_path=":memory:",
+            node_client=fake_node_client,
+            delivery_client=FakeDeliveryClient(),
+            backend_client=FakeRecognitionClient(),
+            health_client=FakeHealthClient(),
+        )
+
+        try:
+            orchestrator.start()
+            old_runner = orchestrator._cameras[initial["camera_uuid"]]
+            assert old_runner.liveness_enabled is False
+            assert old_runner.worker._liveness_detector is None
+
+            changed = dict(initial)
+            changed["liveness_enabled"] = True
+            fake_node_client.cameras = [changed]
+
+            assert orchestrator.sync_config() is True
+            new_runner = orchestrator._cameras[initial["camera_uuid"]]
+            assert new_runner is not old_runner
+            assert new_runner.liveness_enabled is True
+            assert new_runner.worker._liveness_detector is not None
+        finally:
+            orchestrator.stop(timeout=1.0)
+
     def test_orchestrator_offline_buffering_and_retry(self, mock_camera_config):
         fake_node_client = FakeNodeClient(cameras=[mock_camera_config])
         # Delivery client fails initially
