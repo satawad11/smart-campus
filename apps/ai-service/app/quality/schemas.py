@@ -32,6 +32,9 @@ class QualityThresholds(BaseModel):
     max_pitch_degrees: float = Field(25.0, ge=0.0, le=90.0)
     max_roll_degrees: float = Field(25.0, ge=0.0, le=180.0)
     min_quality_score: float = Field(0.50, ge=0.0, le=1.0)
+    # Mean luminance (0..1) below/above which the frame is too dark/bright (CAM-022)
+    min_luminance: float = Field(0.20, ge=0.0, le=1.0)
+    max_luminance: float = Field(0.85, ge=0.0, le=1.0)
 
     # Weighted contribution to overall quality score
     weight_blur: float = Field(0.35, ge=0.0, le=1.0)

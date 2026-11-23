@@ -148,4 +148,36 @@ class AiNodeConfigRevisionTest extends TestCase
             ->assertJsonPath('data.revisions.0.revision', 1)
             ->assertJsonPath('data.schema.target_fps.max', 30);
     }
+
+    public function test_quality_gate_settings_are_versioned_bounded_and_delivered(): void
+    {
+        // CAM-022: the node's recognition quality gate is tunable like any other runtime setting.
+        $manager = $this->manager();
+
+        foreach ([
+            ['quality_max_pitch_degrees' => 90],
+            ['quality_max_yaw_degrees' => 5],
+            ['quality_min_blur_score' => 0.0],
+            ['quality_min_luminance' => 0.6],
+            ['quality_max_luminance' => '0.9'],
+        ] as $settings) {
+            $this->save($manager, $settings)->assertStatus(422);
+        }
+        $this->assertSame(0, AiNodeConfigRevision::count());
+
+        $this->save($manager, ['quality_max_pitch_degrees' => 45, 'quality_min_blur_score' => 0.2])
+            ->assertStatus(201)
+            ->assertJsonPath('data.settings.quality_max_pitch_degrees', 45);
+
+        $this->getJson("/internal/v1/ai-nodes/{$this->node->uuid}/config", $this->bearer())
+            ->assertOk()
+            ->assertJsonPath('data.runtime.settings.quality_max_pitch_degrees', 45)
+            ->assertJsonPath('data.runtime.settings.quality_min_blur_score', 0.2);
+
+        $this->actingAs($manager, 'web')->getJson("/api/v1/ai-nodes/{$this->node->uuid}/config-revisions")
+            ->assertOk()
+            ->assertJsonPath('data.schema.quality_max_pitch_degrees.max', 60)
+            ->assertJsonPath('data.schema.quality_max_pitch_degrees.default', 25)
+            ->assertJsonPath('data.schema.quality_min_blur_score.default', 0.35);
+    }
 }

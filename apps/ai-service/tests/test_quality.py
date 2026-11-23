@@ -374,3 +374,20 @@ class TestStaticArchitectureAndScopeBoundaries:
         assert "FaceEmbedding" not in exported
         assert "RecognitionClassifier" not in exported
         assert "PolicyEngine" not in exported
+
+
+def test_luminance_limits_come_from_thresholds():
+    """CAM-022: the dark/bright limits are configurable instead of fixed at 0.20/0.85."""
+    import numpy as np
+
+    from app.quality.schemas import QualityRejectionReason, QualityThresholds
+    from app.quality.standard import StandardFaceQualityEvaluator
+
+    dim = np.full((112, 112, 3), 38, dtype=np.uint8)  # mean luminance ~0.15
+    strict = StandardFaceQualityEvaluator().evaluate(dim)
+    assert QualityRejectionReason.IMAGE_TOO_DARK in strict.rejection_reasons
+
+    evaluator = StandardFaceQualityEvaluator()
+    evaluator.set_thresholds(QualityThresholds(min_luminance=0.10))
+    relaxed = evaluator.evaluate(dim)
+    assert QualityRejectionReason.IMAGE_TOO_DARK not in relaxed.rejection_reasons

@@ -46,6 +46,7 @@ from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
 from app.orchestration.telemetry import SystemTelemetry
 from app.orchestration.worker import RecognitionWorker, RecognitionWorkerPool
 from app.quality.factory import get_face_quality_evaluator
+from app.quality.schemas import QualityThresholds
 from app.roi.filter import is_detection_in_roi
 from app.roi.schemas import RegionOfInterest, RoiPoint
 from app.sampling.sampler import FrameSampler
@@ -665,6 +666,23 @@ class NodeOrchestrator:
         "command_poll_interval_seconds": ("command_poll_interval", 5, 300),
     }
 
+    # CAM-022: recognition quality gate, same keys/bounds as the backend's
+    # AiNodeRuntimeConfigService::SCHEMA. key => (QualityThresholds field, min, max).
+    # Unlike the intervals these are absolute per revision: a key missing from
+    # the applied revision falls back to the built-in default, so rolling back
+    # to an older revision also restores its quality gate exactly.
+    _QUALITY_SETTINGS = {
+        "quality_max_yaw_degrees": ("max_yaw_degrees", 15, 60),
+        "quality_max_pitch_degrees": ("max_pitch_degrees", 15, 60),
+        "quality_max_roll_degrees": ("max_roll_degrees", 15, 60),
+        "quality_min_pose_score": ("min_pose_score", 0.1, 0.9),
+        "quality_min_blur_score": ("min_blur_score", 0.05, 0.9),
+        "quality_min_face_size_score": ("min_face_size_score", 0.1, 1.0),
+        "quality_min_luminance": ("min_luminance", 0.05, 0.5),
+        "quality_max_luminance": ("max_luminance", 0.6, 0.98),
+        "quality_min_quality_score": ("min_quality_score", 0.2, 0.9),
+    }
+
     def _apply_runtime_settings(self, runtime: Any) -> None:
         """Apply a versioned settings revision. Intervals take effect on the
         next loop iteration; target_fps applies to cameras started after it."""
@@ -676,8 +694,9 @@ class NodeOrchestrator:
             return
         if revision == self.applied_config_revision:
             return
+        quality: dict[str, float] = {}
         for key, value in settings_data.items():
-            spec = self._RUNTIME_SETTINGS.get(key)
+            spec = self._RUNTIME_SETTINGS.get(key) or self._QUALITY_SETTINGS.get(key)
             if spec is None or isinstance(value, bool) or not isinstance(value, int | float):
                 logger.warning("Ignoring unsupported runtime setting %s", key)
                 continue
@@ -685,9 +704,29 @@ class NodeOrchestrator:
             if not low <= value <= high:
                 logger.warning("Ignoring out-of-range runtime setting %s=%s", key, value)
                 continue
-            setattr(self, attr, float(value))
+            if key in self._QUALITY_SETTINGS:
+                quality[attr] = float(value)
+            else:
+                setattr(self, attr, float(value))
+        self._apply_quality_thresholds(quality)
         self.applied_config_revision = revision
         logger.info("Applied runtime settings revision %s", revision)
+
+    def _apply_quality_thresholds(self, overrides: dict[str, float]) -> None:
+        """Rebuild the quality gate from defaults plus this revision's values.
+
+        Workers hold the same evaluator object, so the swap reaches every
+        camera on its next frame. The bounds keep min_luminance (<= 0.5) below
+        max_luminance (>= 0.6); anything the model still rejects keeps the
+        previous thresholds.
+        """
+        try:
+            thresholds = QualityThresholds(**overrides)
+        except ValueError as exc:
+            logger.warning("Ignoring invalid quality thresholds %s: %s", overrides, exc)
+            return
+        self.quality_evaluator.set_thresholds(thresholds)
+        logger.info("Quality gate thresholds: %s", thresholds.model_dump())
 
     def _heartbeat_loop(self) -> None:
         """Sends periodic operational telemetry heartbeat (CAM-003, CAM-014)."""
