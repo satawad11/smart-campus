@@ -106,6 +106,63 @@ class EventHistoryApiTest extends TestCase
         $this->assertSame([$first->uuid, $second->uuid], $uuids);
     }
 
+    public function test_show_exposes_why_the_node_rejected_the_face(): void
+    {
+        $user = $this->userWith(['event.view']);
+        $event = AccessEvent::factory()->create([
+            'event_type' => 'UNKNOWN_PERSON',
+            'face_score' => null,
+            'metadata' => [
+                'classification' => 'UNKNOWN',
+                'rejected_locally' => true,
+                'reasons' => ['BAD_POSE', 'IMAGE_BLUR'],
+                'distance' => null,
+            ],
+        ]);
+
+        $res = $this->actingAs($user, 'web')->getJson("/api/v1/events/{$event->uuid}");
+
+        $res->assertOk()
+            ->assertJsonPath('data.recognition.classification', 'UNKNOWN')
+            ->assertJsonPath('data.recognition.rejected_locally', true)
+            ->assertJsonPath('data.recognition.reasons', ['BAD_POSE', 'IMAGE_BLUR'])
+            // Diagnostic block only — never leaks other metadata.
+            ->assertJsonMissingPath('data.recognition.distance')
+            ->assertJsonMissingPath('data.metadata');
+    }
+
+    public function test_recognition_summary_is_empty_for_events_without_metadata(): void
+    {
+        $user = $this->userWith(['event.view']);
+        $event = AccessEvent::factory()->create(['metadata' => null]);
+
+        $this->actingAs($user, 'web')->getJson("/api/v1/events/{$event->uuid}")
+            ->assertOk()
+            ->assertJsonPath('data.recognition.classification', null)
+            ->assertJsonPath('data.recognition.rejected_locally', null)
+            ->assertJsonPath('data.recognition.reasons', []);
+    }
+
+    public function test_node_supplied_reasons_are_bounded_before_reaching_the_browser(): void
+    {
+        $user = $this->userWith(['event.view']);
+        $event = AccessEvent::factory()->create([
+            'metadata' => [
+                'classification' => 'UNKNOWN',
+                'rejected_locally' => 'yes', // not a boolean: dropped
+                'reasons' => array_merge([str_repeat('X', 500), ['nested'], 42], array_fill(0, 20, 'BAD_POSE')),
+            ],
+        ]);
+
+        $res = $this->actingAs($user, 'web')->getJson("/api/v1/events/{$event->uuid}");
+
+        $res->assertOk()->assertJsonPath('data.recognition.rejected_locally', null);
+        $reasons = $res->json('data.recognition.reasons');
+        $this->assertCount(10, $reasons);
+        $this->assertSame(120, mb_strlen($reasons[0]));
+        $this->assertContainsOnly('string', $reasons);
+    }
+
     public function test_filters_by_person_uuid(): void
     {
         $user = $this->userWith(['event.view']);

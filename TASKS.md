@@ -150,6 +150,9 @@ Only mark `[x]` when the relevant tests pass.
     in history/review. Frontend regression test covers the read endpoint and local unread state.
 [R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
     currently sent or stored on the recognition event path.
+[x] EVT-026 Recognition reasons on event detail (owner request 2026-11-21): GET /events/{uuid} gains an additive
+    `recognition` block (classification, rejected_locally, bounded reasons — no identity/score/vector); the page
+    explains in Thai when the AI node rejected the face before matching (BAD_POSE, IMAGE_BLUR, …).
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 
