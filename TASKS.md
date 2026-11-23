@@ -150,6 +150,9 @@ Only mark `[x]` when the relevant tests pass.
     in history/review. Frontend regression test covers the read endpoint and local unread state.
 [R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
     currently sent or stored on the recognition event path.
+[x] EVT-027 Live monitor camera wall (owner request 2026-11-23): every camera of the selected site grouped by zone
+    with zone tabs; tiles reuse the audited snapshot view (camera.live, 5 s refresh, no overlap, paused when hidden,
+    auto-stop; "ดูภาพสดทั้งหมด" restarts all). Continuous video would need a streaming server outside the locked stack.
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 
