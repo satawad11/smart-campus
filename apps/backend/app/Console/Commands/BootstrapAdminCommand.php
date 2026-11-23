@@ -10,6 +10,7 @@ use App\Services\Audit\AuditService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Symfony\Component\Console\Formatter\OutputFormatter;
 
 /**
  * Create the first SUPER_ADMIN on a fresh installation (V1 audit A-01).
@@ -85,7 +86,11 @@ class BootstrapAdminCommand extends Command
 
         $this->info("SUPER_ADMIN {$user->username} created (uuid {$user->uuid}).");
         $this->warn('One-time password (shown once, change at first login, then enable MFA):');
-        $this->line($password);
+        // Escape before printing: the console formatter treats "\<", "\>" and
+        // "<...>" as markup, so a raw Str::password() value containing those
+        // sequences (about 0.6% of them) would be printed altered and the
+        // operator would copy a password that does not match the stored hash.
+        $this->line(OutputFormatter::escape($password));
 
         return self::SUCCESS;
     }

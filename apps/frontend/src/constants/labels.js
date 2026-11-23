@@ -140,6 +140,38 @@ export function apiErrorText(err, fallback) {
   return fallback
 }
 
+/**
+ * EVT-026: Thai text for recognition reasons recorded on an access event.
+ * The first group comes from the AI node's quality gate (the face was
+ * rejected before it was ever compared); the rest from matching/liveness.
+ */
+export const RECOGNITION_REASON_LABELS = {
+  BAD_POSE: 'มุมใบหน้าไม่ตรง (หันข้าง ก้ม หรือเงยมากเกินไป)',
+  IMAGE_BLUR: 'ภาพเบลอ',
+  IMAGE_TOO_DARK: 'ภาพมืดเกินไป',
+  IMAGE_TOO_BRIGHT: 'ภาพสว่างเกินไป',
+  FACE_TOO_SMALL: 'ใบหน้าเล็กเกินไปในภาพ',
+  LOW_RESOLUTION: 'ความละเอียดภาพต่ำเกินไป',
+  LOW_QUALITY: 'คุณภาพภาพไม่ผ่านเกณฑ์',
+  INVALID_IMAGE: 'ภาพไม่ถูกต้อง',
+  LIVENESS_FAILED: 'ไม่ผ่านการตรวจใบหน้าจริง',
+  PRESENTATION_ATTACK_SUSPECTED: 'สงสัยว่าเป็นภาพถ่ายหรือหน้าจอ',
+  NO_CANDIDATES_FOUND: 'ไม่มีใบหน้าที่ลงทะเบียนให้เปรียบเทียบ',
+  NO_CANDIDATE_ABOVE_THRESHOLD: 'เปรียบเทียบแล้ว ไม่มีผู้ใดคล้ายถึงเกณฑ์',
+  SIMILARITY_IN_REVIEW_BAND: 'ความคล้ายอยู่ในช่วงที่ต้องให้เจ้าหน้าที่ตรวจสอบ',
+  AMBIGUOUS_CANDIDATES: 'มีผู้ที่คล้ายใกล้เคียงกันมากกว่าหนึ่งคน',
+  HIGH_SIMILARITY_MATCH: 'ความคล้ายถึงเกณฑ์ยืนยัน',
+  SERVER_MATCH_THRESHOLD_NOT_MET: 'เซิร์ฟเวอร์ตรวจซ้ำแล้ว ความคล้ายไม่ถึงเกณฑ์ยืนยัน',
+}
+
+/** Known codes get Thai text; anything else (e.g. BACKEND_UNAVAILABLE: …) is shown as sent. */
+export function recognitionReasonLabel(code) {
+  if (RECOGNITION_REASON_LABELS[code]) return RECOGNITION_REASON_LABELS[code]
+  const prefix = typeof code === 'string' ? code.split(':')[0] : ''
+  if (prefix === 'BACKEND_UNAVAILABLE') return 'ติดต่อเซิร์ฟเวอร์ไม่ได้ขณะเปรียบเทียบ'
+  return code
+}
+
 export function onOff(value) {
   return value ? 'เปิด' : 'ปิด'
 }

@@ -3,7 +3,7 @@
 import pytest
 
 from app.core.config import settings
-from app.health_check import check_backend_transport
+from app.health_check import check_backend_transport, check_node_identity
 
 
 @pytest.mark.parametrize(
@@ -24,3 +24,16 @@ def test_backend_transport(monkeypatch, url, allow_insecure, expected):
     monkeypatch.setattr(settings, "ai_node_allow_insecure_backend", allow_insecure)
 
     assert check_backend_transport().status == expected
+
+
+def test_default_zero_node_uuid_is_not_a_valid_identity(monkeypatch) -> None:
+    monkeypatch.setattr(
+        settings,
+        "ai_node_uuid",
+        "00000000-0000-0000-0000-000000000000",
+    )
+
+    result = check_node_identity()
+
+    assert result.status == "FAIL"
+    assert "placeholder" in result.message

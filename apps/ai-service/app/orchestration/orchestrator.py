@@ -101,6 +101,12 @@ class CameraPipelineRunner:
         self.ai_node_uuid = ai_node_uuid
         self.target_fps = target_fps
         self._delivery_service = delivery_service
+        # Older node-config payloads omitted these flags and historically ran
+        # both stages. Preserve that upgrade behaviour while honouring an
+        # explicit false from the current camera-management contract.
+        self.recognition_enabled = camera_config.get("face_recognition_enabled", True) is not False
+        self.liveness_enabled = camera_config.get("liveness_enabled", True) is not False
+        self._stream_signature = self._connection_signature(camera_config)
 
         # ROI setup
         self.roi: RegionOfInterest | None = None
@@ -139,7 +145,7 @@ class CameraPipelineRunner:
             backend_client=backend_client,
             model_code=model_code,
             model_version=model_version,
-            liveness_detector=liveness_detector,
+            liveness_detector=liveness_detector if self.liveness_enabled else None,
             cache=self.cache,
             liveness_mode=settings.liveness_mode,
             liveness_min_face_px=settings.liveness_min_face_px,
@@ -167,9 +173,27 @@ class CameraPipelineRunner:
         self.roi = None
 
     def update_config(self, new_config: dict[str, Any]) -> None:
-        """Dynamically update ROI or flags without recreating the stream."""
+        """Apply fields that are safe to change without recreating the stream."""
         self.config = new_config
+        self.camera_code = new_config.get("camera_code", self.camera_code)
+        self.name = new_config.get("name", self.name)
+        self.recognition_enabled = new_config.get("face_recognition_enabled", True) is not False
         self._update_roi(new_config.get("roi"))
+
+    @staticmethod
+    def _connection_signature(camera_config: dict[str, Any]) -> tuple[Any, ...]:
+        """Fields whose changes require a fresh VideoSource/worker pipeline."""
+        return (
+            camera_config.get("rtsp_url") or "",
+            camera_config.get("username"),
+            camera_config.get("password"),
+            camera_config.get("stream_protocol"),
+            camera_config.get("liveness_enabled", True) is not False,
+        )
+
+    def requires_restart(self, new_config: dict[str, Any]) -> bool:
+        """Return true when hot-update would leave stale stream or PAD state."""
+        return self._connection_signature(new_config) != self._stream_signature
 
     @property
     def reconnect_count(self) -> int:
@@ -248,7 +272,7 @@ class CameraPipelineRunner:
                 tracks = self.tracker.update(detections)
 
                 # Match tracks to detections and submit eligible ones for recognition
-                if tracks and detections:
+                if self.recognition_enabled and tracks and detections:
                     # Submit tracks that are not cached
                     for track in tracks:
                         matched_det = detection_for_track(track, detections)
@@ -599,24 +623,22 @@ class NodeOrchestrator:
                 if is_active:
                     active_uuids.add(cam_uuid)
                     if cam_uuid in self._cameras:
-                        # Existing camera: dynamically update ROI and config
-                        self._cameras[cam_uuid].update_config(cam_conf)
+                        runner = self._cameras[cam_uuid]
+                        if runner.requires_restart(cam_conf):
+                            logger.info(
+                                "Restarting camera pipeline %s after stream or liveness change",
+                                runner.camera_code,
+                            )
+                            runner.stop()
+                            runner = self._create_camera_runner(cam_conf)
+                            runner.start()
+                            self._cameras[cam_uuid] = runner
+                        else:
+                            # ROI, name and recognition enablement are safe hot updates.
+                            runner.update_config(cam_conf)
                     else:
                         # New camera: spawn pipeline runner
-                        runner = CameraPipelineRunner(
-                            camera_config=cam_conf,
-                            ai_node_uuid=self.node_uuid,
-                            detector=self.detector,
-                            aligner=self.aligner,
-                            quality_evaluator=self.quality_evaluator,
-                            embedder=self.embedder,
-                            liveness_detector=self.liveness_detector,
-                            backend_client=self.backend_client,
-                            delivery_service=self.delivery_service,
-                            model_code=self.model_code,
-                            model_version=self.model_version,
-                            target_fps=self.target_fps,
-                        )
+                        runner = self._create_camera_runner(cam_conf)
                         runner.start()
                         self._cameras[cam_uuid] = runner
                 else:
@@ -637,6 +659,22 @@ class NodeOrchestrator:
         self._last_sync_error = None
         return True
 
+    def _create_camera_runner(self, camera_config: dict[str, Any]) -> CameraPipelineRunner:
+        return CameraPipelineRunner(
+            camera_config=camera_config,
+            ai_node_uuid=self.node_uuid,
+            detector=self.detector,
+            aligner=self.aligner,
+            quality_evaluator=self.quality_evaluator,
+            embedder=self.embedder,
+            liveness_detector=self.liveness_detector,
+            backend_client=self.backend_client,
+            delivery_service=self.delivery_service,
+            model_code=self.model_code,
+            model_version=self.model_version,
+            target_fps=self.target_fps,
+        )
+
     # COM-03: runtime settings the backend may change, with the same bounds
     # it validates against (checked again here; out-of-range values ignored).
     _RUNTIME_SETTINGS = {
@@ -645,6 +683,23 @@ class NodeOrchestrator:
         "config_sync_interval_seconds": ("config_sync_interval", 10, 600),
         "camera_health_interval_seconds": ("camera_health_interval", 5, 300),
         "command_poll_interval_seconds": ("command_poll_interval", 5, 300),
+    }
+
+    # CAM-022: recognition quality gate, same keys/bounds as the backend's
+    # AiNodeRuntimeConfigService::SCHEMA. key => (QualityThresholds field, min, max).
+    # Unlike the intervals these are absolute per revision: a key missing from
+    # the applied revision falls back to the built-in default, so rolling back
+    # to an older revision also restores its quality gate exactly.
+    _QUALITY_SETTINGS = {
+        "quality_max_yaw_degrees": ("max_yaw_degrees", 15, 60),
+        "quality_max_pitch_degrees": ("max_pitch_degrees", 15, 60),
+        "quality_max_roll_degrees": ("max_roll_degrees", 15, 60),
+        "quality_min_pose_score": ("min_pose_score", 0.1, 0.9),
+        "quality_min_blur_score": ("min_blur_score", 0.05, 0.9),
+        "quality_min_face_size_score": ("min_face_size_score", 0.1, 1.0),
+        "quality_min_luminance": ("min_luminance", 0.05, 0.5),
+        "quality_max_luminance": ("max_luminance", 0.6, 0.98),
+        "quality_min_quality_score": ("min_quality_score", 0.2, 0.9),
     }
 
     def _apply_runtime_settings(self, runtime: Any) -> None:
@@ -658,18 +713,44 @@ class NodeOrchestrator:
             return
         if revision == self.applied_config_revision:
             return
+        quality: dict[str, float] = {}
         for key, value in settings_data.items():
-            spec = self._RUNTIME_SETTINGS.get(key)
-            if spec is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+            spec = self._RUNTIME_SETTINGS.get(key) or self._QUALITY_SETTINGS.get(key)
+            if spec is None or isinstance(value, bool) or not isinstance(value, int | float):
                 logger.warning("Ignoring unsupported runtime setting %s", key)
                 continue
             attr, low, high = spec
             if not low <= value <= high:
                 logger.warning("Ignoring out-of-range runtime setting %s=%s", key, value)
                 continue
-            setattr(self, attr, float(value))
+            if key in self._QUALITY_SETTINGS:
+                quality[attr] = float(value)
+            else:
+                setattr(self, attr, float(value))
+        self._apply_quality_thresholds(quality)
         self.applied_config_revision = revision
         logger.info("Applied runtime settings revision %s", revision)
+
+    def _apply_quality_thresholds(self, overrides: dict[str, float]) -> None:
+        """Rebuild the quality gate from the CCTV defaults plus this revision's values.
+
+        The base is the node's CCTV gate (cctv_quality_thresholds), not the
+        stricter enrollment defaults, so applying a revision without quality
+        keys never tightens the surveillance gate behind the operator's back.
+        Workers hold the same evaluator object, so the swap reaches every
+        camera on its next frame. The bounds keep min_luminance (<= 0.5) below
+        max_luminance (>= 0.6); anything the model still rejects keeps the
+        previous thresholds.
+        """
+        try:
+            thresholds = QualityThresholds(
+                **{**cctv_quality_thresholds().model_dump(), **overrides}
+            )
+        except ValueError as exc:
+            logger.warning("Ignoring invalid quality thresholds %s: %s", overrides, exc)
+            return
+        self.quality_evaluator.set_thresholds(thresholds)
+        logger.info("Quality gate thresholds: %s", thresholds.model_dump())
 
     def _heartbeat_loop(self) -> None:
         """Sends periodic operational telemetry heartbeat (CAM-003, CAM-014)."""

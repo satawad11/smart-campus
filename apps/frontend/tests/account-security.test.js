@@ -5,6 +5,7 @@ import api from '@/services/api'
 import { authService } from '@/services/auth'
 import { useAuthStore } from '@/stores/auth'
 import AccountSecurityView from '@/views/account/AccountSecurityView.vue'
+import QrcodeVue from 'qrcode.vue'
 
 const RouterLinkStub = { template: '<a><slot /></a>', props: ['to'] }
 
@@ -55,6 +56,13 @@ describe('A-15: MFA enrollment UI (account security)', () => {
 
     await wrapper.get('[data-test="mfa-start"]').trigger('click')
     await flushPromises()
+    expect(wrapper.get('[data-test="mfa-qr-code"]').exists()).toBe(true)
+    expect(wrapper.findComponent(QrcodeVue).props()).toMatchObject({
+      value: 'otpauth://totp/Campus:officer1?secret=JBSWY3DPEHPK3PXP',
+      size: 240,
+      level: 'M',
+      renderAs: 'svg',
+    })
     expect(wrapper.get('[data-test="mfa-secret"]').text()).toBe('JBSW Y3DP EHPK 3PXP')
 
     await wrapper.get('[data-test="mfa-confirm-code"]').setValue('123456')

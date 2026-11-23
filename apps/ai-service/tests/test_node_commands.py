@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
-from app.orchestration.orchestrator import NodeOrchestrator
+from app.orchestration.orchestrator import NodeOrchestrator, cctv_quality_thresholds
 
 
 class CommandNodeClient(AiNodeClient):
@@ -175,3 +175,39 @@ def test_heartbeat_sends_config_revision(monkeypatch):
     HttpAiNodeClient("http://backend:8000", "t").heartbeat(config_revision=5)
 
     assert sent["config_revision"] == 5
+
+
+def test_quality_gate_settings_reach_the_shared_evaluator():
+    """CAM-022: quality_* keys retune the gate every camera worker uses."""
+    settings = {"quality_max_pitch_degrees": 45, "quality_min_blur_score": 0.2, "target_fps": 6}
+    orchestrator = _orchestrator(RuntimeConfigClient({"revision": 5, "settings": settings}), [])
+
+    orchestrator.sync_config()
+
+    t = orchestrator.quality_evaluator.thresholds
+    assert t.max_pitch_degrees == 45.0
+    assert t.min_blur_score == 0.2
+    # untouched keys keep the node's CCTV default (OWNER-DECISIONS-2026-11-23 R3)
+    assert t.max_yaw_degrees == cctv_quality_thresholds().max_yaw_degrees
+    assert orchestrator.target_fps == 6.0
+    assert orchestrator.applied_config_revision == 5
+
+
+def test_quality_gate_is_absolute_per_revision_and_bounded():
+    """A later revision without a key restores its default; out-of-range values are ignored."""
+    client = RuntimeConfigClient({"revision": 1, "settings": {"quality_max_yaw_degrees": 50}})
+    orchestrator = _orchestrator(client, [])
+    orchestrator.sync_config()
+    assert orchestrator.quality_evaluator.thresholds.max_yaw_degrees == 50.0
+
+    client.runtime = {
+        "revision": 2,
+        "settings": {"quality_min_luminance": 0.1, "quality_max_pitch_degrees": 90},
+    }
+    orchestrator.sync_config()
+
+    t = orchestrator.quality_evaluator.thresholds
+    assert t.max_yaw_degrees == cctv_quality_thresholds().max_yaw_degrees
+    assert t.min_luminance == 0.1
+    # 90 is outside 15..60, so the CCTV default stays
+    assert t.max_pitch_degrees == cctv_quality_thresholds().max_pitch_degrees

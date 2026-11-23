@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
-import { personTypeLabel, statusLabel } from '@/constants/labels'
+import { personTypeLabel, statusLabel, recognitionReasonLabel } from '@/constants/labels'
 
 const route = useRoute()
 const router = useRouter()
@@ -165,6 +165,29 @@ onMounted(() => {
               <span class="text-gray-500">คะแนน Liveness:</span> {{ event.liveness_score ?? '-' }}
             </div>
           </div>
+        </div>
+
+        <!-- EVT-026: why recognition produced this result -->
+        <div
+          v-if="event.recognition && (event.recognition.reasons?.length || event.recognition.rejected_locally !== null)"
+          class="bg-surface rounded-xl border border-gray-200 p-6"
+          data-testid="recognition-reasons"
+        >
+          <h2 class="font-semibold text-gray-900 mb-3">ผลการรู้จำใบหน้า</h2>
+          <p
+            v-if="event.recognition.rejected_locally"
+            class="mb-3 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-800"
+            data-testid="rejected-locally-note"
+          >
+            ภาพไม่ผ่านเกณฑ์คุณภาพที่หน่วยประมวลผล จึง<strong>ไม่ได้นำไปเปรียบเทียบ</strong>กับใบหน้าที่ลงทะเบียนไว้
+            (ไม่ใช่การยืนยันว่าเป็นบุคคลภายนอก) — ตรวจมุมกล้อง แสง และความคมชัด
+          </p>
+          <ul v-if="event.recognition.reasons?.length" class="space-y-1 text-sm">
+            <li v-for="(reason, i) in event.recognition.reasons" :key="i" class="flex items-baseline gap-2">
+              <span class="text-gray-900">{{ recognitionReasonLabel(reason) }}</span>
+              <code class="text-xs text-gray-500">{{ reason }}</code>
+            </li>
+          </ul>
         </div>
 
         <!-- Decision timeline (Event Drawer) -->
