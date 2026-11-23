@@ -18,6 +18,10 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class AccessEventResource extends JsonResource
 {
+    private const MAX_REASONS = 10;
+
+    private const MAX_REASON_LENGTH = 120;
+
     /**
      * @return array<string, mixed>
      */
@@ -70,6 +74,11 @@ class AccessEventResource extends JsonResource
             'review_candidate' => ($this->metadata['classification'] ?? null) === 'REVIEW'
                 ? ($this->metadata['review_candidate'] ?? null)
                 : null,
+            // EVT-026: why the perception pipeline produced this result
+            // (e.g. BAD_POSE / IMAGE_BLUR when the node rejected the face
+            // before matching, NO_CANDIDATE_ABOVE_THRESHOLD after matching).
+            // Diagnostic only: no identity, no score, no vector.
+            'recognition' => $this->recognitionSummary(),
             // Current (most recent) decision only — a compact summary for
             // list views. The full append-only history is `decisions`,
             // only present when explicitly eager-loaded (show()).
@@ -95,6 +104,28 @@ class AccessEventResource extends JsonResource
             'ocr_score' => $plate['ocr_score'] ?? null,
             'vehicle_uuid' => $plate['vehicle_uuid'] ?? null,
             'vehicle_status' => $plate['vehicle_status'] ?? null,
+        ];
+    }
+
+    /**
+     * Reasons are node-supplied strings, so they are bounded here before
+     * reaching the browser: strings only, at most MAX_REASONS entries of at
+     * most MAX_REASON_LENGTH characters each.
+     *
+     * @return array{classification: ?string, rejected_locally: ?bool, reasons: list<string>}
+     */
+    private function recognitionSummary(): array
+    {
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+        $reasons = is_array($metadata['reasons'] ?? null) ? $metadata['reasons'] : [];
+
+        return [
+            'classification' => is_string($metadata['classification'] ?? null) ? $metadata['classification'] : null,
+            'rejected_locally' => is_bool($metadata['rejected_locally'] ?? null) ? $metadata['rejected_locally'] : null,
+            'reasons' => array_values(array_map(
+                fn (string $reason) => mb_substr($reason, 0, self::MAX_REASON_LENGTH),
+                array_slice(array_filter($reasons, 'is_string'), 0, self::MAX_REASONS),
+            )),
         ];
     }
 }
