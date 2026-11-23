@@ -157,6 +157,9 @@ Only mark `[x]` when the relevant tests pass.
 [x] EVT-026 Recognition reasons on event detail (owner request 2026-11-21): GET /events/{uuid} gains an additive
     `recognition` block (classification, rejected_locally, bounded reasons — no identity/score/vector); the page
     explains in Thai when the AI node rejected the face before matching (BAD_POSE, IMAGE_BLUR, …).
+[x] EVT-027 Live monitor camera wall (owner request 2026-11-23): every camera of the selected site grouped by zone
+    with zone tabs; tiles reuse the audited snapshot view (camera.live, 5 s refresh, no overlap, paused when hidden,
+    auto-stop; "ดูภาพสดทั้งหมด" restarts all). Continuous video would need a streaming server outside the locked stack.
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 
