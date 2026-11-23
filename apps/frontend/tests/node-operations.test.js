@@ -127,4 +127,30 @@ describe('COM-03: node operations panel', () => {
     expect(rollback).toHaveBeenCalledWith('node-1', 1)
     expect(wrapper.get('[role="alert"]').text()).toContain('Revision not found')
   })
+  it('CAM-022: quality gate fields accept decimals and show the default', async () => {
+    aiNodesService.listConfigRevisions.mockResolvedValue({
+      data: {
+        applied_revision: null,
+        schema: {
+          target_fps: { min: 1, max: 30, default: 5 },
+          quality_min_blur_score: { min: 0.05, max: 0.9, default: 0.35 },
+        },
+        revisions: [],
+      },
+    })
+    const save = vi.spyOn(aiNodesService, 'saveConfigRevision').mockResolvedValue({ data: {} })
+    const wrapper = mountAs(['ai_node.view', 'ai_node.manage'])
+    await flushPromises()
+
+    const input = wrapper.get('[data-test="setting-quality_min_blur_score"]')
+    expect(input.attributes('step')).toBe('any')
+    expect(input.attributes('placeholder')).toContain('0.35')
+    expect(wrapper.text()).toContain('IMAGE_BLUR')
+
+    await input.setValue('0.2')
+    await wrapper.get('[data-test="save-settings"]').trigger('submit')
+    await flushPromises()
+
+    expect(save).toHaveBeenCalledWith('node-1', { quality_min_blur_score: 0.2 }, null)
+  })
 })

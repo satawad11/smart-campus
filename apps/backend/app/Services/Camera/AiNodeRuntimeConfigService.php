@@ -21,13 +21,32 @@ use Illuminate\Support\Facades\DB;
  */
 class AiNodeRuntimeConfigService
 {
-    /** key => [min, max] (numbers). */
+    /**
+     * key => [min, max, default] (numbers). The default is what the node uses
+     * when a revision leaves the key out.
+     *
+     * CAM-022: the quality_* keys tune the AI node's recognition quality gate
+     * (the check that rejects a face before matching: BAD_POSE, IMAGE_BLUR,
+     * IMAGE_TOO_DARK, …). Same keys and bounds as the node's
+     * _QUALITY_SETTINGS. The bounds keep the gate on; they never touch
+     * liveness/PAD, the match/review thresholds (FACE-021, config/face.php)
+     * or enrollment quality.
+     */
     public const SCHEMA = [
-        'target_fps' => [1, 30],
-        'heartbeat_interval_seconds' => [5, 300],
-        'config_sync_interval_seconds' => [10, 600],
-        'camera_health_interval_seconds' => [5, 300],
-        'command_poll_interval_seconds' => [5, 300],
+        'target_fps' => [1, 30, 5],
+        'heartbeat_interval_seconds' => [5, 300, 15],
+        'config_sync_interval_seconds' => [10, 600, 30],
+        'camera_health_interval_seconds' => [5, 300, 15],
+        'command_poll_interval_seconds' => [5, 300, 10],
+        'quality_max_yaw_degrees' => [15, 60, 30],
+        'quality_max_pitch_degrees' => [15, 60, 25],
+        'quality_max_roll_degrees' => [15, 60, 25],
+        'quality_min_pose_score' => [0.1, 0.9, 0.4],
+        'quality_min_blur_score' => [0.05, 0.9, 0.35],
+        'quality_min_face_size_score' => [0.1, 1.0, 0.3],
+        'quality_min_luminance' => [0.05, 0.5, 0.2],
+        'quality_max_luminance' => [0.6, 0.98, 0.85],
+        'quality_min_quality_score' => [0.2, 0.9, 0.5],
     ];
 
     public function __construct(

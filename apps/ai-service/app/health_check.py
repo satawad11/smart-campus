@@ -56,6 +56,10 @@ def check_node_identity() -> CheckResult:
 
     try:
         val = uuid.UUID(uuid_val)
+        if val.int == 0:
+            return CheckResult(
+                "node_identity", "FAIL", "AI_NODE_UUID contains the default placeholder"
+            )
         if str(val) != uuid_val.lower():
             return CheckResult(
                 "node_identity", "WARNING", f"AI_NODE_UUID is valid but non-canonical: {uuid_val}"

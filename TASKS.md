@@ -117,6 +117,10 @@ Only mark `[x]` when the relevant tests pass.
 [x] CAM-019 Build camera/node health UI
 [x] CAM-020 Benchmark 1/2/4/8-camera load
 [x] CAM-021 Add camera/AI-node acceptance tests
+[x] CAM-022 Tunable recognition quality gate (owner request 2026-11-22): COM-03 runtime settings gain bounded
+    quality_* keys (max yaw/pitch/roll, min pose/blur/face-size/quality score, luminance range); the node rebuilds
+    its gate per revision (missing key = default, so rollback restores it). Liveness/PAD, FACE-021 match/review
+    thresholds and enrollment quality are unchanged. Schema response gains an additive `default` per key.
 
 # MODULE 05 — EVENT + POLICY + REALTIME
 
@@ -155,6 +159,9 @@ Only mark `[x]` when the relevant tests pass.
     event.view + (camera.live or face.view), is scope-checked (404) and audited per view; retention purges
     the object. Alert offers ดูภาพ / ลงทะเบียนใบหน้า (opens the normal enrollment page, image as reference
     only) / ละเว้น (marks the notification read only). DENY of a recognised person carries no crop from the node.
+[x] EVT-026 Recognition reasons on event detail (owner request 2026-11-21): GET /events/{uuid} gains an additive
+    `recognition` block (classification, rejected_locally, bounded reasons — no identity/score/vector); the page
+    explains in Thai when the AI node rejected the face before matching (BAD_POSE, IMAGE_BLUR, …).
 
 # UI COMPLETENESS (owner request 2026-11-17: edit everything editable from the web)
 
