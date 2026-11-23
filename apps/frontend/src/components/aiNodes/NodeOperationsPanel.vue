@@ -23,6 +23,16 @@ const SETTING_LABELS = {
   config_sync_interval_seconds: 'ซิงก์การตั้งค่า (วินาที)',
   camera_health_interval_seconds: 'รายงานสุขภาพกล้อง (วินาที)',
   command_poll_interval_seconds: 'ตรวจคำสั่ง (วินาที)',
+  // CAM-022: recognition quality gate (rejects a face before matching)
+  quality_max_yaw_degrees: 'มุมหันข้างสูงสุด (องศา) — BAD_POSE',
+  quality_max_pitch_degrees: 'มุมก้ม/เงยสูงสุด (องศา) — BAD_POSE',
+  quality_max_roll_degrees: 'มุมเอียงศีรษะสูงสุด (องศา) — BAD_POSE',
+  quality_min_pose_score: 'คะแนนมุมหน้าต่ำสุด — BAD_POSE',
+  quality_min_blur_score: 'ความคมชัดต่ำสุด — IMAGE_BLUR',
+  quality_min_face_size_score: 'ขนาดใบหน้าต่ำสุด (1.0 = 100 px) — FACE_TOO_SMALL',
+  quality_min_luminance: 'ความสว่างต่ำสุด — IMAGE_TOO_DARK',
+  quality_max_luminance: 'ความสว่างสูงสุด — IMAGE_TOO_BRIGHT',
+  quality_min_quality_score: 'คะแนนคุณภาพรวมต่ำสุด — LOW_QUALITY',
 }
 
 const commands = ref([])
@@ -181,6 +191,11 @@ onMounted(load)
         revision ล่าสุด: {{ latest?.revision ?? '-' }} · AI Node ใช้งานอยู่:
         {{ appliedRevision ?? '-' }}
       </p>
+      <p class="mt-1 text-xs text-gray-500" data-test="quality-hint">
+        ช่องที่เว้นว่างใช้ค่าเริ่มต้น · ค่า quality_* คือเกณฑ์คุณภาพภาพที่ AI Node
+        ใช้คัดใบหน้าก่อนนำไปเปรียบเทียบ (เช่น กล้องติดสูงมักติด BAD_POSE ให้เพิ่มมุมก้ม/เงย)
+        ไม่มีผลกับการตรวจใบหน้าจริงและเกณฑ์ยืนยันตัวตน
+      </p>
       <form
         v-if="canManage"
         class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2"
@@ -192,8 +207,10 @@ onMounted(load)
             v-model="draft[key]"
             :data-test="`setting-${key}`"
             type="number"
+            step="any"
             :min="bounds.min"
             :max="bounds.max"
+            :placeholder="bounds.default != null ? `ค่าเริ่มต้น ${bounds.default}` : ''"
             class="mt-1 block w-full rounded-md border border-gray-300 px-2 py-1"
           />
         </label>

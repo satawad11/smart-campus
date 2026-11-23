@@ -109,9 +109,9 @@ class StandardFaceQualityEvaluator(FaceQualityEvaluator):
             mean_luminance = float(np.mean(gray)) / 255.0  # 0.0 .. 1.0
             # Normalized exposure score: 1.0 at ideal 0.50, decreases as it approaches 0 or 1
             brightness_score = float(np.clip(1.0 - 2.0 * abs(mean_luminance - 0.50), 0.0, 1.0))
-            if mean_luminance < 0.20:
+            if mean_luminance < self.thresholds.min_luminance:
                 rejection_reasons.append(QualityRejectionReason.IMAGE_TOO_DARK)
-            elif mean_luminance > 0.85:
+            elif mean_luminance > self.thresholds.max_luminance:
                 rejection_reasons.append(QualityRejectionReason.IMAGE_TOO_BRIGHT)
 
             # 3. Face Size

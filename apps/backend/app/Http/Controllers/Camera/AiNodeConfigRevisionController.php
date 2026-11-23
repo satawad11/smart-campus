@@ -34,7 +34,7 @@ class AiNodeConfigRevisionController extends Controller
         return $this->ok([
             'applied_revision' => $aiNode->applied_config_revision,
             'schema' => collect(AiNodeRuntimeConfigService::SCHEMA)
-                ->map(fn (array $b) => ['min' => $b[0], 'max' => $b[1]]),
+                ->map(fn (array $b) => ['min' => $b[0], 'max' => $b[1], 'default' => $b[2]]),
             'revisions' => $revisions->map(fn (AiNodeConfigRevision $r) => $this->present($r))->values(),
         ]);
     }
