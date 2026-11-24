@@ -1,5 +1,8 @@
 # Owner Decision — 2026-11-16: lab recognition thresholds for SFace
 
+> **Superseded 2026-11-23:** these values are now the defaults everywhere
+> (`OWNER-DECISIONS-2026-11-23-CCTV-RECOGNITION.md`, R1). No `.env` lines are needed any more.
+
 **How this was made:** in chat on 2026-11-16 the owner saw the lab's Live Monitor recognise almost nobody
 (ALLOW 1, REVIEW 7, UNKNOWN 13 in one day). The agent explained that the FACE-021 thresholds (match 0.80, review 0.60)
 were kept deliberately strict by ACR-AI-01 §5 and proposed lab values. The owner answered **"Approve for lab"**.

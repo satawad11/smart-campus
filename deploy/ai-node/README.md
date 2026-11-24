@@ -153,10 +153,33 @@ The models are built into the image under `/app/models` with their licence notic
 (`php artisan face:model-activate yunet-sface 2021dec`).
 
 > [!IMPORTANT]
-> Recognition thresholds (FACE-021) are not yet calibrated for SFace: evaluate with consenting
-> volunteers before relying on matches. Training-data provenance of the weights is undocumented
+> Recognition thresholds default to the SFace operating points MATCH 0.45 / REVIEW 0.36
+> (`docs/decisions/OWNER-DECISIONS-2026-11-23-CCTV-RECOGNITION.md`). Fine-tune them on your own
+> cameras with the diagnostic below. Training-data provenance of the weights is undocumented
 > upstream; see `docs/decisions/ACR-AI-01-FACE-MODELS.md` before any use beyond the institution's
-> own pilot. `AI_MODE=mock` remains available for software rehearsal.
+> own pilot. `AI_MODE=mock` is synthetic and never recognises anyone.
+
+### CCTV tuning and on-site check (`app.diagnose_camera`)
+
+The node runs a CCTV-specific gate (`.env.example`, section 2): faces from ~24 px are recognised,
+liveness is `advisory` (reported, a SPOOF still raises `LIVENESS_FAILED`, small faces are not
+scored), a track that is not yet a MATCH is retried every `RECOGNITION_RETRY_SECONDS`, and
+faces too poor to compare are not posted as "unknown person". Frames wider than
+`DETECTOR_MAX_INPUT_WIDTH` (1280) are downscaled for detection only.
+
+To see what the pipeline does with a real camera, without the backend, run on the node:
+
+```bash
+mkdir -p gallery && cp /path/to/reference-photos/*.jpg gallery/   # one photo per person, file name = label
+docker compose run --rm -v "$PWD/gallery:/gallery:ro" -v "$PWD/diag:/diag" ai-node \
+  python -m app.diagnose_camera --source 'rtsp://USER:PASS@CAMERA-IP:554/stream1' \
+  --gallery /gallery --seconds 30 --out /diag
+```
+
+Each face prints its size, quality, liveness and the best gallery similarity (MATCH ≥ 0.45,
+REVIEW ≥ 0.36); `diag/` gets annotated snapshots. No faces at all → check camera angle/zoom
+(faces need ≥ ~24 px); mostly `REJECTED [FACE_TOO_SMALL]` → use the main stream or zoom in;
+mostly `UNKNOWN` with similarities 0.30–0.40 → enrol a clearer, more frontal photo.
 
 ---
 

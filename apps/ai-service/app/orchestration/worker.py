@@ -10,6 +10,7 @@ ever produced.
 import queue
 import threading
 import uuid
+from collections import OrderedDict
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -51,6 +52,9 @@ class RecognitionWorker:
         liveness_detector: FaceLivenessDetector | None = None,
         cache: RecognitionCache | None = None,
         id_factory: Callable[[], str] | None = None,
+        liveness_mode: str = "enforce",
+        liveness_min_face_px: float = 0.0,
+        retry_ttl_seconds: float | None = None,
     ):
         self._camera_uuid = camera_uuid
         self._ai_node_uuid = ai_node_uuid
@@ -63,6 +67,18 @@ class RecognitionWorker:
         self._liveness_detector = liveness_detector
         self._id_factory = id_factory or (lambda: str(uuid.uuid4()))
         self._cache = cache if cache is not None else RecognitionCache()
+        mode = (liveness_mode or "enforce").strip().lower()
+        if mode not in LIVENESS_MODES:
+            raise ValueError(f"liveness_mode must be one of {sorted(LIVENESS_MODES)}, got {mode!r}")
+        self._liveness_mode = mode
+        self._liveness_min_face_px = float(liveness_min_face_px)
+        if retry_ttl_seconds is not None and retry_ttl_seconds <= 0:
+            raise ValueError("retry_ttl_seconds must be positive")
+        self._retry_ttl_seconds = retry_ttl_seconds
+        # Best result already delivered per track (bounded), so a retry is only sent
+        # when it improves on it (UNKNOWN -> REVIEW -> MATCH, or a new candidate).
+        self._delivered: OrderedDict[str, tuple[int, str | None]] = OrderedDict()
+        self._delivered_lock = threading.Lock()
 
     @property
     def cache(self) -> RecognitionCache:
@@ -106,17 +122,26 @@ class RecognitionWorker:
                 rejected_locally=True,
                 reasons=[str(r) for r in quality.rejection_reasons] or ["LOW_QUALITY"],
             )
-            self._cache.put(self._camera_uuid, track, result, self._model_code, self._model_version)
-            return result
+            # A face too small/blurred/turned to compare carries no identity evidence:
+            # posting it as UNKNOWN_PERSON flooded the monitor with false "unknown" alerts.
+            # The track is retried on later frames instead.
+            return self._finish(track, result, deliverable=False)
 
         liveness_status = None
-        if self._liveness_detector is not None:
+        if self._should_run_liveness(detection):
             box = detection.bbox
-            liveness = self._liveness_detector.evaluate(
-                sampled_frame.frame.data, (box.x1, box.y1, box.x2, box.y2)
-            )
-            liveness_status = liveness.status
-            if not liveness.is_live:
+            try:
+                liveness = self._liveness_detector.evaluate(
+                    sampled_frame.frame.data, (box.x1, box.y1, box.x2, box.y2)
+                )
+            except Exception:
+                if self._liveness_mode == "enforce":
+                    raise
+                liveness = None  # advisory: a PAD failure never hides the identity
+            liveness_status = liveness.status if liveness is not None else None
+            # enforce: only REAL proceeds. advisory: recognition continues and the status is
+            # reported as-is (a SPOOF still becomes a LIVENESS_FAILED event in the backend).
+            if self._liveness_mode == "enforce" and liveness is not None and not liveness.is_live:
                 result = RecognitionWorkerResult(
                     event_uuid=event_uuid,
                     camera_uuid=self._camera_uuid,
@@ -134,10 +159,7 @@ class RecognitionWorker:
                     rejected_locally=True,
                     reasons=liveness.rejection_reasons or ["LIVENESS_FAILED"],
                 )
-                self._cache.put(
-                    self._camera_uuid, track, result, self._model_code, self._model_version
-                )
-                return result
+                return self._finish(track, result)
 
         embedding = self._embedder.generate(aligned)
 
@@ -185,8 +207,58 @@ class RecognitionWorker:
             rejected_locally=False,
             reasons=backend_result.reasons,
         )
-        self._cache.put(self._camera_uuid, track, result, self._model_code, self._model_version)
-        return result
+        return self._finish(track, result)
+
+    def _should_run_liveness(self, detection: FaceDetection) -> bool:
+        if self._liveness_detector is None or self._liveness_mode == "off":
+            return False
+        if self._liveness_mode == "advisory":
+            size = max(detection.bbox.width, detection.bbox.height)
+            return size >= self._liveness_min_face_px
+        return True
+
+    def _finish(
+        self, track: Track, result: RecognitionWorkerResult, deliverable: bool = True
+    ) -> RecognitionWorkerResult:
+        """Cache the attempt and decide whether it is worth delivering.
+
+        A MATCH is cached for the full TTL. Anything else is cached only for the retry
+        interval (when configured), so the same track is tried again on a later, often
+        better, frame instead of being pinned to UNKNOWN. A retry is delivered only when
+        it improves on what this track already delivered.
+        """
+        ttl = None if result.classification == "MATCH" else self._retry_ttl_seconds
+        self._cache.put(
+            self._camera_uuid, track, result, self._model_code, self._model_version, ttl_seconds=ttl
+        )
+        if not deliverable:
+            return replace(result, suppress_delivery=True)
+        rank = _result_rank(result)
+        candidate = result.candidate_person_uuid
+        with self._delivered_lock:
+            previous = self._delivered.get(track.track_id)
+            improved = (
+                previous is None
+                or rank > previous[0]
+                or (rank == previous[0] and rank >= 2 and candidate != previous[1])
+            )
+            if improved:
+                self._delivered[track.track_id] = (rank, candidate)
+                self._delivered.move_to_end(track.track_id)
+                while len(self._delivered) > _MAX_DELIVERED_TRACKS:
+                    self._delivered.popitem(last=False)
+        return result if improved else replace(result, suppress_delivery=True)
+
+
+_MAX_DELIVERED_TRACKS = 2000
+LIVENESS_MODES = frozenset({"enforce", "advisory", "off"})
+
+
+def _result_rank(result: RecognitionWorkerResult) -> int:
+    """Order of usefulness of an attempt: rejected < UNKNOWN < REVIEW < MATCH."""
+    if result.rejected_locally:
+        return 0
+    return {"UNKNOWN": 1, "REVIEW": 2, "MATCH": 3}.get(result.classification, 0)
 
 
 class RecognitionWorkerPool:

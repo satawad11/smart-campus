@@ -104,4 +104,31 @@ class AccessEventBroadcastTest extends TestCase
         $this->assertNull($payload['event']['person_uuid']);
         $this->assertNull($payload['event']['person_display_name']);
     }
+
+    public function test_review_event_carries_the_proposed_candidate_but_no_person(): void
+    {
+        $candidate = ['uuid' => 'p-uuid', 'name' => 'Rose Leslie', 'person_type' => 'STUDENT'];
+        $event = AccessEvent::factory()->create([
+            'person_id' => null,
+            'metadata' => ['classification' => 'REVIEW', 'review_candidate' => $candidate],
+        ]);
+        $decision = AccessDecision::factory()->for($event, 'event')->create();
+
+        $payload = (new AccessEventBroadcast($event, $decision))->broadcastWith();
+
+        $this->assertSame($candidate, $payload['event']['review_candidate']);
+        $this->assertNull($payload['event']['person_uuid']);
+    }
+
+    public function test_non_review_event_never_carries_a_candidate(): void
+    {
+        $event = AccessEvent::factory()->create([
+            'metadata' => ['classification' => 'UNKNOWN', 'review_candidate' => ['name' => 'X']],
+        ]);
+        $decision = AccessDecision::factory()->for($event, 'event')->create();
+
+        $payload = (new AccessEventBroadcast($event, $decision))->broadcastWith();
+
+        $this->assertNull($payload['event']['review_candidate']);
+    }
 }

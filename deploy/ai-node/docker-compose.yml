@@ -18,7 +18,7 @@ services:
         required: false
 
     environment:
-      AI_MODE: ${AI_MODE:-mock}
+      AI_MODE: ${AI_MODE:-onnx}
       BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://localhost:8000}
       AI_NODE_UUID: ${AI_NODE_UUID:-}
       AI_NODE_TOKEN: ${AI_NODE_TOKEN:-}
