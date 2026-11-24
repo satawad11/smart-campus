@@ -11,7 +11,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * access decision field lives directly on the event (Event != Decision);
  * its current/full decision history is exposed as related data instead,
  * never merged into the event's own fields. No raw embedding, no snapshot
- * bytes.
+ * bytes and no storage key: only `snapshot_available` (EVT-025); the image
+ * itself is read through the audited GET /events/{uuid}/snapshot.
  *
  * @mixin AccessEvent
  */
@@ -65,6 +66,7 @@ class AccessEventResource extends JsonResource
             'liveness_score' => $this->liveness_score,
             'quality_score' => $this->quality_score,
             'track_id' => $this->track_id,
+            'snapshot_available' => $this->snapshot_path !== null,
             // A REVIEW suggestion is evidence for an officer only. It is not
             // event.person and cannot drive an automatic access decision.
             'review_candidate' => ($this->metadata['classification'] ?? null) === 'REVIEW'

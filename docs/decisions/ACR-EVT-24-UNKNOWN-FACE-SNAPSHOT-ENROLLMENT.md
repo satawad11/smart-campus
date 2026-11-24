@@ -1,6 +1,8 @@
 # ARCHITECTURE_CHANGE_REQUEST — Unknown-event image and enrollment action
 
-**Status:** PENDING OWNER APPROVAL
+**Status:** APPROVED 2026-11-20 — approved "as written" by the owner (all four proposals in "Decisions needed";
+alternative C stays rejected). Recorded in `docs/decisions/OWNER-DECISIONS-2026-11-20.md` (item 2, on branch
+`claude/phase4-5-alpr-smart-gate-acr`). Implemented by EVT-025.
 **Raised:** 2026-11-17
 **Related:** EVT-022, EVT-018, FACE-016, CAM-011, SEC-010
 

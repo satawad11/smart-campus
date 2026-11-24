@@ -14,7 +14,7 @@ from app.delivery.buffer import OfflineEventBuffer
 from app.delivery.client import EventDeliveryClient
 from app.delivery.exceptions import EventDeliveryError, EventRejectedError
 from app.delivery.schemas import DeliveryOutcome
-from app.delivery.service import to_event_payload
+from app.delivery.service import to_event_payload, upload_face_crop
 from app.orchestration.schemas import RecognitionWorkerResult
 
 
@@ -42,8 +42,11 @@ class BufferedEventDeliveryService:
             self._buffer.reject(payload, exc.status_code, exc.error_code)
             return DeliveryOutcome(delivered=False, reason="rejected")
         except EventDeliveryError:
+            # EVT-025: only the event JSON is buffered; a face crop is never
+            # written to the node's disk, so a buffered event has no image.
             self._buffer.enqueue(payload)
             return DeliveryOutcome(delivered=False, reason="buffered_offline")
+        upload_face_crop(self._client, result)
         return DeliveryOutcome(delivered=True)
 
     def retry_pending(self, limit: int = 50) -> RetryBatchResult:

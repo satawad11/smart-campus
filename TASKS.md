@@ -152,8 +152,13 @@ Only mark `[x]` when the relevant tests pass.
     private user.{uuid} (polling stays as fallback)
 [x] EVT-024 Alert acknowledgement: “ละเว้นการแจ้งเตือน” marks only the notification read; the durable event stays
     in history/review. Frontend regression test covers the read endpoint and local unread state.
-[R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
-    currently sent or stored on the recognition event path.
+[x] EVT-025 Unknown-event image and quick enrollment from alert (ACR-EVT-24 approved 2026-11-20): the node sends
+    a ≤256 px JPEG face crop for UNKNOWN/REVIEW results after the event is accepted (never cached or buffered);
+    POST /internal/v1/events/{uuid}/snapshot stores it privately (UNKNOWN/REVIEW/DENY only, size/dimension
+    caps, upload window, once); events expose only snapshot_available; GET /events/{uuid}/snapshot needs
+    event.view + (camera.live or face.view), is scope-checked (404) and audited per view; retention purges
+    the object. Alert offers ดูภาพ / ลงทะเบียนใบหน้า (opens the normal enrollment page, image as reference
+    only) / ละเว้น (marks the notification read only). DENY of a recognised person carries no crop from the node.
 [x] EVT-026 Recognition reasons on event detail (owner request 2026-11-21): GET /events/{uuid} gains an additive
     `recognition` block (classification, rejected_locally, bounded reasons — no identity/score/vector); the page
     explains in Thai when the AI node rejected the face before matching (BAD_POSE, IMAGE_BLUR, …).

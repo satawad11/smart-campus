@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 import { useNotificationsStore, notificationLabel } from '@/stores/notifications'
 
 /**
@@ -9,6 +10,13 @@ import { useNotificationsStore, notificationLabel } from '@/stores/notifications
  */
 const store = useNotificationsStore()
 const router = useRouter()
+const authStore = useAuthStore()
+
+const ENROLLABLE_TYPES = ['EVENT_UNKNOWN_PERSON', 'EVENT_REVIEW_REQUIRED']
+const canSeeImage = () =>
+  authStore.can('event.view') && (authStore.can('camera.live') || authStore.can('face.view'))
+const canEnroll = (alert) =>
+  !!alert.data?.event_uuid && ENROLLABLE_TYPES.includes(alert.type) && authStore.can('face.enroll')
 
 function formatTime(iso) {
   if (!iso) return ''
@@ -19,6 +27,23 @@ async function view(alert) {
   await store.markRead(alert)
   const eventUuid = alert.data?.event_uuid
   if (eventUuid) router.push({ name: 'events.show', params: { uuid: eventUuid } })
+}
+
+async function viewImage(alert) {
+  // EVT-025: the face image opens on the event page, where every view is audited.
+  await store.markRead(alert)
+  router.push({
+    name: 'events.show',
+    params: { uuid: alert.data.event_uuid },
+    query: { image: '1' },
+  })
+}
+
+async function enroll(alert) {
+  // Opens the normal enrollment workflow (person picker, consent, quality,
+  // audit). Nothing is created from the alert itself.
+  await store.markRead(alert)
+  router.push({ name: 'faces.enroll', query: { event: alert.data.event_uuid } })
 }
 
 async function ignore(alert) {
@@ -72,6 +97,24 @@ async function ignore(alert) {
         @click="view(alert)"
       >
         ดูเหตุการณ์
+      </button>
+      <button
+        v-if="alert.data?.event_uuid && canSeeImage()"
+        type="button"
+        data-test="alert-view-image"
+        class="ml-4 mt-2 text-xs font-medium text-blue-600 hover:text-blue-800"
+        @click="viewImage(alert)"
+      >
+        ดูภาพ
+      </button>
+      <button
+        v-if="canEnroll(alert)"
+        type="button"
+        data-test="alert-enroll"
+        class="ml-4 mt-2 text-xs font-medium text-blue-600 hover:text-blue-800"
+        @click="enroll(alert)"
+      >
+        ลงทะเบียนใบหน้า
       </button>
       <button
         type="button"

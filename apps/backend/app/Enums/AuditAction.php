@@ -139,6 +139,10 @@ enum AuditAction: string
     // Module 05 — manual event review (EVT-010)
     case EVENT_REVIEWED = 'EVENT_REVIEWED';
 
+    // Module 05 — event face crop (EVT-025, ACR-EVT-24)
+    case EVENT_SNAPSHOT_STORED = 'EVENT_SNAPSHOT_STORED';
+    case EVENT_SNAPSHOT_VIEWED = 'EVENT_SNAPSHOT_VIEWED';
+
     // Module 06 — report export (RPT-014..RPT-017)
     case REPORT_EXPORTED = 'REPORT_EXPORTED';
     case REPORT_EXPORT_DOWNLOADED = 'REPORT_EXPORT_DOWNLOADED';

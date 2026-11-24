@@ -12,6 +12,7 @@ use App\Models\AccessEvent;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Event\EventReviewService;
 use App\Services\Event\EventSearchQuery;
+use App\Services\Event\EventSnapshotService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -46,6 +47,7 @@ class EventController extends Controller
     public function __construct(
         private readonly EventReviewService $reviewService,
         private readonly EventSearchQuery $searchQuery,
+        private readonly EventSnapshotService $snapshots,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -109,6 +111,30 @@ class EventController extends Controller
             'data' => new AccessEventResource($accessEvent),
             'meta' => null,
         ]);
+    }
+
+    /**
+     * EVT-025 (ACR-EVT-24): the event's face crop for an authorized operator.
+     * Out-of-scope events answer 404 like the event itself; each successful
+     * view is audited. Returned only here, never in ordinary event JSON, and
+     * marked not cacheable.
+     */
+    public function snapshot(Request $request, AccessEvent $accessEvent): JsonResponse
+    {
+        $this->assertInScope($request, 'event.view', $accessEvent->site_id, $accessEvent->zone_id);
+
+        $bytes = $this->snapshots->read($accessEvent, $request->user(), AuditRequestContext::fromRequest($request));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Success',
+            'data' => [
+                'event_uuid' => $accessEvent->uuid,
+                'content_type' => 'image/jpeg',
+                'image_base64' => base64_encode($bytes),
+            ],
+            'meta' => null,
+        ])->header('Cache-Control', 'no-store, private')->header('Pragma', 'no-cache');
     }
 
     public function review(ReviewEventRequest $request, AccessEvent $accessEvent): JsonResponse

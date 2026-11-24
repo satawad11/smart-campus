@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 
 from app.alignment.base import FaceAligner
 from app.caching.cache import RecognitionCache
+from app.delivery.face_crop import CROP_CLASSIFICATIONS, encode_face_crop
 from app.detection.schemas import FaceDetection
 from app.embeddings.base import FaceEmbedder
 from app.liveness.base import FaceLivenessDetector
@@ -92,6 +93,24 @@ class RecognitionWorker:
         return cached is None
 
     def process(
+        self, sampled_frame: SampledFrame, detection: FaceDetection, track: Track
+    ) -> RecognitionWorkerResult:
+        result = self._recognize(sampled_frame, detection, track)
+        # EVT-025: attach a small face crop to a fresh UNKNOWN/REVIEW result
+        # that will be delivered. Added after caching, so the cache never holds
+        # a face image; a suppressed (not improved) attempt is never sent.
+        if (
+            not result.from_cache
+            and not result.suppress_delivery
+            and result.classification in CROP_CLASSIFICATIONS
+        ):
+            box = detection.bbox
+            crop = encode_face_crop(sampled_frame.frame.data, (box.x1, box.y1, box.x2, box.y2))
+            if crop is not None:
+                result = replace(result, face_crop_jpeg=crop)
+        return result
+
+    def _recognize(
         self, sampled_frame: SampledFrame, detection: FaceDetection, track: Track
     ) -> RecognitionWorkerResult:
         cached = self._cache.get(self._camera_uuid, track, self._model_code, self._model_version)

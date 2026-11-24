@@ -54,6 +54,10 @@ class RecognitionWorkerResult:
     from_cache: bool = False
     """True when this result was served from RecognitionCache (CAM-010)
     rather than freshly computed this call — the pipeline did not re-run."""
+    face_crop_jpeg: bytes | None = field(default=None, repr=False, compare=False)
+    """EVT-025: small JPEG face crop for an UNKNOWN/REVIEW result, sent once to
+    the private event-snapshot endpoint after the event is accepted. Never part
+    of the event JSON, never cached and never written to the offline buffer."""
     suppress_delivery: bool = False
     """True when this freshly computed attempt is no better than what was already
     delivered for the same track (e.g. a retry that is still UNKNOWN): it is not sent
