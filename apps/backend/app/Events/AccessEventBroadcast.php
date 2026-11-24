@@ -72,6 +72,11 @@ class AccessEventBroadcast implements ShouldBroadcastNow
                 'person_code' => $this->event->person?->studentProfile?->student_code
                     ?? $this->event->person?->staffProfile?->staff_code,
                 'face_score' => $this->event->face_score,
+                // Same rule as AccessEventResource: a REVIEW suggestion for the officer,
+                // never event.person.
+                'review_candidate' => ($this->event->metadata['classification'] ?? null) === 'REVIEW'
+                    ? ($this->event->metadata['review_candidate'] ?? null)
+                    : null,
             ],
             'decision' => [
                 'uuid' => $this->decision->uuid,

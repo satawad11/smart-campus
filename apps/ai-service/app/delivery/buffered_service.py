@@ -32,6 +32,8 @@ class BufferedEventDeliveryService:
     def deliver(self, result: RecognitionWorkerResult) -> DeliveryOutcome:
         if result.from_cache:
             return DeliveryOutcome(delivered=False, skipped=True, reason="from_cache")
+        if result.suppress_delivery:
+            return DeliveryOutcome(delivered=False, skipped=True, reason="not_improved")
 
         payload = to_event_payload(result)
         try:

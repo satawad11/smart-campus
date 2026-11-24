@@ -22,6 +22,7 @@ class _CacheEntry:
     model_code: str
     model_version: str
     hits_at_cache_time: int
+    ttl_seconds: float | None = None
 
 
 class RecognitionCache:
@@ -77,7 +78,8 @@ class RecognitionCache:
             self.invalidate(camera_uuid, track.track_id)
             return None
 
-        if (self._clock_fn() - entry.cached_at) > self._ttl_seconds:
+        ttl = entry.ttl_seconds if entry.ttl_seconds is not None else self._ttl_seconds
+        if (self._clock_fn() - entry.cached_at) > ttl:
             self.invalidate(camera_uuid, track.track_id)
             return None
 
@@ -90,7 +92,12 @@ class RecognitionCache:
         result: RecognitionWorkerResult,
         model_code: str,
         model_version: str,
+        ttl_seconds: float | None = None,
     ) -> None:
+        """Cache a result. ``ttl_seconds`` overrides the cache-wide TTL for this entry
+        (a rejected/non-MATCH attempt is kept only briefly so the track is re-tried)."""
+        if ttl_seconds is not None and ttl_seconds <= 0:
+            raise ValueError("ttl_seconds must be positive")
         key = (camera_uuid, track.track_id)
 
         if key not in self._store and len(self._store) >= self._max_size:
@@ -102,6 +109,7 @@ class RecognitionCache:
             model_code=model_code,
             model_version=model_version,
             hits_at_cache_time=track.hits,
+            ttl_seconds=ttl_seconds,
         )
         self._store.move_to_end(key)
 

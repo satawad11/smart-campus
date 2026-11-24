@@ -58,3 +58,7 @@ class RecognitionWorkerResult:
     """EVT-025: small JPEG face crop for an UNKNOWN/REVIEW result, sent once to
     the private event-snapshot endpoint after the event is accepted. Never part
     of the event JSON, never cached and never written to the offline buffer."""
+    suppress_delivery: bool = False
+    """True when this freshly computed attempt is no better than what was already
+    delivered for the same track (e.g. a retry that is still UNKNOWN): it is not sent
+    again, so one person walking past does not flood the monitor with events."""

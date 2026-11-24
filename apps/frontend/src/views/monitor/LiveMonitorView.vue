@@ -7,6 +7,7 @@ import camerasService from '@/services/cameras'
 import { getEcho, disconnectEcho } from '@/services/echo'
 import { apiErrorText } from '@/constants/labels'
 import CameraLiveView from '@/components/cameras/CameraLiveView.vue'
+import CameraZoneWall from '@/components/cameras/CameraZoneWall.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -201,6 +202,8 @@ function personLabel(event) {
     event.person_name ||
     event.person?.display_name ||
     event.person_display_name ||
+    // REVIEW: no confirmed person, but show who the system proposes for checking.
+    (event.review_candidate?.name ? `อาจเป็น: ${event.review_candidate.name} (รอตรวจสอบ)` : null) ||
     'ไม่ทราบตัวตน'
   )
 }
@@ -308,6 +311,13 @@ function personMeta(event) {
           <div class="text-xs text-gray-400">วันนี้</div>
         </div>
       </div>
+
+      <!-- EVT-027: every camera of the site, grouped by zone -->
+      <CameraZoneWall
+        v-if="canViewCameras && selectedSiteUuid"
+        :cameras="camerasForSelectedSite"
+        :can-view-live="canViewLive"
+      />
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Selected camera preview -->
