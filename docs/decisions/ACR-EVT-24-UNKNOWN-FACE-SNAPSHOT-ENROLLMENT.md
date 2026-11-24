@@ -1,6 +1,6 @@
 # ARCHITECTURE_CHANGE_REQUEST — Unknown-event image and enrollment action
 
-**Status:** PENDING OWNER APPROVAL
+**Status:** APPROVED 2026-11-20 by the project owner in chat, as written (`OWNER-DECISIONS-2026-11-20.md`)
 **Raised:** 2026-11-17
 **Related:** EVT-022, EVT-018, FACE-016, CAM-011, SEC-010
 

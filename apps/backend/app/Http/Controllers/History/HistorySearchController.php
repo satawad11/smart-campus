@@ -8,6 +8,7 @@ use App\Http\Resources\AccessEventResource;
 use App\Models\Person;
 use App\Models\StudentProfile;
 use App\Services\Event\EventSearchQuery;
+use App\Services\Vehicle\PlateSearchAuditor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -48,11 +49,16 @@ class HistorySearchController extends Controller
             'zone_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:zones,uuid'],
             'camera_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:cameras,uuid'],
             'academic_status' => ['sometimes', 'string'],
+            'plate' => ['sometimes', 'string', 'max:32'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);
 
         $query = $this->scopeQuery($this->searchQuery->build($validated), $request, 'report.view');
+        // VEH-013: plate searches are audited (PDPA).
+        if (! empty($validated['plate'])) {
+            app(PlateSearchAuditor::class)->record($request, 'history', $validated['plate']);
+        }
 
         if (! empty($validated['keyword'])) {
             $keyword = $validated['keyword'];

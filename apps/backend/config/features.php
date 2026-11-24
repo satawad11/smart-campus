@@ -6,16 +6,21 @@
 |--------------------------------------------------------------------------
 |
 | SEC-024 approved Production V1 on the condition that FEATURE_DOOR_ENABLED,
-| FEATURE_VISITOR_ENABLED, FEATURE_VEHICLE_ENABLED, FEATURE_ALPR_ENABLED and
-| FEATURE_AI_ASSISTANT_ENABLED stay explicitly `false` in production config.
+| FEATURE_VISITOR_ENABLED and FEATURE_AI_ASSISTANT_ENABLED stay explicitly
+| `false` in production config.
+|
+| FEATURE_VEHICLE_ENABLED and FEATURE_ALPR_ENABLED are optional modules since
+| ACR-VEH-01 (approved 2026-11-12). They must still be set explicitly: `false`
+| keeps the module off whatever the settings say; `true` lets an administrator
+| switch it on in System Settings (feature.vehicle / feature.alpr, off by default).
 |
 | These values are an environment-level ceiling on top of the database
 | `feature.*` system settings (SEC-002): when a variable is set to a false
 | value, the feature is disabled regardless of the system setting, so an
-| administrator cannot switch a locked module on through the settings API.
+| administrator cannot switch the module on through the settings API.
 | An unset variable (null) leaves the SEC-002 settings behaviour unchanged,
-| which itself fails closed. `php artisan pilot:preflight` fails unless every
-| variable below is explicitly false.
+| which itself fails closed. `php artisan pilot:preflight` fails unless the
+| locked variables are explicitly false and the optional ones are explicitly set.
 |
 */
 

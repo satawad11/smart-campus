@@ -37,6 +37,7 @@ class CameraResource extends JsonResource
             'face_recognition_enabled' => $this->face_recognition_enabled,
             'liveness_enabled' => $this->liveness_enabled,
             'snapshot_enabled' => $this->snapshot_enabled,
+            'plate_recognition_enabled' => (bool) $this->plate_recognition_enabled,
             'roi' => $this->roi_polygon,
             'status' => $this->status?->value ?? $this->status,
             'last_seen_at' => $this->last_seen_at?->toIso8601String(),

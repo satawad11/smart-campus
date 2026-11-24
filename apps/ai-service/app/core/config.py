@@ -40,6 +40,20 @@ class Settings(BaseSettings):
     # FACE-021 liveness thresholds (same values as the backend's config/face.php)
     liveness_threshold_real: float = 0.70
     liveness_threshold_spoof: float = 0.40
+    # VEH-008 plate reading (ACR-VEH-01 D4): LPD-YuNet + PaddleOCR Thai from
+    # scripts/fetch-plate-models.sh.
+    # Runs only on cameras the backend enables (feature.alpr AND the camera switch). The
+    # detection threshold and reads per vehicle are provisional until the owner approves them
+    # after the real-photo evaluation (VEH-007 part 2); the OCR threshold is the backend's.
+    plate_detector_model_path: str | None = "models/license_plate_detection_lpd_yunet_2023mar.onnx"
+    plate_ocr_model_path: str | None = "models/th_ppocrv5_mobile_rec.onnx"
+    plate_ocr_dict_path: str | None = "models/th_ppocrv5_mobile_rec_dict.txt"
+    plate_detection_threshold: float = 0.8
+    # Width the frame is scaled to for plate detection. 640 found synthetic plates that 320
+    # missed, at about 4x the CPU (0.45 s vs 0.1 s on the build PC); the evaluation decides.
+    plate_detector_input_width: int = 640
+    plate_reads_per_vehicle: int = 8
+
     # CCTV liveness policy (AI node only; the enrollment/scan API always enforces):
     #   enforce  - only a REAL face is recognised (close-range access points)
     #   advisory - PAD runs and is reported; a SPOOF face is still reported to the backend

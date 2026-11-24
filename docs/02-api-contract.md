@@ -375,3 +375,172 @@ Propagate it to logs/internal calls/audit where relevant.
 Recognition event ingestion uses unique `event_uuid`.
 
 Retrying the same event must not duplicate Event or Decision records.
+
+## 25. Vehicles (ACR-VEH-01, VEH-004)
+
+Behind `feature:vehicle` (off by default; `FEATURE_VEHICLE_ENABLED=false` forces it off). The feature
+gate is checked before permissions, so a disabled module answers `403 FEATURE_DISABLED`.
+
+```
+GET  /api/v1/vehicles                               vehicle.view
+POST /api/v1/vehicles                               vehicle.manage
+GET  /api/v1/vehicles/{vehicle_uuid}                vehicle.view   (includes links, newest first)
+PUT  /api/v1/vehicles/{vehicle_uuid}                vehicle.manage
+POST /api/v1/vehicles/{vehicle_uuid}/links          vehicle.manage (link a person)
+POST /api/v1/vehicles/{vehicle_uuid}/links/{link_uuid}/end   vehicle.manage (end a link)
+```
+
+List filters: `plate` (exact, normalised), `province` (code or Thai name), `keyword` (plate, brand,
+model, colour), `status`, `vehicle_type`, `person_uuid` (current links only), `sort`, `order`, paging.
+
+Create body: `plate_number`, `plate_province` (ISO 3166-2:TH code or Thai name), optional
+`vehicle_type`, `brand`, `model`, `color`, `status`, `notes`. Plates are normalised with the rules in
+`contracts/thai-plates.json`. The plate and province cannot change after registration.
+
+Update body: `vehicle_type`, `brand`, `model`, `color`, `status` (`ACTIVE|INACTIVE|BLOCKED`), `notes`.
+
+Link body: `person_uuid`, `relation` (`OWNER|DRIVER|AUTHORIZED`), optional `effective_from`, `reason`.
+End body: optional `effective_to`, `reason`. Links are never deleted.
+
+No DELETE routes. Every create, update, link and end is written to the audit log (module `vehicle`).
+
+Error codes: `VEHICLE_PLATE_EXISTS` (409), `VEHICLE_PROVINCE_INVALID` (422), `VEHICLE_LINK_EXISTS` (409),
+`VEHICLE_LINK_ENDED` (409), `VEHICLE_LINK_END_BEFORE_START` (422), `PERSON_NOT_FOUND` (422).
+
+### 25.1 Per-camera plate reading (VEH-005)
+
+`plate_recognition_enabled` (boolean, default `false`) is accepted by `POST /api/v1/cameras` and
+`PUT /api/v1/cameras/{camera_uuid}` and returned by the camera resource. Turning it **on** while the
+ALPR module is off (`feature.alpr` false or `FEATURE_ALPR_ENABLED=false`) is rejected with
+`422 ALPR_DISABLED`; turning it off is always allowed. Changes are audited with the camera update.
+
+`GET /internal/v1/ai-nodes/{node_uuid}/config` sends each camera's **effective** value: the camera
+switch AND `feature.alpr`. Nodes treat anything other than a literal `true` as off.
+
+### 25.2 Plate event types (VEH-006)
+
+Seeded by `EventTypeSeeder` (category `PLATE`), also on upgrades:
+
+| Code | Meaning | Severity |
+|---|---|---|
+| `PLATE_RECOGNIZED` | Plate read clearly and it matches a registered vehicle | INFO |
+| `PLATE_UNKNOWN` | Plate read clearly but no registered vehicle has it | WARNING |
+| `PLATE_LOW_CONFIDENCE` | Plate read, but OCR confidence is below the threshold chosen in VEH-007 | INFO |
+
+The backend picks the type when it ingests a plate result (VEH-010); nodes never set it. Plate events
+are records only: no default access policy uses them until the Smart Gate tasks (GATE-006).
+
+### 25.3 Plate-read ingestion (VEH-010)
+
+`POST /internal/v1/events/plate` (node bearer token). Body: `event_uuid`, `camera_uuid`,
+`ai_node_uuid`, `track_id`, `occurred_at`, `plate_text` (raw OCR), optional `province_text` (raw OCR),
+`ocr_score` (0–1), optional `detection_score`, `frames_voted`, `model_code`, `model_version`, optional
+`reasons[]`. The node may not send `event_type`, `vehicle_*`, `person_*`, `decision` or internal ids.
+
+The backend normalises the text (`contracts/thai-plates.json`), resolves the province, and picks the
+type: `PLATE_LOW_CONFIDENCE` when the text is not a valid Thai plate or `ocr_score` is below
+`ALPR_OCR_MIN_CONFIDENCE` (provisional 0.90 until VEH-007 is approved); otherwise `PLATE_RECOGNIZED`
+when a registered vehicle has the plate (province must match; with no readable province only a
+plate held by exactly one vehicle matches), else `PLATE_UNKNOWN`.
+
+Plate events have no person and **never get an access decision**. They are broadcast on the site
+channel as `plate.read`. Rejections: `422 ALPR_DISABLED`, `422 PLATE_RECOGNITION_DISABLED` (camera
+switch off), `AI_NODE_IDENTITY_MISMATCH`, `CAMERA_NOT_FOUND`, `CAMERA_NOT_ASSIGNED_TO_NODE`,
+`409 EVENT_ALREADY_EXISTS`. A retried `event_uuid` answers 200; the same readable plate at the same
+camera within `ALPR_PLATE_COOLDOWN_SECONDS` (30) is one pass and answers 200 with the first event.
+
+### 25.4 Plate events in events, history and reports (VEH-012)
+
+- `GET /api/v1/events` and `GET /api/v1/history/search` accept `plate` (normalised like stored plates;
+  matches plate events only; unreadable input returns nothing).
+- Event resources carry `plate` on plate events: `plate_number`, `plate_display`, `plate_province`,
+  `plate_province_name`, `raw_text`, `ocr_score`, `vehicle_uuid`, `vehicle_status`; `null` otherwise.
+- Range reports (`/reports/daily|weekly|monthly|yearly|custom`) add `plates`: `recognized`,
+  `unknown`, `low_confidence`, `blocked_vehicle_reads`. These are counted from events and are not part
+  of `totals` (plate events have no decision), except the plate event of a PLATE_ONLY Smart Gate pass:
+  it carries that pass's decision and counts in `totals` like any decided event (§26.1).
+- `POST /api/v1/events/{uuid}/review` on a plate event answers `422 PLATE_EVENT_NOT_REVIEWABLE`,
+  except the plate event of a PLATE_ONLY Smart Gate pass, which carries the gate decision (§26.1).
+- Realtime: plate reads arrive on the site channel as `plate.read` (§25.3), separate from
+  `event.decided`.
+
+## 26. Smart Gates (ACR-VEH-01 Phase 5, GATE-002)
+
+Behind `feature:vehicle` (owner decision 2026-11-17), checked before permissions, so a disabled module
+answers `403 FEATURE_DISABLED`. Permissions `gate.view` / `gate.manage` (SUPER_ADMIN and SYSTEM_ADMIN
+manage, SECURITY_OFFICER views). Configuration only: no endpoint here opens a barrier (decision D5).
+
+```
+GET  /api/v1/gates                         gate.view   (filters: keyword, site_uuid, zone_uuid, status, paging)
+POST /api/v1/gates                         gate.manage
+GET  /api/v1/gates/form-options            gate.manage (sites -> zones and cameras; each camera has gate_uuid/gate_name if already used)
+GET  /api/v1/gates/{gate_uuid}             gate.view   (includes cameras)
+PUT  /api/v1/gates/{gate_uuid}             gate.manage
+PUT  /api/v1/gates/{gate_uuid}/cameras     gate.manage (replaces the whole camera set)
+```
+
+Create body: `site_uuid`, `zone_uuid`, `code` (`[A-Za-z0-9_-]`, max 64, unique per site), `name`,
+optional `direction` (`IN|OUT|BOTH`, default `BOTH`), `correlation_window_seconds` (1-60, default 10),
+`status` (`ACTIVE|INACTIVE`, default `INACTIVE`), `notes`, `cameras[]` (`camera_uuid`, `role`
+`FACE|PLATE|BOTH`). `mode` is not accepted: every gate is `FACE_PRIMARY` (decision D2).
+
+Update body: `name`, `zone_uuid` (same site), `direction`, `correlation_window_seconds`, `status`,
+`notes`. Site, code and mode cannot change; cameras change only through `PUT .../cameras`
+(body `cameras: [{camera_uuid, role}]`, may be empty).
+
+Rules: an `ACTIVE` gate needs at least one camera whose role reads faces (`FACE` or `BOTH`); a camera
+serves at most one gate and must be in the gate's site. The gate resource lists each camera's `role`,
+`status`, `face_recognition_enabled` and `plate_recognition_enabled` so the UI can warn when a role does
+not match what the camera is set to read. No DELETE: a gate is deactivated.
+
+Audit (module `gate`): `GATE_CREATED`, `GATE_UPDATED`, `GATE_CAMERAS_CHANGED` (only when the set changes).
+
+Error codes: `GATE_CODE_EXISTS` (409), `GATE_CAMERA_IN_USE` (409), `GATE_NEEDS_FACE_CAMERA` (422),
+`GATE_ZONE_SITE_MISMATCH` (422), `GATE_CAMERA_SITE_MISMATCH` (422), `GATE_CAMERA_DUPLICATE` (422),
+`SITE_NOT_FOUND` (422), `ZONE_NOT_FOUND` (422), `CAMERA_NOT_FOUND` (422).
+
+### 26.1 Gate pass decisions (GATE-007)
+
+Each Smart Gate pass gets one decision, an ordinary access decision on the pass's face event (its plate
+event for a PLATE_ONLY pass), evaluated by the access policies (§ docs/09 "Smart Gate Policies").
+Additive fields only:
+
+- Decision resources (`current_decision`, `decisions[]`) carry `gate_pass`: `null` for an ordinary
+  decision, else `uuid`, `match_result` (`MATCHED|MISMATCH|UNKNOWN|FACE_ONLY|PLATE_ONLY`),
+  `occurred_at`, `gate` (`uuid`, `code`, `name`), `face_event_uuid`, `plate_event_uuid`, `plate`
+  (`plate_number`, `plate_display`, `plate_province`, `plate_province_name`, `vehicle_uuid`; `null`
+  once the plate read is redacted).
+- Realtime: the gate decision arrives as `event.decided` for that event with a top-level `gate_pass`
+  (same shape; `null` on ordinary decisions). The Live Monitor replaces the event's row.
+- Notifications for a gate decision add `gate_pass_uuid`, `gate_name`, `match_result` and
+  `plate_display` to `data`. At a camera linked to an ACTIVE gate (with `feature.vehicle` on) the face
+  event itself does not notify; the one alert comes with the gate decision (owner choice 2026-11-20).
+- Review: `POST /api/v1/events/{uuid}/review` as for any event; the officer's decision keeps the
+  `gate_pass` link. The review queue (`GET /events?decision=REVIEW`) lists gate decisions like others.
+
+Decision and notification only: nothing opens a barrier (D5).
+
+### 26.2 Gate pass history and reports (GATE-008)
+
+`GET /api/v1/history/gate-passes` — `feature.vehicle` (403 `FEATURE_DISABLED`) then `report.view`, with
+the caller's site/zone scope applied through the pass's gate (like `/history/search`). Read only.
+
+Query: `from`, `to` (date-times), `gate_uuid`, `site_uuid`, `person_uuid`, `vehicle_uuid`,
+`match_result` (`MATCHED|MISMATCH|UNKNOWN|FACE_ONLY|PLATE_ONLY`), `decision` (`ALLOW|REVIEW|DENY|UNKNOWN`,
+the pass's current decision, so an officer's review counts), `plate` (what the plate camera read,
+normalised like stored plates; unreadable input returns nothing; audited as `PLATE_SEARCHED` with
+`source` `gate_passes`), `order` (`desc` default, by `occurred_at`), `page`, `per_page` (max 100).
+An unknown uuid is a real filter that returns nothing.
+
+Each row: the §26.1 `gate_pass` fields, plus `site` (`uuid`, `name`), `person` (`uuid`, `name`,
+`person_code`, `person_type`; `null` when the face was not recognised), `vehicle` (`uuid`,
+`plate_number`, `plate_province`, `plate_province_name`, `status`; `null` when no registered vehicle,
+or after the plate read was redacted), `decision` (`uuid`, `decision`, `reason_code`,
+`decision_source`, `created_at`; `null` while the decision is still pending). `meta.pagination` as
+other lists.
+
+Range reports (`/reports/daily|weekly|monthly|yearly|custom`) add `gates`: one row per gate with a
+pass in the range (sorted by name; `[]` when none, and within the caller's site): `gate_uuid`,
+`gate_code`, `gate_name`, `total`, `by_match_result` (all five codes), `by_decision` (`ALLOW`,
+`REVIEW`, `DENY`, `UNKNOWN`, `UNDECIDED`; current decision). Passes group events already counted in
+`totals`; nothing is added to `totals`. Report exports do not include `gates` yet.

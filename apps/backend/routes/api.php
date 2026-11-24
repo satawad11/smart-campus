@@ -25,6 +25,8 @@ use App\Http\Controllers\Face\FaceEnrollmentVerificationController;
 use App\Http\Controllers\Face\FaceLifecycleController;
 use App\Http\Controllers\Face\FaceRecognitionTestController;
 use App\Http\Controllers\Face\FaceScanController;
+use App\Http\Controllers\Gate\GateController;
+use App\Http\Controllers\Gate\GatePassHistoryController;
 use App\Http\Controllers\History\HistorySearchController;
 use App\Http\Controllers\History\PersonTimelineController;
 use App\Http\Controllers\Integration\IntegrationConnectionController;
@@ -49,6 +51,7 @@ use App\Http\Controllers\System\LicenseController;
 use App\Http\Controllers\System\SystemMonitoringController;
 use App\Http\Controllers\System\SystemSettingController;
 use App\Http\Controllers\System\SystemUpdateController;
+use App\Http\Controllers\Vehicle\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -480,9 +483,32 @@ Route::middleware(['auth:web', 'active', 'session.active'])->group(function () {
         Route::post('/visits/{visit:uuid}/check-out', [VisitController::class, 'checkOut'])->middleware('permission:visit.manage');
         Route::post('/visits/{visit:uuid}/cancel', [VisitController::class, 'cancel'])->middleware('permission:visit.manage');
     });
+    // Vehicle registry (VEH-004, ACR-VEH-01). The feature gate runs before the permission
+    // check, so a disabled module answers 403 FEATURE_DISABLED to everyone. No DELETE route:
+    // vehicles are deactivated and person links are ended, never removed.
     Route::middleware('feature:vehicle')->prefix('vehicles')->group(function () {
-        Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
+        Route::get('/', [VehicleController::class, 'index'])->middleware('permission:vehicle.view');
+        Route::post('/', [VehicleController::class, 'store'])->middleware('permission:vehicle.manage');
+        Route::get('/{vehicle}', [VehicleController::class, 'show'])->middleware('permission:vehicle.view');
+        Route::put('/{vehicle}', [VehicleController::class, 'update'])->middleware('permission:vehicle.manage');
+        Route::post('/{vehicle}/links', [VehicleController::class, 'link'])->middleware('permission:vehicle.manage');
+        Route::post('/{vehicle}/links/{link}/end', [VehicleController::class, 'unlink'])->middleware('permission:vehicle.manage');
     });
+    // Smart Gate configuration (GATE-002, ACR-VEH-01 Phase 5). Same feature gate as the vehicle
+    // registry (owner decision 2026-11-17). No DELETE: gates are deactivated. Configuration
+    // only; nothing here opens a barrier (D5).
+    Route::middleware('feature:vehicle')->prefix('gates')->group(function () {
+        Route::get('/', [GateController::class, 'index'])->middleware('permission:gate.view');
+        Route::post('/', [GateController::class, 'store'])->middleware('permission:gate.manage');
+        // Literal path before /{gate} so it never binds as a uuid.
+        Route::get('/form-options', [GateController::class, 'formOptions'])->middleware('permission:gate.manage');
+        Route::get('/{gate}', [GateController::class, 'show'])->middleware('permission:gate.view');
+        Route::put('/{gate}', [GateController::class, 'update'])->middleware('permission:gate.manage');
+        Route::put('/{gate}/cameras', [GateController::class, 'replaceCameras'])->middleware('permission:gate.manage');
+    });
+    // Gate pass history (GATE-008). Reporting boundary (report.view) with the caller's scope,
+    // like historical search; read only.
+    Route::middleware('feature:vehicle')->get('/history/gate-passes', [GatePassHistoryController::class, 'index'])->middleware('permission:report.view');
     Route::middleware('feature:alpr')->prefix('alpr')->group(function () {
         Route::get('/', fn () => response()->json(['success' => true, 'data' => []]));
     });

@@ -125,14 +125,15 @@ else report H12 FAIL "frontend is not the production static build"; fi
 # H13 no default/shared accounts
 report H13 "$(pf_all 'no seeded test accounts active' 'no active account uses a shared dev password')" "pilot:preflight account checks"
 
-# H14 locked features false (config + effective + public API)
+# H14 locked features false (config + effective + public API).
+# vehicle/alpr are optional since ACR-VEH-01: their variables must be set explicitly (true or false).
 feat=$($CURL -H 'Accept: application/json' "$BASE/api/v1/features" 2>/dev/null)
 api_ok=$(printf '%s' "$feat" | grep -c '"door":false' 2>/dev/null)
-if [ "$(pf_all 'FEATURE_DOOR_ENABLED explicitly false' 'FEATURE_VISITOR_ENABLED explicitly false' 'FEATURE_VEHICLE_ENABLED explicitly false' 'FEATURE_ALPR_ENABLED explicitly false' 'FEATURE_AI_ASSISTANT_ENABLED explicitly false' 'door effectively disabled' 'visitor effectively disabled' 'vehicle effectively disabled' 'alpr effectively disabled' 'ai_assistant effectively disabled')" = "PASS" ] \
-  && printf '%s' "$feat" | grep -q '"visitor":false' && printf '%s' "$feat" | grep -q '"vehicle":false' \
-  && printf '%s' "$feat" | grep -q '"alpr":false' && printf '%s' "$feat" | grep -q '"ai_assistant":false' && [ "$api_ok" -ge 1 ]; then
-  report H14 PASS "kill switches engaged; /api/v1/features all locked false"
-else report H14 FAIL "locked feature not disabled"; fi
+if [ "$(pf_all 'FEATURE_DOOR_ENABLED explicitly false' 'FEATURE_VISITOR_ENABLED explicitly false' 'FEATURE_AI_ASSISTANT_ENABLED explicitly false' 'door effectively disabled' 'visitor effectively disabled' 'ai_assistant effectively disabled' 'FEATURE_VEHICLE_ENABLED explicitly set' 'FEATURE_ALPR_ENABLED explicitly set')" = "PASS" ] \
+  && printf '%s' "$feat" | grep -q '"visitor":false' \
+  && printf '%s' "$feat" | grep -q '"ai_assistant":false' && [ "$api_ok" -ge 1 ]; then
+  report H14 PASS "kill switches engaged; /api/v1/features locked false; vehicle/alpr explicitly set"
+else report H14 FAIL "locked feature not disabled or vehicle/alpr switch unset"; fi
 
 # Overall application preflight
 overall=$(printf '%s' "$PREFLIGHT_JSON" | grep -o '"result": *"[A-Z]*"' | head -1)

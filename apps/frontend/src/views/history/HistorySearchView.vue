@@ -4,8 +4,12 @@ import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import { apiErrorText } from '@/constants/labels'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
+import { useFeaturesStore } from '@/stores/features'
 
 const router = useRouter()
+// VEH-012: plate search only while the ALPR module is on.
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 
 const loading = ref(false)
 const error = ref(null)
@@ -18,6 +22,7 @@ const meta = ref({
 
 const filters = ref({
   keyword: '',
+  plate: '',
   from: '',
   to: '',
   event_type: '',
@@ -51,6 +56,7 @@ async function fetchEvents(page = 1) {
 function resetFilters() {
   filters.value = {
     keyword: '',
+    plate: '',
     from: '',
     to: '',
     event_type: '',
@@ -110,6 +116,18 @@ onMounted(() => {
           />
         </div>
 
+        <!-- Plate (VEH-012) -->
+        <div v-if="featuresStore.isOn('alpr')">
+          <label class="block text-xs font-medium text-gray-700 mb-1">ทะเบียนรถ</label>
+          <input
+            v-model="filters.plate"
+            id="history-plate"
+            type="text"
+            placeholder="เช่น 1กข 1234"
+            class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+          />
+        </div>
+
         <!-- From Date -->
         <div>
           <label class="block text-xs font-medium text-gray-700 mb-1">ตั้งแต่วันที่</label>
@@ -141,6 +159,9 @@ onMounted(() => {
             <option value="FACE_RECOGNIZED">รู้จักบุคคล (FACE_RECOGNIZED)</option>
             <option value="UNKNOWN_FACE">ไม่ทราบตัวตน (UNKNOWN_FACE)</option>
             <option value="LIVENESS_FAILED">ตรวจจับภาพลวง (LIVENESS_FAILED)</option>
+            <option value="PLATE_RECOGNIZED">รถที่ลงทะเบียน (PLATE_RECOGNIZED)</option>
+            <option value="PLATE_UNKNOWN">รถไม่ได้ลงทะเบียน (PLATE_UNKNOWN)</option>
+            <option value="PLATE_LOW_CONFIDENCE">อ่านทะเบียนไม่ชัด (PLATE_LOW_CONFIDENCE)</option>
           </select>
         </div>
 
@@ -213,20 +234,33 @@ onMounted(() => {
                 <span
                   class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold"
                   :class="{
-                    'bg-green-100 text-green-800': (evt.current_decision?.decision || evt.decision) === 'ALLOW',
-                    'bg-red-100 text-red-800': (evt.current_decision?.decision || evt.decision) === 'DENY',
-                    'bg-amber-100 text-amber-800': (evt.current_decision?.decision || evt.decision) === 'REVIEW',
-                    'bg-gray-100 text-gray-800': (evt.current_decision?.decision || evt.decision) === 'UNKNOWN',
+                    'bg-green-100 text-green-800':
+                      (evt.current_decision?.decision || evt.decision) === 'ALLOW',
+                    'bg-red-100 text-red-800':
+                      (evt.current_decision?.decision || evt.decision) === 'DENY',
+                    'bg-amber-100 text-amber-800':
+                      (evt.current_decision?.decision || evt.decision) === 'REVIEW',
+                    'bg-gray-100 text-gray-800':
+                      (evt.current_decision?.decision || evt.decision) === 'UNKNOWN',
                   }"
                 >
                   {{ evt.current_decision?.decision || evt.decision || '-' }}
                 </span>
               </td>
               <td class="px-4 py-3 whitespace-nowrap">
-                <div v-if="evt.person" class="text-sm">
+                <div v-if="evt.plate" class="text-sm" data-test="history-plate-cell">
+                  <div class="font-medium text-gray-900">
+                    {{ evt.plate.plate_display || evt.plate.raw_text || 'อ่านทะเบียนไม่ได้' }}
+                  </div>
+                  <div class="text-xs text-gray-500">{{ evt.plate.plate_province_name || '' }}</div>
+                </div>
+                <div v-else-if="evt.person" class="text-sm">
                   <div class="font-medium text-gray-900">{{ evt.person.name }}</div>
                   <div class="text-xs text-gray-500">{{ evt.person.person_code }}</div>
-                  <div class="text-xs text-blue-700">{{ personTypeLabel(evt.person.person_type) }}<span v-if="evt.person.status"> · {{ statusLabel(evt.person.status) }}</span></div>
+                  <div class="text-xs text-blue-700">
+                    {{ personTypeLabel(evt.person.person_type)
+                    }}<span v-if="evt.person.status"> · {{ statusLabel(evt.person.status) }}</span>
+                  </div>
                 </div>
                 <span v-else class="text-gray-400 text-xs">-</span>
               </td>

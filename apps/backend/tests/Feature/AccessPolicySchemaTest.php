@@ -115,7 +115,8 @@ class AccessPolicySchemaTest extends TestCase
         $this->seed(EventTypeSeeder::class);
         $this->seed(AccessPolicySeeder::class);
 
-        $this->assertDatabaseCount('access_policies', 19);
+        // Gate policies (GATE-006) are counted in FacePrimaryGatePolicyTest.
+        $this->assertSame(19, AccessPolicy::whereNull('gate_mode')->count());
 
         $expected = [
             'Liveness Failed -> Review' => 'REVIEW',
@@ -150,7 +151,8 @@ class AccessPolicySchemaTest extends TestCase
         $this->seed(AccessPolicySeeder::class);
         $this->seed(AccessPolicySeeder::class);
 
-        $this->assertDatabaseCount('access_policies', 19);
+        // Gate policies (GATE-006) are counted in FacePrimaryGatePolicyTest.
+        $this->assertSame(19, AccessPolicy::whereNull('gate_mode')->count());
     }
 
     public function test_student_status_policies_cover_every_studentacademicstatus_value(): void

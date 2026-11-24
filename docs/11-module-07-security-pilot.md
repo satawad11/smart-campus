@@ -22,8 +22,8 @@ Backend and frontend must enforce flags.
 Production V1 keeps:
 - DOOR false
 - VISITOR false
-- VEHICLE false
-- ALPR false
+- VEHICLE false by default — optional since ACR-VEH-01 (approved 2026-11-12)
+- ALPR false by default — optional since ACR-VEH-01 (approved 2026-11-12)
 - AI_ASSISTANT false
 
 ## Security Hardening
@@ -136,6 +136,7 @@ Required:
 - restore
 - disaster recovery
 - incident handling
+- Smart Gate pilot (optional module, ACR-VEH-01): `docs/pilot/SMART-GATE-PILOT-RUNBOOK.md`
 
 ## Production V1 Gate
 Production V1 requires human go/hold review after pilot and UAT.

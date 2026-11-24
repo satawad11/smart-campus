@@ -152,7 +152,7 @@ Only mark `[x]` when the relevant tests pass.
     private user.{uuid} (polling stays as fallback)
 [x] EVT-024 Alert acknowledgement: “ละเว้นการแจ้งเตือน” marks only the notification read; the durable event stays
     in history/review. Frontend regression test covers the read endpoint and local unread state.
-[R] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 pending owner approval; no image is
+[ ] EVT-025 Unknown-event image and quick enrollment from alert: ACR-EVT-24 APPROVED 2026-11-20; no image is
     currently sent or stored on the recognition event path.
 [x] EVT-026 Recognition reasons on event detail (owner request 2026-11-21): GET /events/{uuid} gains an additive
     `recognition` block (classification, rejected_locally, bounded reasons — no identity/score/vector); the page
@@ -260,7 +260,7 @@ kept as recorded history; the audit annotates them instead of rewriting them:
 [x] AUDIT-RPT-019 Dashboard read flat fields/arrays while RPT-005/006 return nested `events`/`series`;
     cards threw and charts were empty on a real server, tests mocked the wrong shape — fixed PR #6
 [ ] [R] AUDIT-A15 MFA enrollment UI missing (AUTH-015 partial) — human decision
-[ ] [R] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — human RBAC decision
+[ ] AUDIT-A14 SECURITY_OFFICER dashboard permission mismatch — owner approved dashboard.view for SECURITY_OFFICER (2026-11-20)
 [ ] AUDIT-A19 SEC-019 calibration has no execution evidence (requires B5)
 [ ] AUDIT-A20 SEC-020 physical camera results have no raw evidence
 Open register: docs/audit/V1-OPEN-FINDINGS.md
@@ -289,7 +289,8 @@ feature flags stay false until the module is complete.
 
 [ ] [R] DOOR-* Door Access Control (module 08) — after Module 09; needs controller hardware/protocol from the owner
 [x] [R] VIS-* / PPL-* People: staff, visitors, parents (module 09) — complete; FEATURE_VISITOR remains disabled by default: docs/12-module-09-people-visitor.md
-[ ] [R] VEH-* Vehicle + ALPR (module 10) — needs plate model chosen and licence-checked
+[~] VEH-* Vehicle + ALPR (module 10) — ACR-VEH-01 APPROVED 2026-11-12; VEH-001..006, 008..013 done (PR #18), see PHASE 4/5
+    below; plate model still needs choosing and licence-checking (VEH-007)
 [ ] [R] AIA-* AI Assistant + Advanced Analytics (module 11) — needs provider chosen
 
 ## Module 09 — People: staff, visitors, parents
@@ -307,3 +308,46 @@ feature flags stay false until the module is complete.
 [x] PPL-010 UI: จัดการบุคลากร (list, detail, status, create/edit, import) — UIX-003
 [x] PPL-011 UI: ผู้ปกครอง + ผู้มาติดต่อ (visits today, check-in/out); face enrollment person picker by type
 [x] PPL-012 Events/history/reports show person group and status; acceptance tests
+
+# PHASE 4 — VEHICLE + ALPR (ACR-VEH-01 APPROVED 2026-11-12 — one task at a time)
+
+Face stays the primary identifier. Plate reading is optional: system flag `feature.alpr` plus
+per-camera `plate_recognition_enabled`, both fail closed.
+
+[x] VEH-001 Unlock `vehicle`/`alpr` from LOCKED_V1_FEATURES (kill switches stay); update preflight, SEC-024 and DEPLOYMENT flag lists
+[x] VEH-002 Create vehicles and vehicle_ownership_histories schemas (append-only history, UUIDs)
+[x] VEH-003 Thai plate normalisation and province code list (shared backend/AI rules + tests)
+[x] VEH-004 Vehicle registry APIs + permissions vehicle.view / vehicle.manage, audited
+[x] VEH-005 Add cameras.plate_recognition_enabled and sync it to nodes (CAM-015 path)
+[x] VEH-006 Seed PLATE_RECOGNIZED / PLATE_UNKNOWN / PLATE_LOW_CONFIDENCE event types
+[~] [R] VEH-007 ALPR model evaluation on real Thai plates + licence verification (decision D4, human approval)
+    licence check DONE 2026-11-16 (docs/decisions/VEH-007-ALPR-LICENCE-CHECK.md); evaluation needs plate photos from the owner
+    2026-11-20: owner approved building VEH-008 with LPD-YuNet + PaddleOCR Thai; plate reading stays off until
+    evaluated on ~100 real gate-camera photos and thresholds approved (docs/decisions/OWNER-DECISIONS-2026-11-20.md)
+[x] VEH-008 AI node plate pipeline: detect, crop, OCR, province, per-track vote (behind camera toggle);
+    wire BufferedPlateEventDeliveryService + PlateEventBuffer.retry_pending into the node loop
+    2026-11-20: app/plates/, scripts/fetch-plate-models.sh, evaluation tool
+    (docs/pilot/PLATE-MODEL-EVALUATION.md); plate reading stays off until the owner approves the
+    real-photo evaluation
+[x] VEH-009 Plate result delivery with offline buffer and event UUID idempotency
+    (app/delivery/plate.py; the node's retry loop starts calling it in VEH-008, when plate reads exist)
+[x] VEH-010 Backend plate ingestion (/internal/v1), plate -> vehicle lookup, realtime broadcast
+[x] VEH-011 Vehicle management UI (จัดการยานพาหนะ) and camera toggle "อ่านป้ายทะเบียน"
+[x] VEH-012 Plate in Live Monitor, event detail, history search by plate, reports
+[x] VEH-013 Plate data retention, audit of plate searches, PDPA data-inventory update
+[ ] VEH-014 Benchmark face+plate load per node; Phase 4 acceptance tests
+
+# PHASE 5 — FACE-FIRST SMART GATE (ACR-VEH-01 APPROVED 2026-11-12 — one task at a time)
+
+Decision and notification only. Physical barrier control needs Phase 2 and its own ACR.
+
+[x] GATE-001 Create gates and gate_cameras schemas (camera role FACE / PLATE / BOTH)
+[x] GATE-002 Gate management APIs and UI
+[x] GATE-003 Create gate_passes schema (links events, never modifies them)
+[x] GATE-004 Face + plate correlation service within the gate time window
+[x] GATE-005 Extend AccessContext with gate, vehicle, ownership link and match_result
+[x] GATE-006 Seed FACE_PRIMARY gate policies (decision D2)
+[x] GATE-007 Gate pass decisions in Live Monitor, notifications and review queue
+[x] GATE-008 Gate pass history search and reports
+[x] GATE-009 Correlation edge cases: two cars, tailgating, out-of-order and late events
+[x] GATE-010 Smart Gate acceptance tests and pilot runbook update

@@ -5,12 +5,17 @@ import { useAuthStore } from '@/stores/auth'
 import eventsService from '@/services/events'
 import { apiErrorText } from '@/constants/labels'
 import { personTypeLabel, statusLabel } from '@/constants/labels'
+import { useFeaturesStore } from '@/stores/features'
+import GatePassInfo from '@/components/common/GatePassInfo.vue'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
 const canView = computed(() => authStore.can('event.view'))
+// VEH-012: plate search only while the ALPR module is on.
+const featuresStore = useFeaturesStore()
+featuresStore.load()
 
 const events = ref([])
 const loading = ref(false)
@@ -19,6 +24,7 @@ const errorMessage = ref('')
 const filters = reactive({
   decision: route.query.decision || '',
   event_type: route.query.event_type || '',
+  plate: route.query.plate || '',
   from: route.query.from || '',
   to: route.query.to || '',
   page: 1,
@@ -47,6 +53,7 @@ async function fetchEvents() {
     const res = await eventsService.listEvents({
       decision: filters.decision || undefined,
       event_type: filters.event_type || undefined,
+      plate: filters.plate || undefined,
       from: filters.from || undefined,
       to: filters.to || undefined,
       page: filters.page,
@@ -170,7 +177,18 @@ onMounted(() => {
           <option value="FACE_RECOGNIZED">FACE_RECOGNIZED</option>
           <option value="UNKNOWN_PERSON">UNKNOWN_PERSON</option>
           <option value="LIVENESS_FAILED">LIVENESS_FAILED</option>
+          <option value="PLATE_RECOGNIZED">PLATE_RECOGNIZED</option>
+          <option value="PLATE_UNKNOWN">PLATE_UNKNOWN</option>
+          <option value="PLATE_LOW_CONFIDENCE">PLATE_LOW_CONFIDENCE</option>
         </select>
+        <input
+          v-if="featuresStore.isOn('alpr')"
+          v-model="filters.plate"
+          id="plate-filter"
+          @keyup.enter="applyFilters"
+          placeholder="ค้นหาทะเบียนรถ เช่น 1กข 1234"
+          class="px-3 py-2 border rounded-lg text-sm"
+        />
         <input
           v-model="filters.from"
           @change="applyFilters"
@@ -222,11 +240,20 @@ onMounted(() => {
               @click="router.push({ name: 'events.show', params: { uuid: event.uuid } })"
             >
               <td class="px-6 py-4">
-                <div class="font-semibold text-gray-900">
+                <div v-if="event.plate" class="font-semibold text-gray-900">
+                  {{ event.plate.plate_display || event.plate.raw_text || 'อ่านทะเบียนไม่ได้' }}
+                  <span class="text-xs font-normal text-gray-500">{{
+                    event.plate.plate_province_name || ''
+                  }}</span>
+                </div>
+                <div v-else class="font-semibold text-gray-900">
                   {{ event.person?.name || event.person?.display_name || 'ไม่ทราบตัวตน' }}
                 </div>
                 <div v-if="event.person" class="mt-1 text-xs text-gray-500">
-                  {{ personTypeLabel(event.person.person_type) }}<span v-if="event.person.status"> · {{ statusLabel(event.person.status) }}</span>
+                  {{ personTypeLabel(event.person.person_type)
+                  }}<span v-if="event.person.status">
+                    · {{ statusLabel(event.person.status) }}</span
+                  >
                 </div>
                 <div v-else-if="event.review_candidate" class="mt-1 text-xs text-amber-700" data-test="review-candidate">
                   อาจเป็น: {{ event.review_candidate.name }} (รอตรวจสอบ)
@@ -249,6 +276,12 @@ onMounted(() => {
                 >
                   {{ event.current_decision?.decision || '-' }}
                 </span>
+                <GatePassInfo
+                  v-if="event.current_decision?.gate_pass"
+                  :gate-pass="event.current_decision.gate_pass"
+                  compact
+                  class="mt-1"
+                />
               </td>
               <td class="px-6 py-4 text-xs text-gray-500">
                 {{ event.occurred_at ? new Date(event.occurred_at).toLocaleString() : '-' }}

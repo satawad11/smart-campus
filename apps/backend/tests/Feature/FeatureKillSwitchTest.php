@@ -67,7 +67,7 @@ class FeatureKillSwitchTest extends TestCase
         $settings = app(SystemSettingService::class);
         $flags = app(FeatureFlagService::class);
 
-        foreach (FeatureFlagService::LOCKED_V1_FEATURES as $feature) {
+        foreach (FeatureFlagService::killSwitchFeatures() as $feature) {
             config(['features.locked_kill_switches.'.$feature => 'false']);
             $settings->updateGroup('FEATURE', ['feature.'.$feature => true]);
 
@@ -101,5 +101,56 @@ class FeatureKillSwitchTest extends TestCase
 
         $this->assertFalse($flags->isKillSwitchEngaged('realtime_monitor'));
         $this->assertFalse($flags->isKillSwitchEngaged('scheduled_reports'));
+    }
+
+    public function test_vehicle_and_alpr_are_optional_not_locked(): void
+    {
+        $this->assertSame(['door', 'visitor', 'ai_assistant'], FeatureFlagService::LOCKED_V1_FEATURES);
+        $this->assertSame(['vehicle', 'alpr'], FeatureFlagService::OPTIONAL_FEATURES);
+    }
+
+    public function test_optional_feature_is_off_by_default_and_can_be_enabled_when_switch_allows(): void
+    {
+        $flags = app(FeatureFlagService::class);
+        $settings = app(SystemSettingService::class);
+
+        foreach (FeatureFlagService::OPTIONAL_FEATURES as $feature) {
+            config(['features.locked_kill_switches.'.$feature => 'true']);
+            $this->assertFalse($flags->isEnabled($feature), "{$feature} must default to off");
+
+            $settings->updateGroup('FEATURE', ['feature.'.$feature => true]);
+            $this->assertFalse($flags->isKillSwitchEngaged($feature));
+            $this->assertTrue($flags->isEnabled($feature), "{$feature} must be enableable");
+            $this->assertTrue($flags->getAll()[$feature]);
+
+            config(['features.locked_kill_switches.'.$feature => false]);
+            $this->assertFalse($flags->isEnabled($feature), "{$feature} kill switch must still win");
+        }
+    }
+
+    public function test_reseeding_keeps_admin_choice_for_optional_but_resets_locked_features(): void
+    {
+        app(SystemSettingService::class)->updateGroup('FEATURE', [
+            'feature.vehicle' => true,
+            'feature.door' => true,
+        ]);
+
+        $this->seed(SystemSettingSeeder::class);
+        $settings = app(SystemSettingService::class);
+
+        $this->assertTrue((bool) $settings->get('feature.vehicle'));
+        $this->assertFalse((bool) $settings->get('feature.door'));
+    }
+
+    public function test_kill_switch_configured_reports_whether_variable_is_set(): void
+    {
+        $flags = app(FeatureFlagService::class);
+
+        config(['features.locked_kill_switches.alpr' => null]);
+        $this->assertFalse($flags->isKillSwitchConfigured('alpr'));
+
+        config(['features.locked_kill_switches.alpr' => false]);
+        $this->assertTrue($flags->isKillSwitchConfigured('alpr'));
+        $this->assertFalse($flags->isKillSwitchConfigured('realtime_monitor'));
     }
 }

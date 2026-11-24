@@ -54,8 +54,8 @@ class FeatureFlagsApiTest extends TestCase
         $this->assertIsArray($flags);
         $this->assertFalse($flags['door'], 'door feature must be false in Production V1');
         $this->assertFalse($flags['visitor'], 'visitor feature must be false in Production V1');
-        $this->assertFalse($flags['vehicle'], 'vehicle feature must be false in Production V1');
-        $this->assertFalse($flags['alpr'], 'alpr feature must be false in Production V1');
+        $this->assertFalse($flags['vehicle'], 'vehicle feature must be off by default (ACR-VEH-01)');
+        $this->assertFalse($flags['alpr'], 'alpr feature must be off by default (ACR-VEH-01)');
         $this->assertFalse($flags['ai_assistant'], 'ai_assistant feature must be false in Production V1');
     }
 

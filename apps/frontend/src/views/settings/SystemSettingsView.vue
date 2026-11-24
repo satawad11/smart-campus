@@ -29,13 +29,9 @@ const errorMessage = ref('')
 
 const canManage = computed(() => authStore.hasPermission('system.manage'))
 
-const LOCKED_FEATURES = [
-  'feature.door',
-  'feature.visitor',
-  'feature.vehicle',
-  'feature.alpr',
-  'feature.ai_assistant',
-]
+// feature.vehicle and feature.alpr are optional since ACR-VEH-01 and stay editable here;
+// the backend still forces them off when FEATURE_VEHICLE/ALPR_ENABLED=false.
+const LOCKED_FEATURES = ['feature.door', 'feature.visitor', 'feature.ai_assistant']
 
 async function fetchSettings() {
   isLoading.value = true

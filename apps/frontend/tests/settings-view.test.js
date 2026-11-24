@@ -95,4 +95,39 @@ describe('SEC-001 / SEC-002: System Settings and Feature Flags UI', () => {
       expect(wrapper.text()).toContain('Locked V1')
     }
   })
+
+  it('keeps door locked but lets admins toggle optional vehicle/alpr flags (ACR-VEH-01)', async () => {
+    const authStore = useAuthStore()
+    authStore.user = { id: 1, name: 'Admin', permissions: ['system.view', 'system.manage'] }
+    authStore.hasPermission = () => true
+
+    vi.spyOn(api, 'get').mockResolvedValueOnce({
+      data: {
+        success: true,
+        data: {
+          FEATURE: [
+            { key: 'feature.door', type: 'boolean', value: false, is_public: true },
+            { key: 'feature.vehicle', type: 'boolean', value: false, is_public: true },
+            { key: 'feature.alpr', type: 'boolean', value: false, is_public: true },
+          ],
+        },
+      },
+    })
+
+    const wrapper = mount(SystemSettingsView, { global: { plugins: [pinia] } })
+    await wrapper.vm.$nextTick()
+    await new Promise((resolve) => setTimeout(resolve, 50))
+
+    const featureTab = wrapper.findAll('button').find((b) => b.text().includes('ฟีเจอร์ระบบ'))
+    expect(featureTab).toBeTruthy()
+    await featureTab.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    const toggles = wrapper.findAll('input[type="checkbox"]')
+    expect(toggles).toHaveLength(3)
+    expect(toggles[0].attributes('disabled')).toBeDefined()
+    expect(toggles[1].attributes('disabled')).toBeUndefined()
+    expect(toggles[2].attributes('disabled')).toBeUndefined()
+    expect(wrapper.text().match(/Locked V1/g)).toHaveLength(1)
+  })
 })

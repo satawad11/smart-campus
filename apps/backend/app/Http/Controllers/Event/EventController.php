@@ -12,6 +12,7 @@ use App\Models\AccessEvent;
 use App\Services\Audit\AuditRequestContext;
 use App\Services\Event\EventReviewService;
 use App\Services\Event\EventSearchQuery;
+use App\Services\Vehicle\PlateSearchAuditor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -68,6 +69,7 @@ class EventController extends Controller
             'zone_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:zones,uuid'],
             'camera_uuid' => ['bail', 'sometimes', 'string', 'uuid', 'exists:cameras,uuid'],
             'academic_status' => ['sometimes', 'string'],
+            'plate' => ['sometimes', 'string', 'max:32'],
             'sort' => ['sometimes', 'string', 'in:'.implode(',', self::SORTABLE)],
             'order' => ['sometimes', 'string', 'in:asc,desc'],
         ]);
@@ -80,6 +82,10 @@ class EventController extends Controller
         $order = $validated['order'] ?? $defaultOrder;
 
         $query = $this->scopeQuery($this->searchQuery->build($validated), $request, 'event.view');
+        // VEH-013: plate searches are audited (PDPA).
+        if (! empty($validated['plate'])) {
+            app(PlateSearchAuditor::class)->record($request, 'events', $validated['plate']);
+        }
 
         $paginator = $query->orderBy($sort, $order)->paginate($perPage);
 
@@ -101,7 +107,7 @@ class EventController extends Controller
     public function show(Request $request, AccessEvent $accessEvent): JsonResponse
     {
         $this->assertInScope($request, 'event.view', $accessEvent->site_id, $accessEvent->zone_id);
-        $accessEvent->load(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision', 'decisions.decidedBy']);
+        $accessEvent->load(['person.studentProfile', 'person.staffProfile', 'site', 'zone', 'camera', 'aiNode', 'latestDecision.gatePass.gate', 'latestDecision.gatePass.faceEvent', 'latestDecision.gatePass.plateEvent', 'decisions.decidedBy', 'decisions.gatePass.gate', 'decisions.gatePass.faceEvent', 'decisions.gatePass.plateEvent']);
 
         return response()->json([
             'success' => true,

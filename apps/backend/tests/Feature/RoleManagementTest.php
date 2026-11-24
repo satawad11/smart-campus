@@ -112,7 +112,8 @@ class RoleManagementTest extends TestCase
         }
         // 15 future disabled-module permissions absent. visitor.* left this list when the
         // owner approved Module 09 (OWNER-DECISIONS-2026-11-16, PPL-002).
-        foreach (['door.', 'vehicle.', 'alpr.', 'ai_assistant.'] as $future) {
+        // vehicle.* left it with ACR-VEH-01 (VEH-004).
+        foreach (['door.', 'alpr.', 'ai_assistant.'] as $future) {
             foreach ($codes as $code) {
                 $this->assertStringStartsNotWith($future, $code);
             }

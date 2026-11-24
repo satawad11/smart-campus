@@ -6,6 +6,7 @@ use App\Http\Controllers\Internal\AiNodeEnrollmentInternalController;
 use App\Http\Controllers\Internal\AiNodeInternalController;
 use App\Http\Controllers\Internal\CameraHealthInternalController;
 use App\Http\Controllers\Internal\FaceRecognitionInternalController;
+use App\Http\Controllers\Internal\PlateEventInternalController;
 use App\Http\Controllers\Internal\RecognitionEventInternalController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,10 @@ Route::middleware('ai_node.token')->group(function () {
     // EVT-003: recognition-event ingestion. Perception only — no access
     // decision is ever accepted here or produced by this endpoint.
     Route::post('/events/recognition', [RecognitionEventInternalController::class, 'store']);
+
+    // VEH-010 (ACR-VEH-01): plate reads. The node sends raw text and scores; the backend
+    // normalises, looks up the vehicle and picks the event type. Never a decision.
+    Route::post('/events/plate', [PlateEventInternalController::class, 'store']);
 
     // COM-03: allowlisted remote operations. The node pulls its own pending
     // commands (marking them delivered) and reports each result.

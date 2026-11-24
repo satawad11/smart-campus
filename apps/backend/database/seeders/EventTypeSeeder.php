@@ -60,6 +60,32 @@ class EventTypeSeeder extends Seeder
                 'severity' => 'WARNING',
                 'active' => true,
             ],
+            // VEH-006 (ACR-VEH-01): licence-plate results from AI nodes. A plate event records
+            // what was read; it never grants access on its own (face stays primary, D2).
+            [
+                'code' => 'PLATE_RECOGNIZED',
+                'name_th' => 'อ่านทะเบียนรถที่ลงทะเบียนไว้',
+                'name_en' => 'Registered Plate Recognized',
+                'category' => 'PLATE',
+                'severity' => 'INFO',
+                'active' => true,
+            ],
+            [
+                'code' => 'PLATE_UNKNOWN',
+                'name_th' => 'ทะเบียนรถที่ไม่ได้ลงทะเบียน',
+                'name_en' => 'Unregistered Plate',
+                'category' => 'PLATE',
+                'severity' => 'WARNING',
+                'active' => true,
+            ],
+            [
+                'code' => 'PLATE_LOW_CONFIDENCE',
+                'name_th' => 'อ่านทะเบียนรถได้ไม่ชัดเจน',
+                'name_en' => 'Plate Read With Low Confidence',
+                'category' => 'PLATE',
+                'severity' => 'INFO',
+                'active' => true,
+            ],
         ];
     }
 }

@@ -42,6 +42,8 @@ class StoreCameraRequest extends FormRequest
             'face_recognition_enabled' => ['sometimes', 'boolean'],
             'liveness_enabled' => ['sometimes', 'boolean'],
             'snapshot_enabled' => ['sometimes', 'boolean'],
+            // VEH-005: turning it on also needs feature.alpr (checked in CameraService).
+            'plate_recognition_enabled' => ['sometimes', 'boolean'],
             'status' => ['sometimes', Rule::enum(DeviceStatus::class)],
 
             // Internal identifiers may never be client-supplied.

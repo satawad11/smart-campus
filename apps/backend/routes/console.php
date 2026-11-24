@@ -43,6 +43,11 @@ Schedule::command('license:check')->hourly()->withoutOverlapping(10);
 // PPL-006: expire scheduled visitor visits after their approved time window.
 Schedule::command('visits:expire')->everyMinute()->withoutOverlapping(5);
 
+// GATE-004 (ACR-VEH-01): close Smart Gate passes once their correlation window (max 60 s) has
+// passed. Pairs are made at ingest time; this only closes lone events, so a short interval keeps
+// FACE_ONLY / PLATE_ONLY passes close to real time. No-op while feature.vehicle is off.
+Schedule::command('gates:correlate')->everyFiveSeconds()->withoutOverlapping(1);
+
 // PPL-009: remove visitor face biometrics after the configured retention period.
 Schedule::command('visitors:retain-faces')->dailyAt('02:30')->withoutOverlapping(60);
 

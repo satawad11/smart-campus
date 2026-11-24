@@ -417,6 +417,32 @@ class PermissionSeeder extends Seeder
                 'name' => 'Manage Visits',
                 'description' => 'Create visits and check visitors in and out',
             ],
+            // Vehicle registry (ACR-VEH-01, VEH-004); routes also need feature.vehicle on.
+            [
+                'code' => 'vehicle.view',
+                'module' => 'vehicle',
+                'name' => 'View Vehicles',
+                'description' => 'View registered vehicles and who they are linked to',
+            ],
+            [
+                'code' => 'vehicle.manage',
+                'module' => 'vehicle',
+                'name' => 'Manage Vehicles',
+                'description' => 'Register vehicles, change their status and link or unlink people',
+            ],
+            // Smart Gate (ACR-VEH-01, GATE-002); routes also need feature.vehicle on.
+            [
+                'code' => 'gate.view',
+                'module' => 'gate',
+                'name' => 'View Gates',
+                'description' => 'View Smart Gates and the cameras assigned to them',
+            ],
+            [
+                'code' => 'gate.manage',
+                'module' => 'gate',
+                'name' => 'Manage Gates',
+                'description' => 'Create Smart Gates, change their settings and assign cameras',
+            ],
         ];
     }
 }

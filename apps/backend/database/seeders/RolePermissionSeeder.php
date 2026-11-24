@@ -109,6 +109,10 @@ class RolePermissionSeeder extends Seeder
                 'visitor.manage',
                 'visit.view',
                 'visit.manage',
+                // ACR-VEH-01 D6: security officers see the vehicle registry, admins manage it.
+                'vehicle.view',
+                // GATE-002: security officers see Smart Gates, admins manage them.
+                'gate.view',
             ],
 
             // EXECUTIVE_VIEWER: Read-only aggregated metrics and executive reports.

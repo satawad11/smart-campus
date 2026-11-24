@@ -36,6 +36,7 @@ class AccessDecision extends Model
         'decision',
         'reason_code',
         'access_policy_id',
+        'gate_pass_id',
         'decision_source',
         'decided_by_user_id',
         'reason_text',
@@ -61,6 +62,12 @@ class AccessDecision extends Model
     public function policy(): BelongsTo
     {
         return $this->belongsTo(AccessPolicy::class, 'access_policy_id');
+    }
+
+    /** The Smart Gate pass this decision decided (GATE-007); null for a non-gate decision. */
+    public function gatePass(): BelongsTo
+    {
+        return $this->belongsTo(GatePass::class);
     }
 
     public function person(): BelongsTo
