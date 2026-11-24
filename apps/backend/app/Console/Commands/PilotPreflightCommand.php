@@ -38,10 +38,10 @@ class PilotPreflightCommand extends Command
 
     protected $description = 'Read-only pilot go-live preflight: feature locks, production config, thresholds, health, scope, backup';
 
-    /** FACE-021 human-approved pilot thresholds (must never be self-tuned). */
+    /** Owner-approved recognition thresholds for SFace (2026-11-23; replaces the FACE-021 placeholders). */
     public const APPROVED_THRESHOLDS = [
-        'face.recognition.match_threshold' => 0.80,
-        'face.recognition.review_threshold' => 0.60,
+        'face.recognition.match_threshold' => 0.45,
+        'face.recognition.review_threshold' => 0.36,
         'face.recognition.ambiguity_margin' => 0.05,
         'face.duplicate_review.similarity_threshold' => 0.65,
         'face.liveness.threshold_real' => 0.70,

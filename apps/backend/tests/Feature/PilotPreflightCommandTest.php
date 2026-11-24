@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Console\Commands\PilotPreflightCommand;
 use App\Enums\UserStatus;
 use App\Models\BackupJob;
 use App\Models\User;
@@ -55,6 +56,9 @@ class PilotPreflightCommandTest extends TestCase
             'backup.schedule.enabled' => true,
             'backup.offhost_path' => $this->offhostDir(),
         ]);
+        // A compliant install runs the owner-approved SFace thresholds (phpunit.xml pins
+        // the generic test environment to other values).
+        config(PilotPreflightCommand::APPROVED_THRESHOLDS);
         Http::fake(['*/version' => Http::response(['ai_mode' => 'onnx'])]);
     }
 
@@ -97,7 +101,7 @@ class PilotPreflightCommandTest extends TestCase
         $this->assertSame('FAIL', $this->statusOf($report, 'APP_ENV=production'));
     }
 
-    public function test_compliant_configuration_passes_and_thresholds_match_face_021(): void
+    public function test_compliant_configuration_passes_and_thresholds_match_approved_sface_values(): void
     {
         $this->compliantConfig();
         $report = $this->runPreflight();
@@ -107,7 +111,7 @@ class PilotPreflightCommandTest extends TestCase
         $expectedFailures = config('database.default') === 'pgsql' ? [] : ['DB_CONNECTION=pgsql'];
         $failed = array_values(array_filter($report['checks'], fn ($r) => $r['status'] === 'FAIL'));
         $this->assertSame($expectedFailures, array_column($failed, 'check'));
-        $this->assertSame('PASS', $this->statusOf($report, 'face.recognition.match_threshold = 0.80'));
+        $this->assertSame('PASS', $this->statusOf($report, 'face.recognition.match_threshold = 0.45'));
         $this->assertSame('PASS', $this->statusOf($report, 'face.liveness.threshold_spoof = 0.40'));
         $this->assertSame('PASS', $this->statusOf($report, 'door effectively disabled'));
     }
@@ -125,7 +129,7 @@ class PilotPreflightCommandTest extends TestCase
 
         $this->assertSame(1, $report['exit']);
         $this->assertSame('FAIL', $this->statusOf($report, 'door effectively disabled'));
-        $this->assertSame('FAIL', $this->statusOf($report, 'face.recognition.match_threshold = 0.80'));
+        $this->assertSame('FAIL', $this->statusOf($report, 'face.recognition.match_threshold = 0.45'));
     }
 
     public function test_optional_features_must_be_explicitly_set_and_may_be_enabled(): void

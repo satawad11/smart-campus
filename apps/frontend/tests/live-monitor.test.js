@@ -204,6 +204,23 @@ describe('EVT-016: Live Monitor UI', () => {
     expect(meta).toContain('ผู้เรียน')
     expect(meta).toContain('6599999')
     expect(meta).toContain('ความเหมือน 0.52')
+
+    // A REVIEW event has no confirmed person but names the proposed candidate.
+    handler({
+      event: {
+        uuid: 'evt-live-3',
+        event_type: 'FACE_RECOGNIZED',
+        occurred_at: new Date().toISOString(),
+        camera_name: 'Gate 1',
+        person_display_name: null,
+        review_candidate: { uuid: 'p-9', name: 'Rose Leslie' },
+        face_score: 0.42,
+      },
+      decision: { decision: 'REVIEW', reason_code: 'NO_MATCHING_POLICY' },
+    })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('อาจเป็น: Rose Leslie (รอตรวจสอบ)')
   })
 
   it('unsubscribes from the channel on unmount', async () => {

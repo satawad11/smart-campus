@@ -54,3 +54,7 @@ class RecognitionWorkerResult:
     from_cache: bool = False
     """True when this result was served from RecognitionCache (CAM-010)
     rather than freshly computed this call — the pipeline did not re-run."""
+    suppress_delivery: bool = False
+    """True when this freshly computed attempt is no better than what was already
+    delivered for the same track (e.g. a retry that is still UNKNOWN): it is not sent
+    again, so one person walking past does not flood the monitor with events."""

@@ -3,7 +3,7 @@
 from typing import Any
 
 from app.orchestration.node_client import AiNodeClient, HttpAiNodeClient
-from app.orchestration.orchestrator import NodeOrchestrator
+from app.orchestration.orchestrator import NodeOrchestrator, cctv_quality_thresholds
 
 
 class CommandNodeClient(AiNodeClient):
@@ -187,7 +187,8 @@ def test_quality_gate_settings_reach_the_shared_evaluator():
     t = orchestrator.quality_evaluator.thresholds
     assert t.max_pitch_degrees == 45.0
     assert t.min_blur_score == 0.2
-    assert t.max_yaw_degrees == 30.0  # untouched keys keep the default
+    # untouched keys keep the node's CCTV default (OWNER-DECISIONS-2026-11-23 R3)
+    assert t.max_yaw_degrees == cctv_quality_thresholds().max_yaw_degrees
     assert orchestrator.target_fps == 6.0
     assert orchestrator.applied_config_revision == 5
 
@@ -206,6 +207,7 @@ def test_quality_gate_is_absolute_per_revision_and_bounded():
     orchestrator.sync_config()
 
     t = orchestrator.quality_evaluator.thresholds
-    assert t.max_yaw_degrees == 30.0
+    assert t.max_yaw_degrees == cctv_quality_thresholds().max_yaw_degrees
     assert t.min_luminance == 0.1
-    assert t.max_pitch_degrees == 25.0  # 90 is outside 15..60
+    # 90 is outside 15..60, so the CCTV default stays
+    assert t.max_pitch_degrees == cctv_quality_thresholds().max_pitch_degrees

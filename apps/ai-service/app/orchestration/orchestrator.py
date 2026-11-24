@@ -154,7 +154,7 @@ class CameraPipelineRunner:
         self.collector = CameraHealthCollector(camera_uuid=self.camera_uuid)
 
         # Recognition worker & pool with per-camera cache
-        self.cache = RecognitionCache()
+        self.cache = RecognitionCache(ttl_seconds=settings.recognition_cache_ttl_seconds)
         self.worker = RecognitionWorker(
             camera_uuid=self.camera_uuid,
             ai_node_uuid=self.ai_node_uuid,
@@ -166,6 +166,9 @@ class CameraPipelineRunner:
             model_version=model_version,
             liveness_detector=liveness_detector if self.liveness_enabled else None,
             cache=self.cache,
+            liveness_mode=settings.liveness_mode,
+            liveness_min_face_px=settings.liveness_min_face_px,
+            retry_ttl_seconds=settings.recognition_retry_seconds,
         )
         self.pool = RecognitionWorkerPool(self.worker, max_workers=2, queue_size=15)
 
@@ -388,6 +391,19 @@ class CameraPipelineRunner:
         return delivered
 
 
+def cctv_quality_thresholds() -> QualityThresholds:
+    """Surveillance quality gate from settings (enrollment keeps its stricter defaults)."""
+    return QualityThresholds(
+        min_blur_score=settings.cctv_min_blur_score,
+        min_face_size_score=min(max(settings.cctv_min_face_px / 100.0, 0.0), 1.0),
+        max_yaw_degrees=settings.cctv_max_yaw_degrees,
+        max_pitch_degrees=settings.cctv_max_pitch_degrees,
+        max_roll_degrees=settings.cctv_max_roll_degrees,
+        min_pose_score=0.30,
+        min_quality_score=settings.cctv_min_quality_score,
+    )
+
+
 def detection_for_track(track: Track, detections: list[FaceDetection]) -> FaceDetection | None:
     """The detection this track was matched to in the current frame, if any.
 
@@ -483,7 +499,10 @@ class NodeOrchestrator:
         aligner_prov = "standard" if self.ai_mode != "mock" else "mock"
         self.aligner = get_face_aligner(provider=aligner_prov)
         quality_prov = "standard" if self.ai_mode != "mock" else "mock"
-        self.quality_evaluator = get_face_quality_evaluator(provider=quality_prov)
+        quality_kwargs: dict[str, Any] = {}
+        if quality_prov == "standard":
+            quality_kwargs["thresholds"] = cctv_quality_thresholds()
+        self.quality_evaluator = get_face_quality_evaluator(provider=quality_prov, **quality_kwargs)
         embedder_prov = "onnx" if self.ai_mode == "onnx" else "mock"
         embedder_kwargs: dict[str, Any] = {
             "model_code": self.model_code,
@@ -833,15 +852,20 @@ class NodeOrchestrator:
         logger.info("Applied runtime settings revision %s", revision)
 
     def _apply_quality_thresholds(self, overrides: dict[str, float]) -> None:
-        """Rebuild the quality gate from defaults plus this revision's values.
+        """Rebuild the quality gate from the CCTV defaults plus this revision's values.
 
+        The base is the node's CCTV gate (cctv_quality_thresholds), not the
+        stricter enrollment defaults, so applying a revision without quality
+        keys never tightens the surveillance gate behind the operator's back.
         Workers hold the same evaluator object, so the swap reaches every
         camera on its next frame. The bounds keep min_luminance (<= 0.5) below
         max_luminance (>= 0.6); anything the model still rejects keeps the
         previous thresholds.
         """
         try:
-            thresholds = QualityThresholds(**overrides)
+            thresholds = QualityThresholds(
+                **{**cctv_quality_thresholds().model_dump(), **overrides}
+            )
         except ValueError as exc:
             logger.warning("Ignoring invalid quality thresholds %s: %s", overrides, exc)
             return

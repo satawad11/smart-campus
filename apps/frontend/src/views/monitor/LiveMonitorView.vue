@@ -245,6 +245,8 @@ function personLabel(event) {
     event.person_name ||
     event.person?.display_name ||
     event.person_display_name ||
+    // REVIEW: no confirmed person, but show who the system proposes for checking.
+    (event.review_candidate?.name ? `อาจเป็น: ${event.review_candidate.name} (รอตรวจสอบ)` : null) ||
     'ไม่ทราบตัวตน'
   )
 }

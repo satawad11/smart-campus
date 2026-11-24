@@ -255,6 +255,12 @@ onMounted(() => {
                     · {{ statusLabel(event.person.status) }}</span
                   >
                 </div>
+                <div v-else-if="event.review_candidate" class="mt-1 text-xs text-amber-700" data-test="review-candidate">
+                  อาจเป็น: {{ event.review_candidate.name }} (รอตรวจสอบ)
+                </div>
+                <div v-if="event.face_score != null" class="mt-0.5 text-xs text-gray-400" data-test="face-score">
+                  ความคล้าย {{ Number(event.face_score).toFixed(2) }}
+                </div>
               </td>
               <td class="px-6 py-4 text-xs text-gray-600">
                 {{ event.event_type }}

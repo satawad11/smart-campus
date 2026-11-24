@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     detector_model_path: str | None = "models/face_detection_yunet_2023mar.onnx"
     embedder_model_path: str | None = "models/face_recognition_sface_2021dec.onnx"
     liveness_model_dir: str | None = "models"
+    # Frames wider than this are downscaled for face detection only (0 = never).
+    # 1280 keeps faces of ~24 px at 1080p detectable while cutting detection time ~2.4x.
+    detector_max_input_width: int = 1280
     # FACE-021 liveness thresholds (same values as the backend's config/face.php)
     liveness_threshold_real: float = 0.70
     liveness_threshold_spoof: float = 0.40
@@ -50,6 +53,31 @@ class Settings(BaseSettings):
     # missed, at about 4x the CPU (0.45 s vs 0.1 s on the build PC); the evaluation decides.
     plate_detector_input_width: int = 640
     plate_reads_per_vehicle: int = 8
+
+    # CCTV liveness policy (AI node only; the enrollment/scan API always enforces):
+    #   enforce  - only a REAL face is recognised (close-range access points)
+    #   advisory - PAD runs and is reported; a SPOOF face is still reported to the backend
+    #              (LIVENESS_FAILED event) but UNCERTAIN no longer blocks recognition, and
+    #              faces smaller than liveness_min_face_px are not scored (MiniFASNet is a
+    #              close-range model and is not reliable on distant CCTV faces)
+    #   off      - PAD is not run
+    liveness_mode: str = "advisory"
+    liveness_min_face_px: float = 80.0
+    # CCTV face-quality gate (AI node only). Measured on real faces downscaled to CCTV
+    # sizes: SFace still separates identities at ~28 px faces, so the enrollment-grade
+    # gate (100 px reference, 30 deg yaw on an estimator that over-reads yaw ~1.5x)
+    # threw away most usable surveillance faces.
+    cctv_min_face_px: float = 24.0
+    cctv_min_blur_score: float = 0.20
+    cctv_max_yaw_degrees: float = 65.0
+    cctv_max_pitch_degrees: float = 35.0
+    cctv_max_roll_degrees: float = 35.0
+    cctv_min_quality_score: float = 0.45
+    # A track whose attempt was rejected or not a MATCH is re-tried after this many
+    # seconds (a face walking towards the camera gets better); MATCH results are kept
+    # for recognition_cache_ttl_seconds.
+    recognition_retry_seconds: float = 1.0
+    recognition_cache_ttl_seconds: float = 30.0
     event_buffer_path: str = "data/offline_events.db"
     log_level: str = "INFO"
 
